@@ -1,0 +1,11 @@
+\frametitle{The next challenge - a general framework for data integration?}
+
+\begin{itemize}
+\item Summarize the ``data" on each SNP in each subgroup (or experimental condition) as $(\hat\beta, se(\hat\beta))$.
+\item Arrange these in a big $p$ by $S$ matrix.
+\item Goal: identify the elements that correspond to non-zero (or ``large") $\beta$, exploiting combined structure
+across rows of the matrix.
+\end{itemize}
+
+Challenge: exploit the many available tools -- clustering, PCA, factor analysis,etc -- to do this in a flexible and powerful way.
+

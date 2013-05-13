@@ -1,0 +1,8 @@
+unnamed-chunk-1	paste0	read.table	setwd	source
+unnamed-chunk-2	head	x
+unnamed-chunk-3	<	$	c	counts.associate	dim	ifelse	pt	return	T	x
+unnamed-chunk-4	$	abline	hist	pval	qvalue
+unnamed-chunk-5	$	abline	hist	pval	qvalue	rect
+computing	cars	cor	head
+graphics	cars	dist	geom_smooth	library	qplot	speed
+session-info	print	sessionInfo

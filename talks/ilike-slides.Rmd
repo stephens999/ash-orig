@@ -1,0 +1,144 @@
+% Apaptive Shrinkage and False Discovery Rates by Laplace Approximation
+% Matthew Stephens
+% 2013/5/13
+
+```{r setup, include=FALSE}
+# set global chunk options
+opts_chunk$set(cache=TRUE,autodep=TRUE)
+dep_auto()
+library("qvalue")
+```
+
+# Motivation
+
+- A common problem: you have imperfect measurements
+of many ``similar" things, and wish to estimate their values. 
+
+- Particularly common in genomics. For example,
+ a very common goal is to compare the mean
+expression (activity) level of many genes in two conditions.
+
+
+# Example: Mouse Heart Data
+
+```{r, include=FALSE}
+setwd("~/Documents/git/BayesFDR/talks/")
+## load Poisson_binomial and ash functions 
+source("../../stat45800/code/Rcode/PoissonBinomial.funcs.R")  
+source("../Rcode/ash.R") 
+x = read.table(paste0("../../stat45800/data/nobrega/expression/counts.txt"), header = TRUE)
+```
+
+- Data on 150 mouse hearts, dissected into left and right ventricle
+(courtesy Scott Schmemo, Marcelo Nobrega)
+
+# Example: Mouse Heart Data
+```{r}
+head(x)
+```
+
+
+```{r, echo=FALSE}
+cc = x[, 2:5]
+g = c(-1, -1, 1, 1)
+ngene = dim(x)[1]
+
+cc.assoc = counts.associate(cc, g, 1)
+zdat.ash = cc.assoc$zdat.ash
+zdat = cc.assoc$zdat
+
+
+# two-sided test
+ttest.pval = function(t, df) {
+    pval = pt(t, df = df, lower.tail = T)
+    pval = 2 * ifelse(pval < 0.5, pval, 1 - pval)
+    return(pval)
+}
+
+tscore = zdat[3, ]/zdat[4, ]
+pval = ttest.pval(tscore, df = 2)
+
+
+```
+
+
+# Borrowing Strength
+
+- For gene $j$, denote the difference in mean between condition 0 and condition 1 by $$\beta_j:= \mu^0_j - \mu^1_j.$$
+
+- As measurements are made on only two
+samples in each condition, error in estimates
+of $\beta_j$ are appreciable.
+
+- Fundamental idea: measurements of $\beta_j$ for each gene can be used to improve inference for the values of $\beta$ for other genes.
+
+
+# False Discovery Rates
+
+-Standard practice is to estimate an effect size $\beta_j$ and standard error $s_j$ for each gene. 
+
+-Then convert this to a $p$ value for each gene, e.g. by a $t$ test on $\beta_j/s_j$.
+
+-Then use the distribution of $p$ values to estimate the false discovery rate (FDR) at a given threshold.
+
+# False Discovery Rates
+
+```{r, echo=FALSE}
+hist(pval,prob=TRUE)
+qval = qvalue(pval)
+abline(h=qval$pi0,col="red",lwd=2)
+```
+
+# False Discovery Rates
+
+```{r, echo=FALSE}
+h=hist(pval,prob=TRUE)
+qval = qvalue(pval)
+abline(h=qval$pi0,col="red",lwd=2)
+rect(0,0,0.05,qval$pi0,col="red")
+rect(0,qval$pi0,0.05,h$intensities[1],col="green")
+abline(v=0.05,lwd=3)
+```
+
+#FDR methods are very widely used!
+
+- Why?
+
+- Partly, they make sense.
+
+- Partly, they are generic. Once you have the $p$ values, you don't really care where they came from. 
+
+#Issues
+
+- Different precision of different measurements 
+is forgotten once the $p$ value is computed.
+
+- Borrows information for testing, not for estimation.
+
+#An Alternative
+
+- Instead of summarizing each gene by a single number ($p$ value)
+summarize by two numbers, $\hat\beta_j$ and its standard error $\hat\s_j$.
+
+- Then do inference for $\beta_j$ by Laplace approximation. 
+
+
+
+# Example: Wavelets 
+
+
+
+# Reproducible research
+
+This document is produced with **knitr**, **Rstudio** and **Pandoc**.
+
+Here is my session info:
+
+```{r session-info}
+print(sessionInfo(), locale=FALSE)
+```
+
+# Misc issues
+
+- the plots are too wide? use the chunk option `out.width` which will be used in `<img width=... />`, e.g. `out.width=400px`
+

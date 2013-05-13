@@ -1,0 +1,679 @@
+% CVSId: $Id: Example.tex,v 1.1.1.1 2000/11/28 11:15:12 exupery Exp $
+\documentclass[ignorenonframetext]{beamer}
+
+\usepackage{tikz}
+\usepackage{amsbsy}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{latexsym}
+\usepackage{algorithm}
+\usepackage{multirow}
+\usepackage{algorithmic}
+\usepackage{color} 
+\usepackage{graphicx}
+\usepackage{tabularx}
+%\usepackage{hyperref}
+\usepackage{eepic}
+\usepackage{booktabs}
+\usepackage{epic}
+\def \hatd { \widehat{ d } }
+\def \dhatin {\hatd^{\mbox{\tiny IN}}}
+\def \dhatsw {\hatd^{\mbox{\tiny SW}}}
+\def \mvn{\text{MVN}}
+\def\mn{\text{MN}}
+\def \iw{\text{IW}}
+\def \fp {fastPHASE\ }
+\def\var{\rm Var}
+\def\BF{\text{BF}}
+\def\BFfull{\text{BF}_\text{all}}
+\def\mvr{\text{BMVR}}
+\def\one{\mbf{1}}
+\def\zero{\mbf{0}}
+\def\sxx{S_{xx}}
+\def\syy{S_{yy}}
+\def\rss{\text{\rm RSS}}
+\def\I{I}
+\def\D{D}
+\def\U{U}
+\def\p{p}
+\def\g{G}
+\def\bfav{BF_{\text{av}}}
+\def\pall{p_\text{all}}
+
+%\ColorFoot{2}
+\newcommand{\mbf}[1]{\mbox{\boldmath$#1$}} % true mathbf works in math
+                                % mode too
+\def\BF{\rm BF}
+\def\hfull{\textcolor{red}{H_\text{all}}}
+\def\hnull{\textcolor{blue}{H_0}}
+
+\mode<article>
+{
+  \usepackage{fullpage}
+  \usepackage{pgf}
+  \usepackage{hyperref}
+  \setjobnamebeamerversion{sanger.beamer}
+}
+
+\mode<presentation>
+{
+  \usetheme{Dresden}
+
+  \setbeamercovered{transparent}
+}
+
+\usepackage[latin1]{inputenc}
+\usepackage[english]{babel}
+\def \fp {fastPHASE\ }
+
+
+\title[Adaptive Shrinkage by Laplace Approximation]{Adaptive Shrinkage and False Discovery Rates by Laplace Approximation}
+\author{Matthew Stephens} \date{i-like, Warwick,  May 2013 }
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}{Motivation}  
+A common problem: you have imperfect measurements
+of many ``similar" things, and wish to estimate their values. 
+
+This is particularly common in genomics. For example,
+ a very common goal is to compare the mean
+expression (activity) level of many genes in two conditions.
+
+Let $\mu^0_j$ and $\mu^1_j$ denote the mean expression 
+of gene $j$ ($j=1,\dots,J$) in the two conditions, and define $\beta_j:= \mu^0_j - \mu^1_j$ to be the difference. 
+
+Typically expression
+measurements are made on only a small number of
+samples in each condition - sometimes as few as one
+sample in each condition. Thus the error in estimates
+of $\mu^0_j$ and $\mu^1_j$ is appreciable, and the error
+in estimates of $\beta_j$ still greater.
+
+Marcelo's Heart data as an example.
+
+Wavelets as a second application.
+\end{frame}
+
+
+\begin{frame}{Borrowing Strength}
+A fundamental idea is
+that the measurements of $\beta_j$ for each gene can be used to improve inference for the values of $\beta$ for other genes.
+\end{frame}
+
+\begin{frame}{False Discovery Rates}
+
+What is actually done in practice?
+
+
+\end{frame}
+
+
+
+\begin{frame}{Genetic Association Studies}  
+
+So a typical GWAS analysis involves fitting millions of simple regressions, and testing effects for significance.
+
+\bigskip
+
+Notation: $y$ for phenotype, $g$ for genotype, $\beta$ for genetic effects:
+
+$$y_i = \mu + \beta g_i + \epsilon_i \qquad (i=1,\dots,n)$$
+\end{frame}
+
+
+
+\begin{frame}{Genetic Association Studies and Heterogeneity}  
+
+We have been developing statistical methods for association mapping in multiple subgroups, incorporating heterogeneity of effects.
+See also Lebrec et al (2010); Han and Eskin (2011,2012). 
+\bigskip
+
+Motivating examples include:
+\begin{enumerate}
+ \item The ``Global Lipids Consortium" Genome-wide Association Study meta-analysis (Teslovich et al, 2010).
+ \item Gene expression analysis among multiple tissues (e.g.~Dimas et al, 2009).
+ \end{enumerate}
+\end{frame}
+
+
+ \begin{frame}{Example 1: Global Lipids meta-analysis}
+ 
+GWAS data from the Global Lipids consortium (Teslovich et al, 2010) on $>100,000$ individuals
+from at least 25 separate studies.
+
+\bigskip 
+Four phenotypes: total cholesterol (TC), low-density lipoprotein cholesterol
+(LDL-C), high-density lipoprotein cholesterol (HDL-C) and triglycerides (TG).
+
+\bigskip
+The original association analyses performed a {\it fixed-effects meta-analysis}.
+That is, assume the effects in each subgroup  are all equal ($\beta_s = \beta \, \forall s$ ), and test $H_0: \beta=0$. 
+
+\bigskip
+They reported a total of 95
+SNPs as being associated with one or more phenotypes.
+
+\end{frame}
+
+\begin{frame}{Example 1: Global Lipids meta-analysis}
+
+{\bf Question:} Given that this study involved 25 separate subgroups, many with quite different recruitment criteria
+(e.g. some were recruited as cases for a particular disease; others were recruited as controls; etc),
+would an analysis that allows for heterogeneity across studies identify more associations?
+ \end{frame}
+ 
+ 
+ \begin{frame}{Example 2: eQTL studies across multiple cell-types}
+ 
+ Dimas et al (2009), measured expression data in 75 individuals, in 3 cell types: Fibroblasts, LCLs and T-cells.
+ 
+ \bigskip
+ 
+A key goal was to identify genetic variants associated with expression that were shared among
+ cell types, or were specific to some subset of cell-types.  (Identifying eQTLs specific to individual cell types may shed insight into
+ cell-type-specific regulation mechanisms.)
+ 
+ \bigskip
+ 
+ Original analysis performed association analysis separately in each cell type, and then looked at the overlap
+ of the resulting associations.  The overlap was small (14\%), and they concluded that many eQTLs occur in only one cell type. 
+ 
+ \end{frame}
+ 
+ \begin{frame}{Example 2: eQTL studies across multiple cell-types}
+ 
+ {\bf Question:} Incomplete power may cause this analysis to underestimate sharing; does a joint analysis of all cell types
+ come to the same conclusion?
+\end{frame}
+
+\begin{frame}{Methods}
+
+Focus first on meta-analysis, where effect $\beta$ may vary across subgroups $s$:
+$$y_{si} = \mu_s + \beta_s g_i + \epsilon_{si} \; \text{ with }\epsilon_{si} \sim \mathcal{N}(0,\sigma_s^2).$$
+
+\bigskip
+
+Primary goal of the meta-analysis is to identify SNPs for which there is strong evidence
+against $H_0: \beta_s \equiv 0 \, \forall s$. 
+\end{frame}
+
+\begin{frame}{Alternatives to $H_0$}
+
+To assess evidence against $H_0$ we introduce a set of alternative models, indexed
+by parameters $\phi, \omega$, to be compared with $H_0$.
+
+\bigskip
+
+$H_1(\phi, \omega): \beta_s \text{ normally distributed about common mean } \bar \beta$.
+$$\beta_s |\bar \beta \sim N(\bar\beta,\phi^2); \qquad \bar\beta \sim N(0, \omega^2).$$
+
+\bigskip
+
+{\bf Note 1:} $\phi=0$ corresponds to the usual ``fixed effects" alternative, $\beta_s = \bar \beta \, \forall s$.
+
+\bigskip
+{\bf Note 2:} Can alternatively work with the ``standardized" effect sizes, $b_s = \beta_s/\sigma_s$, which 
+generally yields similar (but not identical) results.
+\end{frame}
+
+\begin{frame}{Bayes Factors}
+
+The Bayes Factor
+$$\BF(\phi,\omega) = p(y | g, H_1(\phi, \omega)) / p(y | H_0)$$
+measures the support for $H_1(\phi,\omega)$ vs $H_0$, with large
+values indicating strong evidence against $H_0$.
+
+\bigskip
+Although $\BF(\phi,\omega)$ depends on priors for nuisance parameters $(\mu,\sigma^2_s)$, it is not very sensitive,
+and sensible default choices exist.
+
+\bigskip 
+Hyperparameters $\phi$ and $\omega$ must be chosen to reflect expected effect sizes and levels of heterogeneity
+(but can average over several values to reflect uncertainty in choice of appropriate values).
+\end{frame}
+
+\begin{frame}{Computation}
+
+$\BF(\phi,\omega)$ can be quickly and accurately approximated by Laplace approximation.
+
+\bigskip
+
+In the simplest cases these approximations depend only on the summary statistics
+in each study, $\hat\beta_s$ and $\rm{se}(\hat\beta_s)$.
+(Details: Wen and Stephens, 2011).
+\end{frame}
+
+
+\begin{frame}{Bayes Factors and standard test statistics}
+
+This framework includes some commonly-used frequentist test statistics as special cases.
+\bigskip
+
+For example, if we allow $\omega$ to vary across SNPs according to the inverse
+of the standard error of $\bar \beta$ then $BF(\phi=0, \omega)$ is monotonic with the weighted $Z$ score
+\begin{equation} \label{weighted.Zscores.eqn}
+\mathcal{Z} = \frac{\sum_s w_s Z_s}{\sqrt{\sum_{s'} w_{s'}^2}}
+\end{equation}
+where $Z_s=\hat\beta_s/ {\rm se}(\hat{\beta}_s)$ and $w_s =  {\rm se}(\hat{\beta}_s)^{-1}$. (Details: Wen and Stephens, 2011.)
+
+\bigskip
+In other words, we can see what implicit models for $\beta$ are assumed by standard methods.
+\end{frame}
+
+\begin{frame}{Example 1: Global Lipids meta-analysis}
+
+{\bf Question:} Given that this study involved 25 separate subgroups, many with quite different recruitment criteria
+(e.g. some were recruited as cases for a particular disease; others were recruited as controls; etc),
+would an analysis that allows for heterogeneity across studies identify more associations?
+ 
+ \bigskip
+ 
+ \pause{{\bf Answer:} Not much!}
+ \end{frame}
+ 
+ 
+ \begin{frame}{Results: Global Lipids GWAS}
+
+\begin{itemize}
+\item Searched genome-wide for SNPs with strong signal when allowing
+for heterogeneity ($\BF_{\rm het}>10^6$) but not when assuming no heterogeneity ($\BF_{\rm no-het}<10^6$).
+\item 42 SNPs satisfied these criteria.
+\item But 36 of these were driven by apparently strong associations in a single study (Framingham heart Study), and seemed likely to be due to data processing errors.
+\item Two more showed similarly suspicious patterns (association in just one study, a subset of the WTCCC). 
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Results: Global Lipids GWAS}
+
+\begin{table}[h!t]
+\begin{center}
+\begin{tabular}{ l c c c c }
+\toprule
+Phenotype & SNP & Gene & $\log_{10} ({\rm BF}_{\rm no-het})$ &  $\log_{10}({\rm BF}_{\rm het})$ \\
+\midrule
+LDL & rs1800978 & {\footnotesize  ABCA1} & 5.2  & 6.0  \\
+TG  & rs1562398 & {\footnotesize nr KLF14} & 5.3 &  6.5 \\
+%TG &  rs765547  & {\footnotesize Flanking LPL}   & 1.7 & 7.9 & 5.8  \\ 
+HDL & rs11229165 & {\footnotesize nr OR4A16} & 4.6 & 6.4 \\
+HDL & rs7108164 & {\footnotesize nr OR4A42P} & 4.2 & 6.3 \\ 
+%HDL & rs11984900 & {\footnotesize N.A. } &-1.1 & 16.6 & 6.2 \\
+%HDL & rs6995137 & {\footnotesize Flanking SFRP1} & -0.4 & 6.9 & 4.8 \\
+\bottomrule
+\end{tabular}
+%\caption{\label{lipids.miss.tbl} Association signals that show strong association under the models allowing for heterogenetiy (${\rm ABF^{EE}_{cefn}} \text{ or } {\rm ABF_{maxH}^{EE}} \ge 10^6$) but less strong under a model with no heterogeneity (${\rm ABF^{EE}_{fix}}< 10^6$). It seems likely that the last two of these represent false positive associations, but we include them in the table for completeness (see text for discussion).}
+\end{center}
+\end{table}
+\end{frame}
+
+
+\begin{frame}{Example 2: eQTL sharing across cell-types}
+ 
+ In meta-analysis application the primary goal was to reject the global null, $H_0: \beta_s =0 \, \forall s$.
+ 
+ \bigskip
+ 
+ Mapping eQTLs among multiple cell-types (subgroups) differs 
+ in that we care more about {\it which} $\beta_s$ are non-zero, and patterns
+ of sharing among subgroups.
+ 
+ \bigskip
+  
+E.g. Dimas et al (2009), identified eQTLs separately in 3 cell types, and asked which eQTLs are shared among cell types (subgroups).
+ 
+ 
+ \end{frame}
+ 
+ \begin{frame}{Example 2: eQTL sharing across cell-types}
+ 
+ To address this we expand our alternative models  $H_1(\phi,\omega)$ to
+ allow that effects may be zero in some subgroups.
+
+\bigskip
+
+Introduce a \alert{configuration} $\gamma$ indicating which subgroups have non-zero effect.
+\begin{itemize}
+\item E.g. $\gamma=[110]$ corresponds to non-zero effect in the first two subgroups.
+\end{itemize}
+
+\bigskip
+
+See also Han \& Eskin (PloS Genetics, 2012).
+
+%\pause
+%\bigskip
+%An eQTL can have different effects in different tissues ($\beta_1 \neq \beta_2$):
+%\begin{itemize}
+% \item $b_s \sim \mathcal{N}(\bar{b}, \alert{\phi^2})$ and $\bar{b} \sim \mathcal{N}(0,\alert{\omega^2})$
+%\item $\omega$: magnitude of the average effect
+%\item $\phi$: magnitude of heterogeneity
+% \item both are specified by a grid of values
+%\end{itemize}
+
+\end{frame}
+
+
+\begin{frame}
+\frametitle{Bayesian Model Averaging and hierarchical modeling}
+
+The support in the data for configuration $\gamma$ can be measured by the Bayes Factor
+$$\BF_\gamma(\phi,\omega) = \frac{p(y | H_1(\gamma,\phi,\omega))}{p(y | H_0)}$$.
+
+\bigskip
+
+Overall evidence against $H_0$ can be measured by averaging over $\gamma, \phi, \omega$:
+$\text{BMA} = \sum_{\gamma,\phi,\omega} \eta_{\gamma,\phi,\omega} \text{BF}_\gamma(\phi,\omega)$
+
+\bigskip
+
+Estimate proportions $\eta_{\gamma,\phi,\omega}$ using a hierarchical model to combine information across genes.
+
+
+\end{frame}
+
+%\begin{frame}
+%\frametitle{Bayes Factor (BF) and hierarchical model (HM)}
+%\begin{itemize}
+%\item Quantify evidence for an eQTL in configuration $\gamma$:
+%\bigskip
+%$\text{BF}_\gamma = \frac{\mathsf{P}(\text{data } | \text{ eQTL in configuration }\gamma)}{\mathsf{P}(\text{data } | \text{ no eQTL in any tissue})}$
+%\pause
+%\bigskip
+%\bigskip
+%\item Estimate configuration proportions $\eta_\gamma$ by borrowing information across genes (pooling).
+%\end{itemize}
+%\end{frame}
+
+%\begin{frame}
+%\frametitle{Tools to fulfill the two goals}
+%\begin{itemize}
+%\item Detect eQTLs by Bayesian Model Averaging (BMA):
+%\bigskip
+%$\text{BMA} = \sum_\gamma \eta_\gamma \text{BF}_\gamma$
+%\pause
+%\bigskip
+%\bigskip
+%\item Identify in which tissue(s) they are active via their posterior:
+%\bigskip
+%\small{$\mathsf{P}(\text{SNP is in configuration }\gamma \; | \text{ data, SNP is eQTL}) = \frac{\eta_\gamma \text{BF}_\gamma}{\sum_\gamma \eta_\gamma \text{BF}_\gamma}$}
+%\end{itemize}
+%\end{frame}
+
+%-----------------------------------------------------------------------------
+
+%\section{Simulations}
+
+
+%-----------------------------------------------------------------------------
+
+%\section{Analysis of three cell types from Dimas \textit{et al.}}
+
+\begin{frame}
+\frametitle{Example 2: eQTL studies across multiple cell-types}
+ 
+Dimas et al (2009), measured expression data in 75 individuals, in 3 cell types: Fibroblasts, LCLs and T-cells.
+
+\bigskip
+ 
+They identified eQTLs separately in each cell-type, and found small overlap of results (14\%).
+
+\bigskip
+ 
+{\bf Question:} Incomplete power may cause this analysis to underestimate sharing; does a joint analysis of all cell types
+ come to the same conclusion?
+
+
+\end{frame}
+
+
+\begin{frame}
+\frametitle{Joint Analysis Increases Power}
+\begin{center}
+  \begin{tikzpicture}
+    \node[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth,height=\textheight,keepaspectratio=true]{figures/box-forest_weak-consistent_ENSG00000090924-rs755690}};
+  \end{tikzpicture}
+\end{center}
+%\begin{center}
+%  \small{Example of gene ENSG00000090924 and SNP rs755690.}
+%\end{center}
+\end{frame}
+
+\begin{frame}
+\frametitle{Gain in power from the joint analysis}
+%\only<1>{
+%\begin{center}
+%%\includegraphics[width=0.95\textwidth,height=0.80\textheight,keepaspectratio=true,clip,trim=0cm 0cm 5.6cm 0cm]{dimas}%
+%  \begin{tikzpicture}
+%    \node[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=0.95\textwidth,height=0.80\textheight,keepaspectratio=true,clip,trim=0cm 0cm 5.6cm 0cm]{figures/dimas}};
+%    \begin{scope}[x={(image.south east)},y={(image.north west)}]
+%      % \draw[help lines,xstep=.1,ystep=.1] (0,0) grid (1,1);
+%      % \foreach \x in {0,1,...,9} { \node [anchor=north] at (\x/10,0) {0.\x}; }
+%      % \foreach \y in {0,1,...,9} { \node [anchor=east] at (0,\y/10) {0.\y}; }
+%      \draw[red,ultra thick,rounded corners] (0.19,0.64) rectangle (0.44,0.81);
+%      \draw[red,ultra thick,rounded corners] (0.68,0.64) rectangle (0.94,0.81);
+%    \end{scope}
+%  \end{tikzpicture}
+%\end{center}
+%}
+%\only<2>{
+\begin{center}
+\includegraphics[width=0.95\textwidth,height=0.80\textheight,keepaspectratio=true,clip,trim=11.6cm 0cm 0cm 0cm]{figures/dimas}%
+\end{center}
+%}
+\end{frame}
+
+\begin{frame}
+\frametitle{Joint analysis suggests much more sharing of eQTLs}
+%\begin{table}[!ht]
+%\begin{tabular}{|c|c|c|}
+%\hline
+%Configuration & Hierarchical model & Tissue-by-tissue \\
+%\hline
+%F-L-T & \alert<2-3>{0.865} [0.807, 0.983] & \alert<2-3>{0.142} \\
+%L-T & \alert<4>{0.046} [0.003, 0.104] & 0.056 \\
+%F-L & 0.005 [0.000, 0.028] & 0.099 \\
+%F-T & 0.001 [0.000, 0.016] & 0.056 \\
+%F & \alert<3>{0.025} [0.000, 0.070] & \alert<3>{0.253} \\
+%L & \alert<3>{0.051} [0.000, 0.115] & \alert<3>{0.265} \\
+%T & \alert<3>{0.007} [0.000, 0.033] & \alert<3>{0.130} \\
+%\hline
+%\end{tabular}
+%\begin{flushleft}\small{The results for the hierarchical model were obtained with the correlated Bayes Factors and the EM algorithm. The results for the tissue-by-tissue analysis were obtained by fixing an FDR of 0.05 in each tissue.}\end{flushleft}
+%\end{table}
+%\only<5>{
+%\alert{Tissue-by-tissue analysis} doesn't account for different power between tissues $\Rightarrow$ likely to \alert{over-estimate tissue specificity}.
+%}
+\begin{center}
+%\includegraphics[width=0.95\textwidth,height=0.80\textheight,keepaspectratio=true]{venn-diag_config-props_sep-vs-join}%
+\begin{tikzpicture}
+  \node[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=0.95\textwidth,height=0.80\textheight,keepaspectratio=true]{figures/venn-diag_config-props_sep-vs-join}};
+  \begin{scope}[x={(image.south east)},y={(image.north west)}]
+    % \draw[help lines,xstep=.1,ystep=.1] (0,0) grid (1,1);
+    % \foreach \x in {0,1,...,9} { \node [anchor=north] at (\x/10,0) {0.\x}; }
+    % \foreach \y in {0,1,...,9} { \node [anchor=east] at (0,\y/10) {0.\y}; }
+    \only<1>{
+      \draw[red,ultra thick,rounded corners] (0.43,0.49) rectangle (0.57,0.6);
+    }
+%    \only<2>{
+%      \draw[red,ultra thick,rounded corners] (0.14,0.67) rectangle (0.27,0.78);
+%      \draw[red,ultra thick,rounded corners] (0.7,0.67) rectangle (0.84,0.78);
+%      \draw[red,ultra thick,rounded corners] (0.43,0.12) rectangle (0.57,0.23);
+%    }
+    % \only<3>{
+    %   \draw[red,ultra thick,rounded corners] (0.6,0.40) rectangle (0.7,0.51);
+    % }
+  \end{scope}
+\end{tikzpicture}
+\end{center}
+\end{frame}
+
+\begin{frame}
+\frametitle{Wrong tissue-specific call by the tissue-by-tissue analysis}
+\only<1>{
+  \begin{center}
+    \begin{tikzpicture}
+      \node[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth,height=\textheight,keepaspectratio=true]{figures/box-forest_wrong-specific_ENSG00000106153-rs4948093}};
+      \begin{scope}[x={(image.south east)},y={(image.north west)}]
+        % \draw[help lines,xstep=.1,ystep=.1] (0,0) grid (1,1);
+        % \foreach \x in {0,1,...,9} { \node [anchor=north] at (\x/10,0) {0.\x}; }
+        % \foreach \y in {0,1,...,9} { \node [anchor=east] at (0,\y/10) {0.\y}; }
+        
+        %\only<2>{
+          \draw[red,ultra thick,rounded corners] (0.77,0.65) rectangle (0.85,0.72);
+                  \draw[red,ultra thick,rounded corners] (0.77,0.47) rectangle (0.85,0.54);
+            \draw[red,ultra thick,rounded corners] (0.77,0.28) rectangle (0.85,0.35);
+%              \draw[red,ultra thick,rounded corners] (0.77,0.65) rectangle (0.85,0.52);
+          %\draw[red,ultra thick,rounded corners] (0.71,0.91) rectangle (0.92,0.99);
+        %}
+      \end{scope}
+    \end{tikzpicture}
+  \end{center}
+  
+  \begin{center}
+    \small{Example of gene ENSG00000106153 and SNP rs4948093 (MAF=0.23).}
+    
+    \small{See also Ding \textit{et al.} (2010, AJHG).}
+  \end{center}
+}
+\end{frame}
+
+
+%-----------------------------------------------------------------------------
+
+%\section{Conclusions and perspectives}
+
+\begin{frame}[fragile]
+\frametitle{The next challenge - more subgroups!}
+\begin{itemize}
+\item This ``configuration-based" framework can deal satisfactorily with, perhaps, 6-10 subgroups.
+\item The NIH GTEX project is currently collecting data on upwards of 20 tissues.
+\item More generally, in genomics, one might have hundreds of  ``observations" on each unit...
+\item ... and, potentially, relevant covariates.
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{The next challenge - a general framework for data integration?}
+
+\begin{itemize}
+\item Summarize the ``data" on each SNP in each subgroup (or experimental condition) as $(\hat\beta, se(\hat\beta))$.
+\item Arrange these in a big $p$ by $S$ matrix.
+\item Goal: identify the elements that correspond to non-zero (or ``large") $\beta$, exploiting combined structure
+across rows of the matrix.
+\end{itemize}
+
+Challenge: exploit the many available tools -- clustering, PCA, factor analysis,etc -- to do this in a flexible and powerful way.
+
+\end{frame}
+
+
+
+\begin{frame}
+\frametitle{Acknowledgments}
+
+\begin{itemize}
+\item  Xiaoquan Wen,  Timoth\'ee Flutre, Jonathan Pritchard. 
+\item Global Lipids Consortium for making data available
+\item Manoulis Dermitzakis for expression data.
+\item Funding: NHGRI and NIH GTEX consortium.
+\end{itemize}
+
+Selected References:
+\begin{itemize}
+\item Wen \& Stephens (2011, arXiv), Wen (2012, arXiv), Flutre et al (2013, PloS Genetics).
+\item Han \& Eskin (2011, AJHG; 2012, PloS Genetics).
+\item Ding \textit{et al.} (2010, AJHG).
+\item Lebrec \textit{et al.} (2010, SAGMB).
+\end{itemize}
+\url{http://stephenslab.uchicago.edu/publications.html}
+\end{frame}
+
+
+
+\begin{frame}
+\frametitle{Gain in power from the joint analysis}
+\only<1>{
+\begin{center}
+%\includegraphics[width=0.95\textwidth,height=0.80\textheight,keepaspectratio=true,clip,trim=0cm 0cm 5.6cm 0cm]{dimas}%
+  \begin{tikzpicture}
+    \node[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=0.95\textwidth,height=0.80\textheight,keepaspectratio=true,clip,trim=0cm 0cm 5.6cm 0cm]{figures/dimas}};
+    \begin{scope}[x={(image.south east)},y={(image.north west)}]
+      % \draw[help lines,xstep=.1,ystep=.1] (0,0) grid (1,1);
+      % \foreach \x in {0,1,...,9} { \node [anchor=north] at (\x/10,0) {0.\x}; }
+      % \foreach \y in {0,1,...,9} { \node [anchor=east] at (0,\y/10) {0.\y}; }
+      \draw[red,ultra thick,rounded corners] (0.19,0.64) rectangle (0.44,0.81);
+      \draw[red,ultra thick,rounded corners] (0.68,0.64) rectangle (0.94,0.81);
+    \end{scope}
+  \end{tikzpicture}
+\end{center}
+}
+\only<2>{
+\begin{center}
+\includegraphics[width=0.95\textwidth,height=0.80\textheight,keepaspectratio=true,clip,trim=11.6cm 0cm 0cm 0cm]{figures/dimas}%
+\end{center}
+}
+\end{frame}
+
+
+
+
+
+%  \begin{frame}{Why Jointly Analyze?}
+%\begin{enumerate}
+%\item Power gains if eQTLs are shared among tissues.
+%\item Without a joint analysis, very hard to assess tissue specificity due to lack of power.
+% \end{enumerate}
+% \end{frame}
+% 
+% 
+ 
+ 
+% Similar, but different, issues, arise when analyzing eQTLs in multiple tissues  
+
+
+%\begin{frame}{LDL Subfractions}  
+%\begin{center}
+%\includegraphics[width=2in,height=2in]{subfrac_top3_av.pdf}
+%\end{center}
+%\end{frame}
+
+\begin{frame}{Where next?}
+\begin{itemize}
+\item Larger-scale problems (e.g.~GTEx collecting data on 30 tissues)
+%\item More complex outcome structures (e.g. small time series).
+\item Multi-SNP multi-phenotype? (e.g.~Verzilli et al (2005); Banerjee et al (2008)).
+%\item Clustering problems generally (Genotype unobserved).
+\item Dealing with non-normality; Outliers; Binary outcome with intermediate quantitative phenotypes.
+\item ``Response" phenotypes. (Maranville et al, PloS Genetics, 2011).
+\end{itemize}
+\end{frame}
+
+
+
+\begin{frame}
+\frametitle{Some eQTLs may be shared; others tissue-specific}
+\only<1>{
+\begin{center}
+\includegraphics[width=0.95\textwidth,height=0.8\textheight,keepaspectratio=true]{figures/ex_config11_var0-5_boxplot}%
+\end{center}
+}
+\only<2>{
+\begin{center}
+\includegraphics[width=0.95\textwidth,height=0.8\textheight,keepaspectratio=true]{figures/ex_config10_var0-5_boxplot}%
+\end{center}
+}
+\only<3>{
+\begin{center}
+\includegraphics[width=0.95\textwidth,height=0.8\textheight,keepaspectratio=true]{figures/ex_config00_var0-5_boxplot}%
+\end{center}
+}
+\end{frame}
+
+
+  
+
+\end{document}

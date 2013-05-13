@@ -1,0 +1,66 @@
+try comparing BF for normal vs servin and stephens bf
+
+```{r}
+lABF = function(k,T ){return(((k/2)*T^2))}
+lBF = function(k,T,n){return((-n/2)*log(1-(k/n)*T^2))}
+
+n=seq(1,100,length=100)
+T=2
+k=.4/T^2 
+
+plot(n,lBF(k,T,n)-lABF(k,T),type="l")
+abline(h=0,col=2)
+```
+Note that lBF>lABF always. So lABF is "biased" towards the null?
+Is that right? Seems wrong, as the normal assumption is somehow
+less conservative than the t?
+
+Of course x<log(1+x)
+```{r}
+x=seq(0,1,length=100)
+plot(x,log(1+x))
+abline(a=0,b=1)
+```
+which seems to imply it is true.
+
+Now let's compare
+H0: \hat{\beta} \sim S T_\nu
+H1: \hat{\beta} \sim \beta + S T_\nu
+with \beta \sim N(0,W)
+Here S is an estimate of the standard error of betahat.
+
+the BF is the integral over beta of 
+the ratio of T densities:
+```{r}
+BFt=function(W,betahat,S,nu){
+  beta = rnorm(1000000,0,sd=sqrt(W))
+  bft=mean(dt((betahat-beta)/S,nu) / dt(betahat/S,nu))
+  #bfn= mean(dnorm((betahat-beta)/S)/dnorm(betahat/S))
+  bfn= dnorm(betahat,0,sd=sqrt(W+S^2))/dnorm(betahat,0,sd=S)
+  Zeff = effective.Zscore(betahat/S,nu)
+  Seff = betahat/Zeff
+  betahat.eff = Zeff*S
+  cat(pnorm(Zeff),pnorm(betahat.eff/S),Zeff,betahat,Seff,pnorm(betahat/Seff),"\n")
+  bfn.Seff= dnorm(betahat,0,sd=sqrt(W+Seff^2))/dnorm(betahat,0,sd=Seff)
+  bfn.beff= dnorm(betahat.eff,0,sd=sqrt(W+S^2))/dnorm(betahat.eff,0,sd=S)
+  return(list(bft=bft,bfn=bfn,bfn.Seff=bfn.Seff,bfn.beff=bfn.beff))
+}
+BFt(1,10,1,2)
+
+```
+
+
+
+
+
+Now transform T to Z be
+```{r}
+effective.Zscore = function(T,nu){
+  return(qnorm(pt(T,nu)))
+}
+Z = effective.Zscore(T,n)
+plot(n,lBF(k,T,n)-lABF(k,Z),type="l")
+abline(h=0,col=2)
+
+```
+

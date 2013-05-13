@@ -1,0 +1,17 @@
+It is common in statistics that you measure many ``similar" things imperfectly, and wish to estimate their values. The situation arises commonly in the kinds of genomics applications I am often involved in, but also in other areas of statistics.
+In genomics, for example, a very common goal
+is to compare the mean
+expression (activity) level of many genes in two conditions.
+Let $\mu^0_j$ and $\mu^1_j$ denote the mean expression 
+of gene $j$ ($j=1,\dots,J$) in the two conditions, and define $\beta_j:= \mu^0_j - \mu^1_j$ to be the difference. Typically expression
+measurements are made on only a small number of
+samples in each condition - sometimes as few as one
+sample in each condition. Thus the error in estimates
+of $\mu^0_j$ and $\mu^1_j$ is appreciable, and the error
+in estimates of $\beta_j$ still greater.
+
+A fundamental idea is
+that the measurements of $\beta_j$ for each gene can be used to improve inference for the values of $\beta$ for other genes.
+
+
+
