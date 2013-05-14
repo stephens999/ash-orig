@@ -1,13 +1,76 @@
-% Apaptive Shrinkage and False Discovery Rates by Laplace Approximation
+% Adaptive Shrinkage and False Discovery Rates by Laplace Approximation
 % Matthew Stephens
 % 2013/5/13
 
 
 
 
-# Motivation
+# Outline
 
-- A common problem: you have imperfect measurements
+* Prelude
+* Allegro (ma non troppo)
+
+# Prelude
+
+- Consider testing the null hypothesis $H_0: \beta=0$, vs the alternative $H_1: \beta \neq 0$ in the
+logistic regression model:
+$$\log \frac{p(Y_i=1|X_i=x)}{p(Y_i=0|X_i=x)}  = \mu + x \beta$$
+
+- Specifically, consider computing the Bayes Factor
+$$BF:=\frac{p(Y | X, H_1)}{p(Y| X ,H_0)}.$$
+
+- In genome-wide association studies, we may wish to do this 
+for millions of different genetic variants ($X$).
+
+# Prelude
+
+$$BF= \frac{\int p(Y | \mu, \beta, X) p_1(\mu,\beta | X) \, d\mu d\beta}{\int p(Y | \mu, \beta=0, X) p_0(\mu | X) \, d\mu},$$
+where $p_0$ and $p_1$ denote priors under $H_0$ and $H_1$.
+
+- These integrals generally don't have closed forms, but being 
+low-dimensional they are simple to approximate.
+
+- For $p_1: \beta \sim N(0,\phi^2)$, 
+Wakefield, 2009 (see also Johnson, 2008) suggested a particularly simple \emph{Approximate Bayes Factor} (ABF)
+based on the maximum likelihood estimate, $\hat\beta$, and 
+its (estimated) standard error $s$.
+
+# Prelude
+
+$$ABF = \sqrt{1-k} \exp(0.5 k T^2)$$
+where $k:= \phi^2/(s^2 + \phi^2)$ and $T:= \hat\beta/s$.
+
+- ABF arises if we assume $\hat{\beta} | s, \beta \sim N(\beta, s^2)$ and treat $\hat{\beta}$ as the observed ``data".
+
+- Equivalently ABF can be derived as a ``Laplace approximation",
+approximating the likelihood
+$L(\beta)$ as Normal, centered on $\hat\beta$,
+with variance $s^2$: $$L(\beta) \propto \exp[- 0.5(\beta-\hat\beta)^2/s^2].$$
+
+# Comments on ABF
+
+* This is not the moxt accurate Laplace approximation one might consider.
+
+* However, it has some nice features.  
+    * The approximation is independent of prior.
+    * Applicable to any regression where $\hat\beta$ and $s$ are available.
+    * Easily computed using results of standard software or published analyses (e.g. CI).
+
+* A simple transformation of $T$ can improve accuracy for small samples (analagous to $t$ test vs $Z$ test); Wen and Stephens, Arxiv. 
+
+# Extensions of ABF
+
+- Similar ideas can be used to compute 
+ABFs in slightly more complex settings.
+
+- Eg In Wen and Stephens, we consider
+$S$ subgroups, and approximate the BF for
+$H_0: \beta_s =0$ for all $s$, vs a general alternative
+$H_0: \beta_s \neq 0$.
+
+# Allegro (ma non troppo)
+
+- The problem: you have imperfect measurements
 of many ``similar" things, and wish to estimate their values. 
 
 - Particularly common in genomics. For example,
@@ -15,30 +78,23 @@ of many ``similar" things, and wish to estimate their values.
 expression (activity) level of many genes in two conditions.
 
 
-
-
 # Example: Mouse Heart Data
 
 
 
 
-- Data on 150 mouse hearts, disected into left and right ventricle
+- Data on 150 mouse hearts, dissected into left and right ventricle
 (courtesy Scott Schmemo, Marcelo Nobrega)
 
-# Example: Mouse Heart Data
-
-```r
-head(x)
-```
 
 ```
-##       gene  lv1  lv2   rv1   rv2 genelength
-## 1    Itm2a 2236 2174  9484 10883       1626
-## 2   Sergef   97   90   341   408       1449
-## 3  Fam109a  383  314  1864  2384       2331
-## 4     Dhx9 2688 2631 18501 20879       4585
-## 5    Ssu72  762  674  2806  3435       1446
-## 6 Olfr1018    0    0     0     0        935
+##      gene  lv1  lv2   rv1   rv2 genelength
+## 1   Itm2a 2236 2174  9484 10883       1626
+## 2  Sergef   97   90   341   408       1449
+## 3 Fam109a  383  314  1864  2384       2331
+## 4    Dhx9 2688 2631 18501 20879       4585
+## 5   Ssu72  762  674  2806  3435       1446
+## 8  Eif2b2  736  762  3081  3601       1565
 ```
 
 
@@ -46,126 +102,169 @@ head(x)
 
 
 
-# Example: Wavelets 
 
+# False Discovery Rate analyses
 
-# Borrowing Strength
+- Standard practice: analyses use False Discovery Rates 
 
-- Denote the difference in mean between condition 0 and condition 1, for gene $j$, by $\beta_j:= \mu^0_j - \mu^1_j$.
+    - e.g. Benjamini and Hochberg, 1995; Storey and Tibshirani, 2003, which have roughly 18k and 4k citations respectively!
 
-- A fundamental idea is
-that the measurements of $\beta_j$ for each gene can be used to improve inference for the values of $\beta$ for other genes.
+- Typical analysis proceeds roughly as follows:
 
-- Let $\mu^0_j$ and $\mu^1_j$ denote the mean expression 
-of gene $j$ ($j=1,\dots,J$) in the two conditions, and define $\beta_j:= \mu^0_j - \mu^1_j$ to be the difference. 
+    - Estimate an effect size $\beta_j$ and standard error $s_j$ for each gene. 
 
-- Typically expression
-measurements are made on only a small number of
-samples in each condition - sometimes as few as one
-sample in each condition. Thus the error in estimates
-of $\mu^0_j$ and $\mu^1_j$ is appreciable, and the error
-in estimates of $\beta_j$ still greater.
+    - Convert this to a $p$ value for each gene, e.g. by a $t$ test on $\beta_j/s_j$.
 
+    - Use the distribution of $p$ values to estimate the false discovery rate (FDR) at a given threshold.
+
+# False Discovery Rates
+
+![](figure/unnamed-chunk-4.png) 
 
 
 # False Discovery Rates
 
-Standard practice is to estimate an effect size $\beta_j$ and standard error $s_j$ for each gene. 
-
-Then convert this to a $p$ value for each gene, by a $t$ test on $\beta_j/s_j$.
-
-And then use the distribution of $p$ values to estimate the false discovery rate (FDR) at a given threshold.
-
-# False Discovery Rates
-
-![plot of chunk unnamed-chunk-4](figure/unnamed-chunk-4.png) 
+![FDR=0.21](figure/unnamed-chunk-5.png) 
 
 
-# False Discovery Rates
+# FDR problem: different genes have different precision/power
 
-![plot of chunk unnamed-chunk-5](figure/unnamed-chunk-5.png) 
+![](figure/unnamed-chunk-6.png) 
 
 
 
-#Why 
+# FDR problem: lower count genes, less power, add noise
 
-- after you finished typing `\documentclass{beamer}` and `\title{}`, I have finished my first slide with markdown
-- much less commands to remember, e.g. to write bullet points, just begin with a dash "`-`" instead of `\begin{itemize}` and `\item`; how things can be simpler?
-- I know you want math to show you are a statistician, e.g. $f(k)={n \choose k}p^{k}(1-p)^{n-k}$
-- you do not need to maintain output -- only maintain a source file
-- HTML5/CSS3 is much more fun than LaTeX
-
-# A bit R code
+![](figure/unnamed-chunk-7.png) 
 
 
-```r
-head(cars)
+
+
+# FDR problem: higher count genes, more power
+![FDR=0.10](figure/unnamed-chunk-8.png) 
+
+
+
+# Adaptive Shrinkage
+
+- Fundamental idea: use hierarchical modelling so measurements of $\beta_j$ for each gene improve inference for $\beta$ at other genes.
+
+- Despite a long-standing literature on these types of methods - e.g. Greenland and Robins 1991, Efron and Tibshirani 2002, Gelman et al 2012 -  they are much less widely used (in genomics at least).
+
+- Possibly this is due, in part, to the lack of a simple, flexible, and generic implementation?
+
+# Generic adaptive shrinkage via Laplace approximation
+
+- Summarize data on each gene by two numbers, $\hat\beta_j$ and its standard error $s_j$. (a la Wakefield; Greenland and Robins 1991)
+
+- Approximate likelihood for $\beta_j$ by 
+$$L(\beta_j) \propto \exp(-0.5 (\beta_j - \hat\beta_j)^2/s_j^2).$$
+(``Laplace Approximation")
+
+- Borrow information by assuming $\beta_j$ are iid $\sim g(\cdot; \pi)$, where $\pi$ are hyperparameters to be estimated.
+
+- Letting $g(\cdot; \pi)$ be a mixture of normal distributions provides
+both flexibility, and analytic calculations.
+    
+    - very small variances can capture effects that are ``effectively" zero.
+
+# An important special case
+
+- Focus on the special case where $g(\cdot; \pi)$ can be
+assumed unimodal and symmetric about zero.
+
+- Then the posterior mean, $E(\beta_j | \hat\beta, s, \hat\pi)$ is a ``shrinkage" estimate of $\beta_j$.
+
+- And $p(\beta_j > 0 | \hat\beta, s, \hat\pi)$ can be used
+to identify $j$ for which the sign of $\beta_j$ can be confidently determined (analogous to test of $\beta_j =0$; Gelman et al, 2012).
+
+- Because $\pi$ is estimated from the data, the amount
+of shrinkage is adaptive to the data. And because of the role of $s_j$, the amount of shrinkage adapts to the information on each gene.
+
+# Example: ASH applied to mouse data
+
+![](figure/unnamed-chunk-9.png) 
+
+
+# Example: ASH applied to mouse data
+
+![](figure/unnamed-chunk-10.png) 
+
+
+# Example: ASH applied to mouse data
+
+![](figure/unnamed-chunk-11.png) 
+
+
+
+# Shrinkage is adaptive to information
+
+
+
+
+
+
+
+
+![](figure/unnamed-chunk-14.png) 
+
+
+# Shrinkage is adaptive to information
+
+![](figure/unnamed-chunk-15.png) 
+
+
+# Shrinkage is adaptive to information
+
+
+```
+##         gene  lv1  lv2  rv1  rv2    pval zdat.ash$localfdr
+## 19422 Mgat5b    7   10  320  452 0.03795           0.37448
+## 20432  Sec63 1042 1034 5496 6649 0.04908           0.03251
 ```
 
-```
-##   speed dist
-## 1     4    2
-## 2     4   10
-## 3     7    4
-## 4     7   22
-## 5     8   16
-## 6     9   10
-```
 
-```r
-cor(cars)
-```
+# Summary: FDR vs ASH
 
-```
-##        speed   dist
-## speed 1.0000 0.8069
-## dist  0.8069 1.0000
-```
+- Both provide a rational approach to identifying ``significant" findings.
+
+- Both are generic and modular: once you have the summary data, you can forget where they came from.  
+
+- But by using two numbers ($\hat\beta,s$) instead of one ($p$ values) precision of different measurements 
+can be better accounted for.
+
+- ASH borrows information for estimation, as well as testing.
+
+# Next steps?
+
+- Extend to allow $g(\cdot;\pi)$ to depend on covariates $X$.
+
+- Extend to allow for correlations in the measured $\hat\beta_j$.
 
 
-# Graphics too
 
+# Thanks
 
-```r
-library(ggplot2)
-```
+- to the several postdoctoral researchers and students
+who have worked with me on related topics.
 
-```
-## Warning: package 'ggplot2' was built under R version 2.15.2
-```
+- Especially: William Wen, Timothee Flutre, Scott Powers, Heejung Shim, Zhengrong Xing, and Ester Pantaleo.
 
-```r
-qplot(speed, dist, data = cars) + geom_smooth()
-```
-
-![A scatterplot of `cars`](figure/graphics.png) 
-
-
-# How
-
-- source editor: [RStudio](http://www.rstudio.org/) (perfect integration with [**knitr**](http://yihui.name/knitr/); one-click compilation); currently you have to use the version >= 0.96.109
-- HTML5 slides converter: [pandoc](http://johnmacfarlane.net/pandoc/); this document was generated by: `pandoc -s -S -i -t dzslides --mathjax knitr-slides.md -o knitr-slides.html`
-- the file [`knitr-slides.md`](https://github.com/yihui/knitr-examples/blob/master/009-slides.md) is the markdown output from its [source](https://github.com/yihui/knitr-examples/blob/master/009-slides.Rmd): `library(knitr); knit('knitr-slides.Rmd')`
-- or simple click the button `Knit HTML` in RStudio
-
-# For ninjas
-
-- you should tweak the default style; why not try some [Google web fonts](http://www.google.com/webfonts)? (think how painful it is to wrestle with fonts in LaTeX)
-- pandoc provides 3 types of HTML5 slides (dzslides is one of them)
-- you can tweak the default template to get better appearances
-- if you have come up with a better dzslides template, please let me know or contribute to pandoc directly (e.g. `pre` blocks should have `max-width` and `max-height`)
-
-# For beamer lovers
-
-- pandoc supports conversion to beamer as well. period.
-
-# For Powerpoint lovers
-
-- ...
+- And to the NIH for funding, and i-like for inviting me.
 
 # Reproducible research
 
-It is good to include the session info, e.g. this document is produced with **knitr**. Here is my session info:
+- This document is produced with **knitr**, **Rstudio** and **Pandoc**.
+
+- For more details see my \tt{stephens999/ash} repository at http://www.github.com/stephens999/ash
+
+- Website: http://stephenslab.uchicago.edu
+
+# Pandoc Command used
+
+pandoc -s -S -i --template=my.beamer -t beamer -V theme:CambridgeUS -V colortheme:beaver  ilike-slides.md -o ilike-slides.pdf
+
+Here is my session info:
 
 
 ```r
@@ -180,25 +279,32 @@ print(sessionInfo(), locale = FALSE)
 ## [1] stats     graphics  grDevices utils     datasets  methods   base     
 ## 
 ## other attached packages:
-## [1] ggplot2_0.9.3.1 qvalue_1.30.0   knitr_1.1      
+## [1] qvalue_1.30.0 knitr_1.1    
 ## 
 ## loaded via a namespace (and not attached):
-##  [1] codetools_0.2-8    colorspace_1.2-1   dichromat_2.0-0   
-##  [4] digest_0.6.3       evaluate_0.4.3     formatR_0.7       
-##  [7] grid_2.15.1        gtable_0.1.2       labeling_0.1      
-## [10] MASS_7.3-23        munsell_0.4        plyr_1.8          
-## [13] proto_0.3-10       RColorBrewer_1.0-5 reshape2_1.2.2    
-## [16] scales_0.2.3       stringr_0.6.2      tcltk_2.15.1      
-## [19] tools_2.15.1
+## [1] codetools_0.2-8 digest_0.6.3    evaluate_0.4.3  formatR_0.7    
+## [5] stringr_0.6.2   tcltk_2.15.1    tools_2.15.1
 ```
 
 
-# Misc issues
 
-- the plots are too wide? use the chunk option `out.width` which will be used in `<img width=... />`, e.g. `out.width=400px`
+# FDRs for higher count genes affected by lower count genes
 
-# Life is short
+![](figure/unnamed-chunk-17.png) 
 
-- so keep your audience awake!
 
-    
+
+# Some odd things in the data
+
+![plot of chunk unnamed-chunk-18](figure/unnamed-chunk-18.png) 
+
+```
+##          gene lv1 lv2 rv1   rv2 genelength
+## 17711   Napsa   0   1   7   779       1470
+## 6927   Akr1b7   0   2   2  1499       1238
+## 3175       C3   7  11  72  9153       5092
+## 21524 Tmprss4   0   0   0  1130       2254
+## 15560  Guca2b   3   7  14  8762        597
+## 20517   Prap1  10  10  21 16899        617
+```
+

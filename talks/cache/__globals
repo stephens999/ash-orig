@@ -1,8 +1,19 @@
-unnamed-chunk-1	paste0	read.table	setwd	source
+unnamed-chunk-1	>	paste0	read.table	rowSums	setwd	source
 unnamed-chunk-2	head	x
-unnamed-chunk-3	<	$	c	counts.associate	dim	ifelse	pt	return	T	x
-unnamed-chunk-4	$	abline	hist	pval	qvalue
-unnamed-chunk-5	$	abline	hist	pval	qvalue	rect
-computing	cars	cor	head
-graphics	cars	dist	geom_smooth	library	qplot	speed
+unnamed-chunk-3	<	>	$	c	counts.associate	dim	ifelse	pt	qvalue	return	T	x	xx
+unnamed-chunk-4	$	abline	c	hist	pval	qval
+unnamed-chunk-5	$	abline	c	hist	pval	qvalue	rect
+unnamed-chunk-6	hist	log10	xx
+unnamed-chunk-7	<	$	abline	c	hist	pval	qvalue	rect	seq	xx
+unnamed-chunk-8	$	abline	c	hist	pval.high	qval.high	rect
+unnamed-chunk-9	c	hist	T	zdat
+unnamed-chunk-10	c	dnorm	hist	lines	seq	T	zdat
+unnamed-chunk-11	$	c	dnorm	hist	lines	t	T	zdat.ash
+unnamed-chunk-12
 session-info	print	sessionInfo
+unnamed-chunk-13
+unnamed-chunk-14	$	plot	pval	zdat.ash
+unnamed-chunk-15	$	plot	points	pval	zdat.ash
+unnamed-chunk-16	$	c	cbind	pval	x	zdat.ash
+unnamed-chunk-17	>	$	plot	qval	qval.high	xx
+unnamed-chunk-18	order	plot	tail	x	zdat
