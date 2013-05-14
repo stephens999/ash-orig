@@ -1,0 +1,304 @@
+\documentclass[12pt,letterpaper]{article}
+
+% Page Layout
+\usepackage[hmargin={1.5in, 1.5in}, vmargin={1.5in, 1.5in}]{geometry}
+
+\usepackage{rotating}
+
+
+% Spacing
+\usepackage{setspace}
+% Use \singlespacing, \onehalfspacing, or \doublespacing,
+% or alternatively \setstretch{3} for triple spacing (or any other number).
+
+% Mathematical Notation
+\usepackage{amsmath,amstext,amssymb,amsfonts}
+
+
+% Colors				
+\usepackage{xcolor,colortbl}
+
+
+\renewcommand{\Pr}{\mathsf{P}}
+\newcommand{\prob}[1]{\Pr\left(#1\right)}
+\newcommand{\given}{\mid}
+\newcommand{\me}{\mathrm{e}} % use for base of the natural logarithm
+\newcommand{\md}{\mathrm{d}} % use for base of the natural logarithm
+\newcommand{\var}{\mathrm{Var}}
+\newcommand{\mean}{\mathrm{E}}
+\newcommand{\Normal}{\mathcal{N}}
+\newcommand{\argmax}{\operatornamewithlimits{argmax}}
+\newcommand{\like}{\mathcal{L}}
+\newcommand{\loglike}{\mathcal{L}\mathcal{L}}
+\newcommand{\eps}{\epsilon}
+\newcommand{\nin}{\noindent}
+
+
+
+\def\logten{\log_{10}}
+\def\BFav{{\rm BF}_\text{av}}
+\def\BFuni{{\rm BF}_\text{uni}}
+\def\BFldl{{\rm BF}_\text{ldl}}
+\def\BF{\rm BF}
+\def\ABF{\rm ABF}
+\def\BFall{{\rm BF}_\text{all}}
+
+
+\newcommand{\zuk}[1]{\textcolor{red}{[#1 --Or]}}
+\newcommand{\heejung}[1]{\textcolor{blue}{[#1 --Heejung]}}
+
+%\usepackage{alltt}
+% for mathematical notation in a verbatim-like environment
+% \begin{alltt} ... \end{alltt}
+
+% Graphics
+\usepackage{graphicx}
+%\usepackage[small]{subfigure}
+% for subfigures in a single figure
+
+%\usepackage{epsfig,rotating,epsf,psfrag,lscape}
+
+% Citations
+\usepackage{natbib}
+
+% Style for sections and such.
+%\usepackage{mbe}
+%\usepackage{genetics}
+
+\begin{document}
+
+
+%\begin{abstract}
+%Template for papers.
+%In particular, check out the way to automatically create a bibliography.
+%\end{abstract}
+
+
+\section{Model in Ash}
+\label{sec:Model_Ash}
+The model considered in Ash is for each $i$,
+\begin{equation}
+x_i \sim \Normal(\alpha_i, y_i^2).
+\end{equation}
+Note that in a PoissonBinomial model, $x_i = \hat{\alpha}_i$ and $y_i = se(\hat{\alpha}_i)$ are estimate (MLE) for $\alpha_i = logit(p_i)$ and its standard error which are estimated by using a glm function in R. 
+Ash considers a mixture of normal distributions as a prior on $\alpha_i$. Specifically, for each $i$,
+\begin{equation}
+\alpha_i \given \pi, \sigma^2 \sim \sum_{m=1}^M \pi_m \Normal(0, \sigma^2_m),\label{eqn:ash_prior}
+\end{equation}
+where $\pi = (\pi_1, \ldots, \pi_M)$ are the mixture proportions which are constrained to be non-negative and sum to one, and $\sigma^2 = (\sigma^2_1, \ldots, \sigma^2_M)$ are the variances for each normal distribution. For now, Ash assumes that the Gaussian
+ means are zero, that the variances vector $\sigma^2$ is known, and estimates $\pi$ by using an empirical Bayes procedure - that is
+ we find the maximum-likelihood estimator $\hat{\pi}_{MLE}$.
+
+\section{EM algorithm in Ash}
+\label{sec:EM_Ash}
+The MLE for $\pi$ can be obtained by using the following EM algorithm. Let $D_i = (x_i, y_i)$ and $D = (D_1, \ldots, D_n)$. Consider unobserved latent variables $Z = (Z_1, \ldots, Z_n)$, where $Z_i \in \{1, \ldots, M\}$ and $\Pr(Z_i = m) = \pi_m$. Then, a complete data likelihood can be written
+\begin{eqnarray}
+\Pr(D, Z \given \pi) &=& \prod_{i=1}^{n}\Pr(D_i, Z_i \given \pi)\\
+&=& \prod_{i=1}^{n} \prod_{m=1}^M\Pr(D_i, Z_i = m \given \pi)^{I(Z_i = m)}\\
+&=& \prod_{i=1}^{n} \prod_{m=1}^M[\Pr(D_i \given Z_i = m, \pi)\pi_m] ^{I(Z_i = m)},
+\end{eqnarray}
+yielding a log likelihood
+\begin{eqnarray}
+\log\Pr(D, Z \given \pi) &=& \sum_{i=1}^{n} \sum_{m=1}^M I(Z_i = m)\Big[\log{\Pr(D_i \given Z_i = m)} + \log{\pi_m}\Big].
+\end{eqnarray}
+
+We denote by $\pi^{l}$ the vector of probabilities at step $l$ of the EM algorithm. In each step, we update the vector, i.e.
+compute in the $l$-th step $\pi^{l+1}$ from $\pi^l$ and the data.
+
+{\bf E-step:} For each $i$ and $m$,
+\begin{eqnarray}
+A_{im}^l \equiv \Pr(Z_i = m \given D_i, \pi^l) &=& \frac{\Pr(Z_i = m, D_i \given \pi^l)}{\sum_{n=1}^M\Pr(Z_i = n, D_i \given \pi^l)} \\
+&=& \frac{\pi_m^l\Pr(D_i \given Z_i = m)}{\sum_{n=1}^M\pi_n^l\Pr(D_i \given Z_i = n)} \\
+&=& \frac{\pi_m^l\BF_i(\sigma^2_m)}{\sum_{n=1}^M\pi_n^l\BF_i(\sigma^2_n)},
+\end{eqnarray}
+where
+\begin{eqnarray}
+\label{eq:base_factor}
+\BF_i(\sigma^2_m) =  \frac{\Pr(D_i \given Z_i = m)}{\Pr(D_i \given \alpha_i = 0)}.
+\end{eqnarray}
+{\bf M-step:} Find the parameters $\pi$ which maximizes $\mean_{Z \given D, \pi^l}[\log\Pr(D, Z \given \pi)]$.
+\begin{eqnarray}
+\pi^{l+1} &=& \argmax_{\pi}\mean_{Z \given D, \pi^l}[\log\Pr(D, Z \given \pi)]\\
+	       &=& \argmax_{\pi} \sum_{i=1}^{n} \sum_{m=1}^M A_{im}^l[\log{\BF_{im}} + \log{\pi_m}]\\
+	       &\equiv& \argmax_{\pi} Q(\pi \given \pi^l),
+\end{eqnarray}
+\nin where we used the fact that $\log \Pr(D_i \given \alpha_i=0)$ is constant.
+%where $A_{im} = \Pr(Z_i = m \given D_i, \pi^l)$ and $\BF_{im} = \BF_i(\sigma^2_m)$.
+For each $m = 1, \ldots, M-1$,
+\begin{eqnarray}
+\frac{\partial Q(\pi \given \pi^l)}{\partial \pi_m} &=& \sum_{i=1}^n[\frac{A_{im}^l}{\pi_m} + \frac{-A_{iM}^l}{\pi_M}]\\
+			&=& \sum_{i=1}^n[\frac{A_{im}^l\pi_M -A_{iM}^l\pi_m}{\pi_m\pi_M}]\\
+			&=& \frac{\pi_M \sum_{i=1}^nA_{im}^l -\pi_m \sum_{i=1}^nA_{iM}^l}{\pi_m\pi_M},
+\end{eqnarray}
+%\zuk{I don't understand how do you get the first equation here (14). If you just take the derivative of (12) you get something more complicated }
+%\heejung{if you take the derivative of (12) wrt $\pi_m$, only $\pi_m$ and $\pi_M = 1 - (\pi_{1} + \ldots, + \pi_{M-1} )$ will matter. The remaining terms are just constant. You should use the relationship in (17) and (18) to make it simple. If it doesn't explain well, I will explain it when we get together.}
+where
+\begin{eqnarray}
+	A_{iM}^l = 1 - (A_{i1}^l + \ldots, + A_{i(M-1)}^l),\\
+	\pi_{M} = 1 - (\pi_{1} + \ldots, + \pi_{M-1}).
+\end{eqnarray}
+Then,
+\begin{eqnarray}
+\pi_M \sum_{i=1}^nA_{im}^l = \pi_m \sum_{i=1}^nA_{iM}^l \quad \text{for} \quad m = 1, \ldots, M-1. \label{eqn:temp}
+\end{eqnarray}
+Summing $M-1$ equations in (\ref{eqn:temp}) leads to
+\begin{eqnarray}
+	\pi_M [\sum_{i=1}^n\sum_{m=1}^{M-1}A_{im}^l] = (1-\pi_M) \sum_{i=1}^nA_{iM}^l.
+\end{eqnarray}
+Then,
+\begin{eqnarray}
+	\pi_M  &=& \frac{\sum_{i=1}^nA_{iM}^l} {\sum_{i=1}^n\sum_{m=1}^{M}A_{im}^l}\\
+		  &=& \frac{\sum_{i=1}^nA_{iM}^l}{n},
+\end{eqnarray}
+and for each $m= 1, \ldots, M-1$,
+\begin{eqnarray}
+	\pi_m  &=& \frac{\sum_{i=1}^nA_{im}^l}{n}.
+\end{eqnarray}
+
+To implement the EM algorithm we need an explicit expression for the Bayes Factor in eq. (\ref{eq:base_factor}).
+We use an approximate likelihood approach to approximate this factor, shown in the next two paragraphs.
+
+\subsection{Likelihood approximation in a PoissonBinomial Model}
+\label{sec:app_PB_like}
+Under a PoissonBinomial model, a log likelihood function for $\alpha_i = logit(p_i)$ can be written as
+\begin{eqnarray}
+\loglike(\alpha_i) &=& \log{P(D_i \given \alpha_i)}\\
+		&=& \log{\prod_j{{n_{ij} \choose x_{ij}} \left(\frac{1}{1+e^{-\alpha_i}}\right)^{x_{ij}} \left(\frac{e^{-\alpha_i}}{1+e^{-\alpha_i}}\right)^{n_{ij} - x_{ij}}}}.
+\end{eqnarray}
+Taking three elements in Taylor series of $\loglike(\alpha_i)$ about a MLE $\hat{\alpha}_i$, $\loglike(\alpha)$ can be approximated by
+\begin{eqnarray}
+\loglike(\alpha_i) &\approx& \loglike(\hat{\alpha}_i) + \frac{\loglike''(\hat{\alpha}_i)(\alpha_i - \hat{\alpha}_i)^2}{2}\\
+		&\approx& \loglike(\hat{\alpha}_i) - \frac{(\alpha_i - \hat{\alpha}_i)^2}{2se(\hat{\alpha}_i)^2}.
+\end{eqnarray}
+Then, a likelihood function for $\alpha_i$, $\like(\alpha_i)$ can be approximated by
+\begin{eqnarray}
+\like(\alpha_i) = exp[\loglike(\alpha_i)] \propto \phi(\alpha_i ; \hat{\alpha}_i, se(\hat{\alpha}_i)^2) %\Normal(\hat{\alpha}_i, se(\hat{\alpha}_i)^2).
+\end{eqnarray}
+
+\nin where $\phi$ is the Gaussian density function, $\phi(x ; \mu, \sigma^2) = \frac{1}{\sqrt{2\pi} \sigma} exp [\frac{-(x-\mu)^2}{2\sigma^2}]$.
+
+\subsection{BF and posterior prob approximation in Ash}
+\label{sec:BF_post_Ash}
+This section describes derivations for the approximate Bayes Factor ($\ABF$) and posterior on $\alpha_i$ when $Z_i = m$ in the prior from equation (\ref{eqn:ash_prior}).
+\begin{eqnarray}
+\Pr(D_i \given Z_i = m) &=& \int \frac{C(\hat{\alpha}_i, se(\hat{\alpha}_i)^2)}{\sqrt {2\pi se(\hat{\alpha}_i)^2 } }\exp{[-\frac{\left(\alpha_i -  \hat{\alpha}_i\right)^2}{2se(\hat{\alpha}_i)^2}]} \frac{1}{\sqrt {2\pi \sigma^2_m } }\exp{[-\frac{\alpha_i^2}{2\sigma^2_m}]}\mathrm{d}\alpha_i\\
+	&=&  \frac{C(\hat{\alpha}_i, se(\hat{\alpha}_i)^2)}{2\pi \sqrt {se(\hat{\alpha}_i)^2  \sigma^2_m }} \int \exp{[-\frac{\sigma^2_m\left(\alpha_i -  \hat{\alpha}_i\right)^2 + se(\hat{\alpha}_i)^2\alpha_i^2}{2se(\hat{\alpha}_i)^2\sigma^2_m}]}\mathrm{d}\alpha_i\\
+	&=&  \frac{C(\hat{\alpha}_i, se(\hat{\alpha}_i)^2)}{2\pi \sqrt {se(\hat{\alpha}_i)^2  \sigma^2_m }} \int \exp{[-\frac{ \left(\sigma^2_m + se(\hat{\alpha}_i)^2\right)\alpha_i^2 - 2\sigma^2_m \hat{\alpha}_i\alpha_i + \sigma^2_m\hat{\alpha}^2_i}{2se(\hat{\alpha}_i)^2\sigma^2_m}]}\mathrm{d}\alpha_i\\
+	&=&  \frac{C(\hat{\alpha}_i, se(\hat{\alpha}_i)^2)}{2\pi \sqrt {se(\hat{\alpha}_i)^2  \sigma^2_m }} \int \exp{[-\frac{\left(\sigma^2_m + se(\hat{\alpha}_i)^2\right)[\alpha_i- \frac{\sigma^2_m \hat{\alpha}_i}{\sigma^2_m + se(\hat{\alpha}_i)^2}]^2 + \frac{\sigma^2_m \hat{\alpha}^2_i se(\hat{\alpha}_i)^2}{\sigma^2_m + se(\hat{\alpha}_i)^2}}{2se(\hat{\alpha}_i)^2\sigma^2_m}]}\mathrm{d}\alpha_i\\
+	&=&  \frac{C(\hat{\alpha}_i, se(\hat{\alpha}_i)^2)\sqrt{2\pi \frac{\sigma^2_m se(\hat{\alpha}_i)^2}{\sigma^2_m + se(\hat{\alpha}_i)^2}}}{2\pi \sqrt {se(\hat{\alpha}_i)^2  \sigma^2_m }} \exp{[-\frac{\hat{\alpha}^2_i}{2(se(\hat{\alpha}_i)^2+\sigma^2_m)}]}\\
+	&=&  \frac{C(\hat{\alpha}_i, se(\hat{\alpha}_i)^2)}{\sqrt{2\pi (\sigma^2_m + se(\hat{\alpha}_i)^2)}} \exp{[-\frac{\hat{\alpha}^2_i}{2(se(\hat{\alpha}_i)^2+\sigma^2_m)}]},
+\end{eqnarray}
+where $C(\hat{\alpha}_i, se(\hat{\alpha}_i)^2)$ is a constant depending on $\hat{\alpha}_i, se(\hat{\alpha}_i)^2$ but does not 
+depend on $\alpha_i$. In fact $C(\hat{\alpha}_i, se(\hat{\alpha}_i)^2) = e^{\loglike(\hat{\alpha}_i)} \sqrt{2\pi se(\hat{\alpha}_i)^2}$.
+
+%\zuk{Why do you need the constant C? isn't it simply 1?}
+%\heejung{Actually $\like(\alpha_i) \propto  \phi(\alpha_i ; \hat{\alpha}_i, se(\hat{\alpha}_i)^2)$. $C$ contains all constant ($C \propto \exp({f(\hat{\alpha}_i)})$) and will be canceled out when you take a ratio for BF calculation.}
+and
+\begin{eqnarray}
+\Pr(D_i \given \alpha_i = 0) &=& \frac{C(\hat{\alpha}_i, se(\hat{\alpha}_i)^2)}{\sqrt {2\pi se(\hat{\alpha}_i)^2 } }\exp{[-\frac{\hat{\alpha}_i^2}{2se(\hat{\alpha}_i)^2}]}.
+\end{eqnarray}
+Then, $\ABF$ can be written as
+\begin{eqnarray}
+\BF_i(\sigma^2_m) &=&  \frac{\Pr(D_i \given Z_i = m)}{\Pr(D_i \given \alpha_i = 0)}\\
+			       &=&  \sqrt{\frac{se(\hat{\alpha}_i)^2}{\sigma^2_m + se(\hat{\alpha}_i)^2}}  \exp{[\frac{\hat{\alpha}_i^2}{2se(\hat{\alpha}_i)^2} \frac{\sigma^2_m}{\sigma^2_m + se(\hat{\alpha}_i)^2}]}\\
+			       &=& \sqrt{\lambda} \exp{[T^2 (1-\lambda)/2]},
+\end{eqnarray}
+
+where
+\begin{eqnarray}
+\lambda &=& \frac{se(\hat{\alpha}_i)^2}{se(\hat{\alpha}_i)^2 + \sigma^2_m} ,\\
+T &=&  \frac{\hat{\alpha}_i}{se(\hat{\alpha}_i)}.
+\end{eqnarray}
+And a posterior on $\alpha_i$ is
+\begin{eqnarray}
+\Pr(\alpha_i \given D_i, Z_i = m) &\propto& \like(\alpha_i)\Pr(\alpha_i \given Z_i)\\
+					   &\propto&  \exp{[-\frac{\left(\alpha_i -  \hat{\alpha}_i\right)^2}{2se(\hat{\alpha}_i)^2}]} \exp{[-\frac{\alpha_i^2}{2\sigma^2_m}]}\\
+					   &\propto&  \exp{[-\frac{\left(\sigma^2_m + se(\hat{\alpha}_i)^2\right)[\alpha_i- \frac{\sigma^2_m \hat{\alpha}_i}{\sigma^2_m + se(\hat{\alpha}_i)^2}]^2}{2se(\hat{\alpha}_i)^2\sigma^2_m}]},
+\end{eqnarray}
+leading to
+\begin{eqnarray}
+\alpha_i \given D_i, Z_i = m &\sim& \Normal(\frac{\sigma^2_m \hat{\alpha}_i}{\sigma^2_m + se(\hat{\alpha}_i)^2}, \frac{\sigma^2_mse(\hat{\alpha}_i)^2}{\sigma^2_m + se(\hat{\alpha}_i)^2}).
+\end{eqnarray}
+
+%\zuk{From this we can compute the posterior probability distribution on $\alpha_i$ - right? it's not just plugging in the fitted $\pi$ vector, since
+%conditional on the data we get different probabilities for different Gaussians?}
+%\heejung{Yes. You're right}
+\begin{eqnarray}
+Pr(\alpha_i \given D_i) &=& \sum_{m=1}^M Pr(Z_i = m | D_i) Pr(\alpha_i \given D_i, Z_i = m) \\
+&=& \sum_{m=1}^M \frac{\pi_m Pr(D_i | Z_i=m)}{\sum_n \pi_n Pr(D_i | Z_i=n)} Pr(\alpha_i \given D_i, Z_i = m) \\
+&=& \sum_{m=1}^M A_{im}^l \Normal(\frac{\sigma^2_m \hat{\alpha}_i}{\sigma^2_m + se(\hat{\alpha}_i)^2}, \frac{\sigma^2_mse(\hat{\alpha}_i)^2}{\sigma^2_m + se(\hat{\alpha}_i)^2})
+\end{eqnarray}
+
+
+\subsection{EM-Algorithm Description}
+We can now write explicitly the EM-algorithm:
+
+\nin {\bf Algorithm: EM-Ash} \\
+{\bf Input: Data $D = (\hat{\alpha}_i, se(\hat{\alpha}_i)^2), i=1, .., n$} \\
+{\bf Output: $\hat{\pi}_{MLE}$} \\
+\begin{enumerate}
+\item
+Initialize $\pi_m^1 = \frac{1}{M}$ for $m=1,..,M$. Set $l=1$.
+
+\item
+While $|| \pi^{l+1} - \pi^l || > \eps$  (i.e. repeat until $\pi^l$ value converges)
+
+\begin{enumerate}
+\item E-Step: For each $i=1,..,n$ set
+\begin{eqnarray}
+\BF_i(\sigma^2_m) &=& \sqrt{\frac{se(\hat{\alpha}_i)^2}{\sigma^2_m + se(\hat{\alpha}_i)^2}}  \exp{[\frac{\hat{\alpha}_i^2}{2se(\hat{\alpha}_i)^2} \frac{\sigma^2_m}{\sigma^2_m + se(\hat{\alpha}_i)^2}]}
+\end{eqnarray}
+
+For each $i=1,..,n$ and $m=1,..,M$ set
+\begin{eqnarray}
+A_{im}^l &=& \frac{\pi_m^l\BF_i(\sigma^2_m)}{\sum_{n=1}^M\pi_n^l\BF_i(\sigma^2_n)}
+\end{eqnarray}
+
+\item M-Step: For each $m=1,..,M$, set
+\begin{eqnarray}
+	\pi_m^{l+1}  &=& \frac{\sum_{i=1}^nA_{im}^l}{n}.
+\end{eqnarray}
+set $l=l+1$.
+
+\end{enumerate}
+
+\item Output $\hat{\pi}_{MLE} = \pi^{l}$.
+
+\end{enumerate}
+
+
+\section{Mean and Variance for a mixture of distributions}
+\label{sec:mean_var_mixture}
+We will describe how to get mean and variance for a mixture of distributions in a general context.
+Consider a mixture of distributions whose mean and variance are given. Specifically,
+\begin{equation}
+Y \given \pi, \mu, \sigma^2 \sim \sum_{m=1}^M \pi_mD(\mu_m, \sigma^2_m),
+\end{equation}
+where $\pi = (\pi_1, \ldots, \pi_M)$ are the mixture proportions which are constrained to be non-negative and sum to one and $\mu = (\mu_1, \ldots, \mu_M)$ and $\sigma^2 = (\sigma^2_1, \ldots, \sigma^2_M)$ are the means and variances for each distribution.
+This distribution can be written as
+\begin{eqnarray}
+Y \given Z=m &\sim& D(\mu_m, \sigma^2_m)
+\end{eqnarray}
+where a latent variable $Z \in \{1, \ldots, M\}$ has a distribution $\Pr(Z = m) = \pi_m$.
+Then,
+\begin{eqnarray}
+\mean(Y) &=& \mean(\mean(Y \given Z)) \\
+	        &=& \sum_{m=1}^M \pi_m \mu_m,\\
+\mean(Y^2) &=&  \mean(\mean(Y^2 \given Z)) \\
+	        &=& \sum_{m=1}^M \pi_m (\mu_m^2 + \sigma_m^2), \\
+\var(Y)  &=& \mean(Y^2) - \mean(Y)^2  \\
+        &=& \sum_{m=1}^M \pi_m (\mu_m^2 + \sigma_m^2) - \big(\sum_{m=1}^M \pi_m \mu_m\big)^2
+\end{eqnarray}
+
+
+
+
+
+
+
+\bibliographystyle{rss}
+\bibliography{sum}
+
+
+\end{document}
+
