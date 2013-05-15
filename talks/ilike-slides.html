@@ -191,6 +191,7 @@ hljs.initHighlightingOnLoad();
 <ul>
 <li>Prelude</li>
 <li>Allegro (ma non troppo)</li>
+<li>Coda</li>
 </ul>
 
 <h1>Prelude</h1>
@@ -393,11 +394,41 @@ can be better accounted for.</p></li>
 <li><p>ASH borrows information for estimation, as well as testing.</p></li>
 </ul>
 
+<h1>Other Applications</h1>
+
+<ul>
+<li><p>Widely applicable: perhaps anywhere (?) 
+where shrinkage is appropriate, requiring only an estimated
+effect size and standard error for each object.</p></li>
+<li><p>Could also use effect size estimate and \( p \) value for each variable, by converting to effect size estimate and (pseudo-) standard error.</p></li>
+<li><p>Currently applying it to wavelet shrinkage applications.</p></li>
+</ul>
+
+<h1>Guarantees?</h1>
+
+<ul>
+<li>&ldquo;I think you have some nice ideas. How will you convince
+people to use them?&rdquo; (C Morris)</li>
+</ul>
+
 <h1>Next steps?</h1>
 
 <ul>
 <li><p>Extend to allow \( g(\cdot;\pi) \) to depend on covariates \( X \).</p></li>
 <li><p>Extend to allow for correlations in the measured \( \hat\beta_j \).</p></li>
+</ul>
+
+<h1>Coda: Other i-like related work</h1>
+
+<ul>
+<li><p>Bayesian variable selection for large-scale linear regression.</p></li>
+<li><p>BSLMM: \[ Y = X \beta + \epsilon, \] with \( \beta_j \sim 
+\pi N(0,\sigma_b^2) + (1-\pi) N(0,\sigma_a^2+\sigma_b^2) \).</p></li>
+<li><p>Particular focus on prior specification (reparameterize in 
+terms of regression \( R^2 \)).</p></li>
+<li><p>BSLMM software, runs with thousands of individuals, hundreds
+of thousands of variables. (Zhou et al, PloS Genetics 2013)</p></li>
+<li><p>Also variational approximations (Carbonetto and Stephens, Bayesian Analysis, 2012)</p></li>
 </ul>
 
 <h1>Thanks</h1>

@@ -13,6 +13,7 @@ library("qvalue")
 
 * Prelude
 * Allegro (ma non troppo)
+* Coda
 
 # Prelude
 
@@ -308,12 +309,42 @@ can be better accounted for.
 
 - ASH borrows information for estimation, as well as testing.
 
+# Other Applications
+
+- Widely applicable: perhaps anywhere (?) 
+where shrinkage is appropriate, requiring only an estimated
+effect size and standard error for each object.
+
+- Could also use effect size estimate and $p$ value for each variable, by converting to effect size estimate and (pseudo-) standard error.
+
+- Currently applying it to wavelet shrinkage applications.
+
+
+# Guarantees?
+
+- ``I think you have some nice ideas. How will you convince
+people to use them?" (C Morris)
+
 # Next steps?
 
 - Extend to allow $g(\cdot;\pi)$ to depend on covariates $X$.
 
 - Extend to allow for correlations in the measured $\hat\beta_j$.
 
+# Coda: Other i-like related work
+
+- Bayesian variable selection for large-scale linear regression.
+
+- BSLMM: $$Y = X \beta + \epsilon,$$ with $\beta_j \sim 
+\pi N(0,\sigma_b^2) + (1-\pi) N(0,\sigma_a^2+\sigma_b^2)$.
+
+- Particular focus on prior specification (reparameterize in 
+terms of regression $R^2$).
+
+- BSLMM software, runs with thousands of individuals, hundreds
+of thousands of variables. (Zhou et al, PloS Genetics 2013)
+
+- Also variational approximations (Carbonetto and Stephens, Bayesian Analysis, 2012)
 
 
 # Thanks
