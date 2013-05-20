@@ -1,3 +1,213 @@
+### Project Goals
+
+The initial goal of the ASH (Adaptive SHrinkage) project is to provide simple, generic, and flexible methods to derive ``shrinkage-based" estimates and credible intervals for unknown quantities $\beta=(\beta_1,\dots,\beta_J)$, given only estimates of those quantities ($\hat\beta=(\hat\beta_1,\dots, \hat\beta_J)$) and their corresponding estimated standard errors ($s=(s_1,\dots,s_J)$). 
+
+Although shrinkage-based estimation can be motivated in various ways, our key goal here is to combine information across the multiple measurements $j=1,\dots,J$ to improve inference for each individual $\beta_j$. By improved inference, we mean both
+improved average accuracy of point estimates, which is
+the traditional focus of shrinkage-based methods, \emph{and} improved assessments of uncertainty. 
+
+By ``adaptive" shrinkage we 
+have two key properties in mind. First, the appropriate amount of shrinkage is determined from the data, rather than being pre-specified. Second, the amount of shrinkage undergone by each $\hat\beta_j$ will depend on the standard error $s_j$: measurements with high standard error will undergo more shrinkage than measurements with low standard error.
+
+As an important special case, we intend these methods to address the "multiple comparisons" problem, where interest usually focuses on which $\beta_j$ can be confidently inferred to be non-zero. Such problems are usually tackled by computing a $p$ value for each $j$, often by applying a $t$ test to $\hat\beta_j/s_j$,
+and then applying a generic procedure, such as that of Benjamini 
+and Hochberg (1995?) or Storey (2001?), designed to control or
+estimate the false discovery rate (FDR) or the positive FDR (Storey, 2001?). In essence we aim to provide analagous
+generic methods that work directly with two numbers for each 
+measurement $(\hat\beta_j,s_j$), rather than a single number (e.g.~ the $p$ value, or $t$ statistic). Working with these two numbers has two important benefits: first, it permits estimation and not only testing; second, the 
+uncertainty in each measurement $\hat\beta_j$ can be more fully accounted for, reducing the impact of ``high-noise" measurements (large $s_j$) that can reduce the effectiveness of a standard FDR analysis. The potential for shrinkage-based estimation to
+help address multiple comparisons problems has been highlighted
+previously, including Greenland and Robins (1991),
+Efron (2008) and Gelman et al (2012). [Note, check also Louis, JASA, 1984]
+
+
+
+### Methods Outline
+
+The methods are based on treating the vectors $\hat\beta$
+and $s$ as ``observed data", and then performing inference for $\beta$ from these observed data, using a standard hierarchical modelling framework
+to combine information across $j=1,\dots,J$.
+
+Specifically, 
+we assume that the true 
+$\beta_j$ values are independent
+and identically distributed from some distribution $g(\cdot ; \pi)$, where $\pi$ is a hyper-parameter to be estimated. 
+Then, given $\beta$, we assume that $(\hat\beta_j,s_j)$ are independent across $j$, and depend only on $\beta_j$. Putting these together, the joint model for the unobserved $\beta$ and the observed $\hat\beta, s$ is:
+\begin{align}
+p(\hat\beta, s, \beta | \pi) & = \prod_j g(\beta_j ; \pi) p(\hat\beta_j, s_j | \beta_j) \\
+& = \prod_j g(\beta_j ; \pi) L(\beta_j; \hat\beta_j,s_j).
+\end{align}
+The specific choices of $g$ and $L$ are described below.
+
+We fit this hierarchical model using the following "Empirical Bayes" approach. First we estimate the hyper-parameters $\pi$ by maximizing the likelihood
+$$L(\pi; \hat\beta, s) := p(\hat\beta, s | \pi) = \int p(\hat\beta, s, \beta | \pi) d\beta.$$
+Then, given this estimate $\hat\pi$, we compute the conditional distributions $$p(\beta_j | \hat\pi, \hat\beta, s) \propto g(\beta_j; \pi) L(\beta_j; \hat\beta_j, s_j).$$ 
+In principle we would
+prefer to take a full Bayes approach that accounts for uncertainty in $\pi$, but, at least for now, we compromise this principle for the simplicity of the EB approach.
+
+[put picture of hierarchical model here]
+
+The conditional distributions $p(\beta_j | \hat\pi, \hat\beta, s)$ 
+encapsulate uncertainty in the values for $\beta_j$, combining information across
+$j=1,\dots,J$. The combining of the information occurs through estimation of
+$\pi$, which involves all of the data, and it is 
+
+These conditional distributions can be conveniently summarized
+in various ways, including point estimates (e.g. the posterior means or medians),
+and credible intervals/regions.
+
+
+The key components of this hierarchical model
+are the distribution $g$ and the likelihood $L(\beta_j; \hat\beta_j, s_j)$. We make the following choices for these.
+
+1. The likelihood for $\beta_j$ is normal, centered on $\hat\beta_j$, with standard deviation $s_j$.
+That is, 
+$$L(\beta_j; \hat\beta_j, s_j) \propto \exp[-0.5(\beta_j-\hat\beta_j)^2/s_j^2]. \quad (**)$$
+
+2. The distribution $g(\cdot; \pi)$ is a mixture of zero-centered normal distributions, 
+$$g(\cdot; \pi) = \sum_{k=1}^K pi_k N(\cdot; 0, \sigma^2_k).$$
+In practice, we currently fix the number of components $K$ to be large, and take the variances $\sigma_1<\sigma_2<\dots<\sigma_K$ to be fixed, and vary from very small (possibly 0), to very large --  sufficiently large that typically $\hat\pi_K=0$.
+
+The choice of normal likelihood seems natural, and indeed it can be motivated in multiple ways. For example, we can write $p(\hat\beta_j, s_j | \beta_j) = p(\hat\beta_j | s_j, \beta_j)p(s_j | \beta_j)$. Now, if we are willing to assume that
+$s_j$ alone contains no information about $\beta_j$, or equivalently that $p(s_j | \beta_j)$ does not depend on $\beta_j$, then
+$L(\beta_j) \propto p(\hat\beta_j | s_j, \beta_j)$,
+and if $\hat\beta_j | s_j, \beta_j \sim N(\beta_j, s_j^2)$,
+as is often asymptotically the case, then we obtain the likelihood (**) above.
+
+An alternative motivation is to think of this as a normal
+approximation to the likelihood from the 
+raw data $D_j$ that were used to compute
+$\hat\beta_j$ and $s_j$. Then if we observed these data
+the likelihood for $\beta$ would be 
+$p(D_j | \beta_j)$, and a Taylor series expansion of the log likelihood around the maximum likelihood estimate $\hat\beta_j$  yields $$l(\beta_j) \approx l(\hat\beta_j) + 0.5* (\beta_j - \hat\beta_j)^2 l''(\hat\beta_j).$$ [Fill in details?]
+
+The idea of using a mixture of normal distributions for $g$ 
+also seems very natural: mixtures of normals provide a flexible family of distributions able to provide a good approximation to any true underlying $g$; and 
+when combined with the normal likelihood they give
+an analytic form for the conditional distribution $p(\beta_j | \hat\pi, \hat\beta_j, s_j)$ (also a mixture of normals).
+The constraint that these normals be centered at zero may seem initially less natural. 
+Certainly this constraint could be relaxed in principle.
+However, we view it as a convenient way to impose an assumption 
+that $g$ is unimodal with its mode at 0,
+which we view as a plausible assumption in many 
+settings, and one which may be helpful to avoid
+"overfitting" of $g$. (Using normal distributions centered at 0
+also imposes an assumption
+that $g$ is symmetric about zero, which we view as less
+plausible, but represents a compromise between simplicity
+and flexibility.
+In cases where this assumption seems wildly inappropriate one could perhaps
+improve results by applying the
+model separately to positive and negative values of $\betahat$.) 
+
+
+Finally, using a large number of normal components with a wide range of variances,
+rather than, say, a smaller number of components with the variances
+to be estimated, is simply for computational convenience. With fixed
+variances there exists a very simple EM algorithm to maximise the likelihood
+in $\pi$. Obtaining maximum likelihood estimates for the variances could certainly
+be implemented with a little
+more work, but it is unclear whether this would result in practically-important gains in many situations of interest. 
+
+### Computation Outline
+
+As outlined above, we fit the model using the following Empirical Bayes procedure:
+1. Estimate $\pi$ by maximizing the likelihood $L(\pi)$.
+2. Compute the conditional distributions $p(\beta_j | \hat\beta_j, s_j, \hat\pi)$.
+
+Using a normal likelihood $L(\beta_j)$, and assuming
+$g$ to be a mixture of normal distributions with fixed variances, 
+yields a simple EM algorithm
+for estimating $\pi$ in Step 1, and simple analytic forms for the conditional
+distributions in Step 2.
+
+### A simple example
+
+Load in some functions.
+```{r}
+setwd("~/Documents/git/ash/Rcode/")
+set.seed(32327)
+## load Poisson_binomial and ash functions 
+source("../Rcode/ash.R") 
+library("qvalue")
+```
+
+Here we simulate data, effectively as in Efron, 2008, Section 7.
+```{r}
+truenull = c(rep(0,1000),rep(1,9000))
+beta = c(rnorm(1000,-3,1),rep(0,9000))
+s= rep(1,10000)
+betahat = beta+rnorm(10000,beta,s)
+
+beta.ash=ash(betahat,s)
+#compute the usual zscore and corresponding p value
+zscore = betahat/s
+pval = pchisq(zscore^2,df=1,lower.tail=F)
+qval = qvalue(pval)
+
+plot(betahat,beta.ash$PosteriorMean,xlab="Observed betahat", ylab="Estimated beta (posterior mean)",ylim=c(-7,4),xlim=c(-7,4))
+abline(h=0)
+abline(a=0,b=1,col=2)
+
+plot(qval$q,2*beta.ash$qval,main="comparison of ash and q value qvalues")
+abline(a=0,b=1)
+
+o = order(beta.ash$qval)
+
+plot(cumsum(truenull[o])/(1:10000),qval$qval[o],col=2,type="l")
+lines(cumsum(truenull[o])/(1:10000),2*beta.ash$qval[o])
+abline(a=0,b=1)
+```
+
+It seems that in this case the ash q values underestimate the
+FDR slightly. Possibly this is the assymetry.
+Try shrinking positive and negatives separately:
+```{r}
+pos= betahat>0
+betapos.ash=ash(betahat[pos],s[pos])
+betaneg.ash = ash(betahat[!pos],s[!pos])
+lfdr = rep(0,length(betahat))
+lfdr[pos] = betapos.ash$localfdr
+lfdr[!pos] = betaneg.ash$localfdr
+qv = qval.from.localfdr(lfdr)
+o = order(qv)
+plot(cumsum(truenull[o])/(1:10000),2*qv[o],type="l")
+abline(a=0,b=1)
+```
+No, that's not it.
+
+So maybe it is the non-monotonic behaviour of the true beta values in this case.
+Let's try putting in a component at -1.5 to make the data fit this assumption better:
+
+
+```{r}
+truenull = c(rep(0,2000),rep(1,8000))
+beta = c(rnorm(1000,-3,1),rnorm(1000,-1.5,1),rep(0,8000))
+s= rep(1,10000)
+betahat = beta+rnorm(10000,beta,s)
+
+beta.ash=ash(betahat,s)
+#compute the usual zscore and corresponding p value
+zscore = betahat/s
+pval = pchisq(zscore^2,df=1,lower.tail=F)
+qval = qvalue(pval)
+plot(qval$q,2*beta.ash$qval,main="comparison of ash and q value qvalues")
+abline(a=0,b=1)
+
+o = order(beta.ash$qval)
+
+plot(cumsum(truenull[o])/(1:10000),qval$qval[o],col=2,type="l")
+lines(cumsum(truenull[o])/(1:10000),2*beta.ash$qval[o])
+abline(a=0,b=1)
+
+
+```
+
+
+
+
+### Motivation
+
 It is common in statistics that you measure many ``similar" things imperfectly, and wish to estimate their values. The situation arises commonly in the kinds of genomics applications I am often involved in, but also in other areas of statistics.
 In genomics, for example, a very common goal
 is to compare the mean
@@ -14,4 +224,6 @@ A fundamental idea is
 that the measurements of $\beta_j$ for each gene can be used to improve inference for the values of $\beta$ for other genes.
 
 
+Note on multiple comparisons: it isn't really a "problem" but an "opportunity". This viewpoint also espoused by Greenland and Robins. It isn't the number of tests that is relevant (the false
+discovery rate at a given threshold does not depend on the number of tests). It is the *results* of the tests that are relevant.
 

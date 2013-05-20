@@ -70,9 +70,14 @@ matrixABF = function(betahat, sebetahat, sigmaavec){
 #prior gives the parameter of a Dirichlet prior on pi
 #(prior is used to encourage results towards smallest value of sigma when
 #likelihood is flat)
-EMest = function(betahat,sebetahat,sigmaavec,pi,prior=NULL,ltol=0.01, maxiter=1000){
+#Introduced sigma.est with intention of implenting an option to esitmate
+#sigma rather than fixing it, but this not yet implemented.
+EMest = function(betahat,sebetahat,sigmaavec,pi,sigma.est=FALSE,prior=NULL,ltol=0.01, maxiter=1000){
+  if(sigma.est==TRUE){
+    stop("Error in EMest: sigma.est=TRUE not yet implemented")}
+  
   k=length(sigmaavec)
-  null.comp = which.min(sigmaavec) #which componentn is the "null"
+  null.comp = which.min(sigmaavec) #which component is the "null"
   if(is.null(prior)){ # set up prior to be 1,1/(k-1),...,1/(k-1) to favour "null"
     prior = rep(1/(k-1),k)
     prior[null.comp] = 1
@@ -82,19 +87,27 @@ EMest = function(betahat,sebetahat,sigmaavec,pi,prior=NULL,ltol=0.01, maxiter=10
   abf = matrixABF(betahat,sebetahat,sigmaavec)
 
   loglik = rep(0,maxiter)
-  m  = t(pi * t(abf)) 
+  m  = t(pi * t(abf)) # abf is n by k; so this is also n by k
   m.rowsum = rowSums(m)
   loglik[1] = sum(log(m.rowsum))
-  classprob = m/m.rowsum
+  classprob = m/m.rowsum #an n by k matrix
 
   for(i in 2:maxiter){  
     pi = colSums(classprob) + prior-1
     pi = ifelse(pi<0,0,pi) #set any estimates that are less than zero, which can happen with prior<1, to 0
     pi = normalize(pi)
+    
+    #if you want to estimate sigma, do EM update for that; not yet implemented
+    if(sigma.est==TRUE){
+      break;     
+    }
+    
+    #Now re-estimate pi
     m  = t(pi * t(abf)) 
     m.rowsum = rowSums(m)
     loglik[i] = sum(log(m.rowsum))
     classprob = m/m.rowsum
+    
     if(abs(loglik[i]-loglik[i-1])<ltol) break;
   }
   null.loglik=sum(log(abf[,null.comp]))
@@ -245,6 +258,15 @@ get_loglik = function(z.ash){
   return(rev(z.ash$fit$loglik)[1])
 }
 
+#compute corresponding q values from a vector of local fdr estimates
+#INPUT: localfdr a vector of local fdr estimates
+#OUTPUT: qvalue, a vector of q value estimates
+qval.from.localfdr = function(localfdr){
+  o = order(localfdr)
+  qvalue=rep(NA,length(localfdr))
+  qvalue[o] = (cumsum(sort(localfdr))/(1:sum(!is.na(localfdr))))
+  return(qvalue)
+}
 
 #main adaptive shrinkage function
 #takes a vector of betahats and ses;
@@ -288,9 +310,7 @@ ash = function(betahat,sebetahat,df=NULL,randomstart=FALSE, usePointMass = FALSE
   	PosteriorMean = posterior_mean(post)
   	if(localfdr){
    		localfdr = ifelse(PositiveProb<0.5,PositiveProb,1-PositiveProb)
-   		o = order(localfdr)
-   	 	qvalue=rep(NA,length(localfdr))
-   		qvalue[o] = (cumsum(sort(localfdr))/(1:sum(!is.na(localfdr))))
+   		qvalue = qval.from.localfdr(localfdr)
   	}else{
    		localfdr=NULL
    		qvalue=NULL

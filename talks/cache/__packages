@@ -1,9 +1,7 @@
-qvalue
-knitr
-stats
-graphics
-grDevices
-utils
-datasets
-methods
 base
+Biobase
+BiocGenerics
+DSS
+knitr
+locfdr
+qvalue

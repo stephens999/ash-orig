@@ -1,14 +1,14 @@
 unnamed-chunk-1	x	xx
 unnamed-chunk-2
 unnamed-chunk-3	cc	cc.assoc	cc.assoc.high	g	highxp	ngene	pval	pval.high	qval	qval.high	tscore	ttest.pval	zdat	zdat.ash	zdat.ash.high	zdat.high
-unnamed-chunk-4
-unnamed-chunk-5	h	qval
-unnamed-chunk-6
-unnamed-chunk-7	h	qval.low
-unnamed-chunk-8	h
-unnamed-chunk-9
-unnamed-chunk-10	t
-unnamed-chunk-11
+unnamed-chunk-4	designs	g	seqData	.Random.seed
+unnamed-chunk-5
+unnamed-chunk-6	h	qval
+unnamed-chunk-7
+unnamed-chunk-8	h	qval.low
+unnamed-chunk-9	h
+unnamed-chunk-10
+unnamed-chunk-11	t
 unnamed-chunk-12
 session-info
 unnamed-chunk-13
@@ -17,3 +17,4 @@ unnamed-chunk-15
 unnamed-chunk-16
 unnamed-chunk-17
 unnamed-chunk-18
+unnamed-chunk-19

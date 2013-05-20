@@ -19,38 +19,8 @@ and the first 500 observations have good precision, and the next 500 have poor p
 ```r
 # install q value package source('http://bioconductor.org/biocLite.R')
 # biocLite('qvalue')
-setwd("~/Documents/BayesFDR/Rcode/")
+setwd("~/Documents/git/ash/Rcode/")
 library("qvalue")
-```
-
-```
-## Loading Tcl/Tk interface ...
-```
-
-```
-## Warning: Can't find a usable tk.tcl in the following directories:
-## /System/Library/Frameworks/Tcl.framework/Versions/8.5/Resources/Scripts/tk8.5
-## /System/Library/Frameworks/Tcl.framework/Versions/8.5/Resources/Scripts/tk8.5/Resources/Scripts
-## /System/Library/Frameworks/Tcl.framework/Versions/8.5/Resources/tk8.5
-## /System/Library/Frameworks/Tcl.framework/Versions/8.5/Resources/tk8.5/Resources/Scripts
-## ./lib/tk8.5 ./lib/tk8.5/Resources/Scripts ~/Library/Tcl/tk8.5
-## ~/Library/Tcl/tk8.5/Resources/Scripts /Library/Tcl/tk8.5
-## /Library/Tcl/tk8.5/Resources/Scripts /System/Library/Tcl/tk8.5
-## /System/Library/Tcl/tk8.5/Resources/Scripts /System/Library/Tcl/8.5/tk8.5
-## /System/Library/Tcl/8.5/tk8.5/Resources/Scripts ~/Library/Frameworks/tk8.5
-## ~/Library/Frameworks/tk8.5/Resources/Scripts /Library/Frameworks/tk8.5
-## /Library/Frameworks/tk8.5/Resources/Scripts
-## /System/Library/Frameworks/tk8.5
-## /System/Library/Frameworks/tk8.5/Resources/Scripts ./library
-## 
-## This probably means that tk wasn't installed properly.
-```
-
-```
-## done
-```
-
-```r
 library("lattice")  #library for some of the plots
 
 # set up some data with mixture of values of s
@@ -141,7 +111,6 @@ So here it makes no difference whether you use all the observations or the just 
 the noise is ignored (as it should be!)
 
 
-
 ### Analyse Hedenfalk et al data.
 Note that there were a few genes with odd observations (eg in the thousands, rather than the usual expression measures), and 
 following Storey's ODP paper I removed the genes with any observation >20.
@@ -153,7 +122,7 @@ print(getwd())
 ```
 
 ```
-## [1] "/Users/stephens/Documents/BayesFDR/Rcode"
+## [1] "/Users/stephens/Documents/git/ash/Rcode"
 ```
 
 ```r
@@ -255,7 +224,6 @@ It would be nice to be able to assess the fit of the different models
 In principle this should be assessable via likelihood, but
 need to code it. This section is work in progress.
 
-
 The following computes the log likelihood for the two fitted ash models,
 first with $\beta \sim \sum_k \pi_k N(0,\sigma_k^2)$, and then $\beta_s \sim \sum_k \pi_k N(0, \sigma^2_k se^2_s)$:
 
@@ -280,11 +248,8 @@ plot(hh.betahat, hh.sebetahat)
 
 
 
-
-
 Another unexpected feature is that the ASH analysis based
-on z scores is rather different from the standard q value analysis,
-even though they are both based on z scores.
+on z scores is rather different from the standard q value analysis, even though they are both based on z scores.
 Look:
 
 ```r
@@ -305,11 +270,10 @@ cat(hh.ash2$fitted.f$pi[1], hh.q$pi0)
 At first I was really worried about this - the pi0 estimate
 is much bigger using the p values. However, this is all to
 do with the assumptions. The q value approach estimates
-pi0 by looking at the p values near 1, which are the z scores near 0.
-If you assume all z scores near 0 are null, then this will give you one answer. However, we actually assume that the distribution of z scores under the alternative also has its mode at 0 - under this assumption not all
-z scores near 0 will be null at all.... these are very different assumptions. 
-
-Of course, z scores near 0 won't give "significant"" results in either approach.
+pi0 by looking at the p values near 1. Effectively it assumes
+that all the p values near 1 are null. At first this seems OK.
+But note that it actually corresponds to assuming that all the z scores near 0 are null - that is, you can never see a z score of 0 under the alternative. In contrast we assume that the distribution of z scores under the alternative also has its mode at 0 - under this assumption not all z scores near 0 will be null at all.... these are very different assumptions. 
+(Of course, z scores near 0 won't give "significant"" results in either approach.)
 
 
 Now I wanted to investigate what distribution for z values under the alternative the standard approach implicitly corresponds to.
@@ -333,8 +297,55 @@ abline(h = 0)
 
 
 
+### Errors in sign, and true 0s
+
+If the true value is 0 and you say it is positive,
+is this an error in sign? Well, yes, it is. But it is not
+negative, and it turns out you need to count errors of sign
+when truth is 0 as 0.5 of a false discovery to make things
+well calibrated. This is because the method gives the same
+results if the true value of mu is exactly 0, or if it has
+epsilon variance around 0. But of course the errors in sign
+in the latter occur at rate 0.5 because of random guessing.
+
+The following simulation illustrates this. It also
+illustrates that the method seems to be relatively robust to
+the situation where the true $\beta$ are not symmetric around 0.
+
+```r
+musim2 = c(rnorm(1000, -3, 1), rnorm(1000, -1.5, 1), rnorm(1000, 0, 1), rep(0, 
+    7000))
+zsim2 = musim2 + rnorm(10000)
+zsim2.ash = ash(zsim2, rep(1, 10000))
+hist(musim2[1:3000])
+```
+
+![plot of chunk unnamed-chunk-12](figure/unnamed-chunk-12.png) 
+
+```r
+errorinsign = ifelse(musim2 == 0, 0.5, (zsim2.ash$PosteriorMean/musim2) < 0)
+sum(errorinsign[zsim2.ash$qvalue < 0.05])/sum(zsim2.ash$qvalue < 0.05)
+```
+
+```
+## [1] 0.06349
+```
+
+
+
 
 #### Miscellaneous  
+
+Simulate data as in Efron, 2008, Section 7. 
+
+```r
+musim = c(rnorm(1000, -3, 1), rep(0, 9000))
+zsim = musim + rnorm(10000)
+zsim.ash = ash(zsim, rep(1, 10000))
+```
+
+Need to implement a method to find CIs to look at this.
+
 
 code below here is not "tidied"
 
@@ -350,7 +361,7 @@ mixseLoglik(bhat.test, c(0, 1), c(0, 0), c(se.test, se.test), hh.sebetahat)
 ```
 
 ```
-## [1] -1472
+## [1] -1495
 ```
 
 ```r
@@ -370,7 +381,7 @@ sum(dnorm(bhat2.test, mhat, sdhat, log = TRUE))
 ```
 
 ```
-## [1] -3260
+## [1] -3145
 ```
 
 ```r
@@ -378,7 +389,7 @@ mixseLoglik(bhat2.test, c(0, 1), c(0, 0), sqrt(c(2, 2)), hh.sebetahat, FUN = "*"
 ```
 
 ```
-## [1] -1281
+## [1] -1288
 ```
 
 ```r
@@ -389,7 +400,7 @@ mixseLoglik(bhat.test, c(0, 1), c(0, 0), c(se.test, se.test), hh.sebetahat)
 ```
 
 ```
-## [1] -1472
+## [1] -1495
 ```
 
 ```r
@@ -414,13 +425,13 @@ p2.test = pchisq(z2.test^2, df = 1, lower.tail = F)
 hist(p.test)
 ```
 
-![plot of chunk unnamed-chunk-12](figure/unnamed-chunk-121.png) 
+![plot of chunk unnamed-chunk-14](figure/unnamed-chunk-141.png) 
 
 ```r
 hist(p2.test)
 ```
 
-![plot of chunk unnamed-chunk-12](figure/unnamed-chunk-122.png) 
+![plot of chunk unnamed-chunk-14](figure/unnamed-chunk-142.png) 
 
 ```r
 
@@ -430,7 +441,7 @@ cat(sum(test1.ash1$qval < 0.05), sum(test1.ash2$qval < 0.05))
 ```
 
 ```
-## 805 602
+## 906 609
 ```
 
 ```r
@@ -441,7 +452,7 @@ cat(sum(test2.ash1$qval < 0.05), sum(test2.ash2$qval < 0.05))
 ```
 
 ```
-## 137 472
+## 167 488
 ```
 
 ```r
@@ -453,7 +464,7 @@ mixseLoglik(bhat.test, test1.ash1$fitted.f$pi, test1.ash1$fitted.f$mu, test1.ash
 ```
 
 ```
-## [1] -1474
+## [1] -1498
 ```
 
 ```r
@@ -462,7 +473,7 @@ mixseLoglik(bhat.test, test1.ash2$fitted.f$pi, test1.ash2$fitted.f$mu, sqrt(test
 ```
 
 ```
-## [1] -1723
+## [1] -1832
 ```
 
 ```r
@@ -472,7 +483,7 @@ mixseLoglik(bhat2.test, test2.ash1$fitted.f$pi, test2.ash1$fitted.f$mu, test2.as
 ```
 
 ```
-## [1] -1464
+## [1] -1452
 ```
 
 ```r
@@ -481,7 +492,7 @@ mixseLoglik(bhat2.test, test2.ash2$fitted.f$pi, test2.ash2$fitted.f$mu, sqrt(tes
 ```
 
 ```
-## [1] -1283
+## [1] -1288
 ```
 
 
@@ -505,7 +516,7 @@ for (i in 1:length(pvec)) {
 plot(q)
 ```
 
-![plot of chunk unnamed-chunk-13](figure/unnamed-chunk-13.png) 
+![plot of chunk unnamed-chunk-15](figure/unnamed-chunk-15.png) 
 
 
 Here look at the 95th percentile of ABF for different sigma:
@@ -522,7 +533,7 @@ for (i in 1:length(Wvec)) {
 plot(q)
 ```
 
-![plot of chunk unnamed-chunk-14](figure/unnamed-chunk-14.png) 
+![plot of chunk unnamed-chunk-16](figure/unnamed-chunk-16.png) 
 
 so it seems that even in the worst case, the 95th quantile is never much more than 2. It seems this could be used to bound the probability of making a false discovery even for p=1. Then (I believe) under the null, the probability of making a false discovery under the null should be even smaller for large p.
 
@@ -617,7 +628,7 @@ plot(cumsum(err[order(qq$qvalues)]), type = "l")
 lines(cumsum(err[order(conf, decreasing = TRUE)]), col = 2)
 ```
 
-![plot of chunk unnamed-chunk-17](figure/unnamed-chunk-17.png) 
+![plot of chunk unnamed-chunk-19](figure/unnamed-chunk-19.png) 
 
 
 

@@ -19,7 +19,7 @@ and the first 500 observations have good precision, and the next 500 have poor p
 #install q value package
 #source("http://bioconductor.org/biocLite.R")
 #biocLite("qvalue")
-setwd("~/Documents/BayesFDR/Rcode/")
+setwd("~/Documents/git/ash/Rcode/")
 library("qvalue")
 library("lattice") #library for some of the plots
 
@@ -176,8 +176,41 @@ abline(h=0)
 ```
 
 
+### Errors in sign, and true 0s
+
+If the true value is 0 and you say it is positive,
+is this an error in sign? Well, yes, it is. But it is not
+negative, and it turns out you need to count errors of sign
+when truth is 0 as 0.5 of a false discovery to make things
+well calibrated. This is because the method gives the same
+results if the true value of mu is exactly 0, or if it has
+epsilon variance around 0. But of course the errors in sign
+in the latter occur at rate 0.5 because of random guessing.
+
+The following simulation illustrates this. It also
+illustrates that the method seems to be relatively robust to
+the situation where the true $\beta$ are not symmetric around 0.
+```{r}
+musim2 = c(rnorm(1000,-3,1),rnorm(1000,-1.5,1),rnorm(1000,0,1),rep(0,7000))
+zsim2 = musim2+rnorm(10000)
+zsim2.ash=ash(zsim2,rep(1,10000))
+hist(musim2[1:3000])
+errorinsign = ifelse(musim2==0,0.5,(zsim2.ash$PosteriorMean/musim2)<0)
+sum(errorinsign[zsim2.ash$qvalue<0.05])/sum(zsim2.ash$qvalue<0.05)
+```
+
+
 
 #### Miscellaneous  
+
+Simulate data as in Efron, 2008, Section 7. 
+```{r}
+musim = c(rnorm(1000,-3,1),rep(0,9000))
+zsim = musim+rnorm(10000)
+zsim.ash=ash(zsim,rep(1,10000))
+```
+Need to implement a method to find CIs to look at this.
+
 
 code below here is not "tidied"
 
