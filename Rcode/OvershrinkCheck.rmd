@@ -1,0 +1,36 @@
+```{r}
+setwd("~/Documents/git/ash/Rcode/")
+set.seed(32327)
+## load ash functions 
+source("../Rcode/ash.R") 
+```
+
+```{r}
+betahat = rnorm(1000,0,1)
+sd = rep(1,1000)
+betahat[1]=4
+hist(betahat)
+betahat.ash = ash(betahat,sd)
+betahat.ash$fitted.f
+plot(betahat.ash$PosteriorMean,betahat)
+
+betahat.ash2=ash(betahat,sd,prior="uniform")
+betahat.ash2$fitted.f
+plot(betahat.ash2$PosteriorMean,betahat)
+
+
+betahat.ash3=ash(betahat,sd,prior=2,nullcheck=FALSE)
+betahat.ash3$fitted.f
+plot(betahat.ash3$PosteriorMean,betahat)
+
+```
+
+Now try more extreme example
+
+```{r}
+betahat[1]=8
+betahat.ash3=ash(betahat,sd,prior=2,nullcheck=FALSE)
+betahat.ash3$fitted.f
+plot(betahat.ash3$PosteriorMean,betahat)
+
+```

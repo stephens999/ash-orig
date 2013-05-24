@@ -70,9 +70,12 @@ matrixABF = function(betahat, sebetahat, sigmaavec){
 #prior gives the parameter of a Dirichlet prior on pi
 #(prior is used to encourage results towards smallest value of sigma when
 #likelihood is flat)
+#nullcheck indicates whether to check whether the loglike exceeds the null
+#(may not want to use if prior is used)
 #Introduced sigma.est with intention of implenting an option to esitmate
 #sigma rather than fixing it, but this not yet implemented.
-EMest = function(betahat,sebetahat,sigmaavec,pi,sigma.est=FALSE,prior=NULL,ltol=0.01, maxiter=1000){
+
+EMest = function(betahat,sebetahat,sigmaavec,pi,sigma.est=FALSE,nullcheck=TRUE,prior=NULL,ltol=0.01, maxiter=1000){
   if(sigma.est==TRUE){
     stop("Error in EMest: sigma.est=TRUE not yet implemented")}
   
@@ -111,13 +114,15 @@ EMest = function(betahat,sebetahat,sigmaavec,pi,sigma.est=FALSE,prior=NULL,ltol=
     if(abs(loglik[i]-loglik[i-1])<ltol) break;
   }
   null.loglik=sum(log(abf[,null.comp]))
-  if(null.loglik> loglik[i]){ #check whether exceeded "null" likelihood where everything is null
-    pi=rep(0,k)
-    pi[null.comp]=1
-    m  = t(pi * t(abf)) 
-    m.rowsum = rowSums(m)
-    loglik[i] = sum(log(m.rowsum))
-    classprob = m/m.rowsum
+  if(nullcheck==TRUE){
+    if(null.loglik> loglik[i]){ #check whether exceeded "null" likelihood where everything is null
+      pi=rep(0,k)
+      pi[null.comp]=1
+      m  = t(pi * t(abf)) 
+      m.rowsum = rowSums(m)
+      loglik[i] = sum(log(m.rowsum))
+      classprob = m/m.rowsum
+    }
   }
 
   return(list(pi=pi,classprob=classprob,loglik=loglik[1:i],null.loglik=null.loglik,
@@ -283,7 +288,7 @@ qval.from.localfdr = function(localfdr){
 #Things to do: automate choice of sigmavec
 # check sampling routin
 # check number of iterations
-ash = function(betahat,sebetahat,df=NULL,randomstart=FALSE, usePointMass = FALSE, onlylogLR = FALSE, localfdr = TRUE, prior=NULL){
+ash = function(betahat,sebetahat,nullcheck=TRUE,df=NULL,randomstart=FALSE, usePointMass = FALSE, onlylogLR = FALSE, localfdr = TRUE, prior=NULL){
   #if df specified, convert betahat so that bethata/sebetahat gives the same p value
   #from a z test as the original effects would give under a t test with df=df
   if(!is.null(df)){
@@ -299,7 +304,7 @@ ash = function(betahat,sebetahat,df=NULL,randomstart=FALSE, usePointMass = FALSE
   pi=normalize(pi)
   if(randomstart){pi=rgamma(length(sigmaavec),1,1)}
   completeobs = !is.na(betahat) & !is.na(sebetahat)
-  pi.fit=EMest(betahat[completeobs],sebetahat[completeobs],sigmaavec,pi,prior=prior)
+  pi.fit=EMest(betahat[completeobs],sebetahat[completeobs],sigmaavec,pi,prior=prior,nullcheck=nullcheck)
 	
   if(onlylogLR){
 	logLR = pi.fit$temp2 - pi.fit$temp1
