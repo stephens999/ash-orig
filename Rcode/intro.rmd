@@ -132,12 +132,74 @@ source("../Rcode/ash.R")
 library("qvalue")
 ```
 
+```{r}
+#simulate n beta-hat values, nnull under the null
+#with altmean and altsd being the mean and sd of beta under the alternative
+simdata=function(n, nnull, altmean, altsd, betasd){
+  null = c(rep(1,nnull),rep(0,n-nnull))
+  beta = c(rep(0,nnull),rnorm(n-nnull,altmean,altsd))
+  betahat = rnorm(n,beta,betasd)
+  return(list(null=null,beta=beta,betahat=betahat,betasd=betasd))
+}
+```
+
+Simulate 10000 tests, with 2000 alternatives, $\beta \sim N(0,sd=2)$, 
+and 8000 null values ($\beta=0$).
+```{r}
+ss = simdata(10000,8000,0,2,1)
+
+beta.ash=ash(ss$betahat,ss$betasd)
+#compute the usual zscore and corresponding p value
+zscore = ss$betahat/ss$betasd
+pval = pchisq(zscore^2,df=1,lower.tail=F)
+qval = qvalue(pval)
+```
+
+Now, we find the fitted values for $\pi$ are mostly near 0, or at 2 (the alternative value).
+```{r}
+beta.ash$fitted.f
+```
+
+
+Also, we can see the effects of shrinkage: small estimates of $\hat\beta$ are
+shrunk to close to 0. Large estimates of $\hat\beta$ are shrunk less strongly because ash recognizes that these larger $\hat\beta$ are likely
+from the alternative, rather than the null.
+```{r}
+plot(ss$betahat,beta.ash$PosteriorMean,xlab="Observed betahat", ylab="Estimated beta (posterior mean)",ylim=c(-7,4),xlim=c(-7,4))
+abline(h=0)
+abline(a=0,b=1,col=2)
+```
+
+Note that to compare ash $q$ values with fdr-type $q$ values we
+multiply them by 2 (this is because the ash $q$ values indicate the
+probability of an error of sign, which is half as large as the
+probability of a false discovery: half the false discoveries would
+have the right sign by random guessing)
+```{r}
+plot(qval$q,2*beta.ash$qval,main="comparison of ash and q value qvalues",xlab="qvalue", ylab="twice ash q values")
+abline(a=0,b=1)
+```
+
+In this example we see that qval overestimates the actual FDR. (This
+is because it assumes all the $p$ values near 1 are null, when they are not.)
+```{r}
+o = order(beta.ash$qval)
+plot(cumsum(ss$null[o])/(1:10000),qval$qval[o],col=2,type="l", xlab="actual FDR", ylab="q value", main="Comparison of actual FDR with q value")
+lines(cumsum(ss$null[o])/(1:10000),2*beta.ash$qval[o])
+abline(a=0,b=1)
+```
+
+### Miscellaneous 
+
+code and text below here is work in progress and untidied.
+
+
 Here we simulate data, effectively as in Efron, 2008, Section 7.
 ```{r}
 truenull = c(rep(0,1000),rep(1,9000))
 beta = c(rnorm(1000,-3,1),rep(0,9000))
 s= rep(1,10000)
-betahat = beta+rnorm(10000,beta,s)
+betahat = rnorm(10000,beta,s)
 
 beta.ash=ash(betahat,s)
 #compute the usual zscore and corresponding p value
@@ -184,7 +246,7 @@ Let's try putting in a component at -1.5 to make the data fit this assumption be
 truenull = c(rep(0,2000),rep(1,8000))
 beta = c(rnorm(1000,-3,1),rnorm(1000,-1.5,1),rep(0,8000))
 s= rep(1,10000)
-betahat = beta+rnorm(10000,beta,s)
+betahat = rnorm(10000,beta,s)
 
 beta.ash=ash(betahat,s)
 #compute the usual zscore and corresponding p value

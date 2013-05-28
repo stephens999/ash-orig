@@ -294,6 +294,10 @@ ash = function(betahat,sebetahat,nullcheck=TRUE,df=NULL,randomstart=FALSE, usePo
   if(!is.null(df)){
     betahat = effective.effect(betahat,sebetahat,df)
   }	
+  
+  if(length(sebetahat)==1){
+    sebetahat = rep(sebetahat,length(betahat))
+  }
   if(usePointMass){
         sigmaavec = c(0,0.0005,0.001,0.002,0.004,0.008,0.016,0.032,0.064,0.128,0.256,0.512,1.024,2.048,4.096,8.192)
   }else{		
