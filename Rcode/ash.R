@@ -149,10 +149,10 @@ posterior_dist = function(pi0,mu0,sigma0,betahat,sebetahat){
 
   #make k by n matrix versions of sigma0^2 and sebetahat^2
   # and mu0 and betahat
-  s0m2 = matrix(sigma0^2,nrow=k,ncol=n,byrow=F)
-  sebm2 = matrix(sebetahat^2,nrow=k,ncol=n, byrow=T)
-  mu0m = matrix(mu0,nrow=k,ncol=n,byrow=F)
-  bhatm = matrix(betahat,nrow=k,ncol=n,byrow=T)
+  s0m2 = matrix(sigma0^2,nrow=k,ncol=n,byrow=FALSE)
+  sebm2 = matrix(sebetahat^2,nrow=k,ncol=n, byrow=TRUE)
+  mu0m = matrix(mu0,nrow=k,ncol=n,byrow=FALSE)
+  bhatm = matrix(betahat,nrow=k,ncol=n,byrow=TRUE)
 
   sigma1 = (s0m2*sebm2/(s0m2 + sebm2))^(0.5)  
   w = sebm2/(s0m2 + sebm2)
@@ -166,36 +166,6 @@ posterior_dist = function(pi0,mu0,sigma0,betahat,sebetahat){
   
   return(list(pi=pi1,mu=mu1,sigma=sigma1))
 }
-
-
-
-
-#posterior_dist = function(pi0,mu0,sigma0,betahat,sebetahat){
-#  k= length(pi0)
-#  n= length(betahat)
-#  
-#  pi1 = pi0 * t(matrixABF(betahat,sebetahat,sigma0))
-#  pi1 = apply(pi1, 2, normalize) #pi1 is now an k by n matrix
-#
-#  #make k by n matrix versions of sigma0^2 and sebetahat^2
-#  # and mu0 and betahat
-#  s0m2 = matrix(sigma0^2,nrow=k,ncol=n,byrow=F)
-#  sebm2 = matrix(sebetahat^2,nrow=k,ncol=n, byrow=T)
-#  mu0m = matrix(mu0,nrow=k,ncol=n,byrow=F)
-#  bhatm = matrix(betahat,nrow=k,ncol=n,byrow=T)
-#
-#  sigma1 = (1/s0m2 + 1/sebm2)^(-0.5)  
-#  w = (1/s0m2)/(1/s0m2 + 1/sebm2)
-#  mu1 = w*mu0m + (1-w)*bhatm
-#  
-#  #WHERE DATA ARE MISSING, SET POSTERIOR = PRIOR
-#  ismiss = (is.na(betahat) | is.na(sebetahat)) 
-#  pi1[,ismiss] = pi0
-#  mu1[,ismiss] = mu0
-#  sigma1[,ismiss] = sigma0
-#  
-#  return(list(pi=pi1,mu=mu1,sigma=sigma1))
-#}
 
 
 
@@ -213,7 +183,7 @@ normmix.mv=function(x){
 #samples nsamp integers from 1:k according to a given prob vector
 sample_component=function(p,nsamp){
   
-  return(sample(length(p),nsamp,replace=T,prob=p))
+  return(sample(length(p),nsamp,replace=TRUE,prob=p))
 }
 
 #m is a k by n matrix
@@ -248,7 +218,7 @@ posterior_mean = function(post){
 # jth column provides parameters for jth mixture of gauusians 
 # return an n vector of probabilities
 PosteriorProbExceedsT = function(pi1,mu1,sigma1,T=0){
-  return(apply(pi1 * pnorm(T,mu1,sigma1,lower.tail=F),2,sum))
+  return(apply(pi1 * pnorm(T,mu1,sigma1,lower.tail=FALSE),2,sum))
 }
   
 #return the "effective" estimate
