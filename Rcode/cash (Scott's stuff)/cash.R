@@ -1,5 +1,5 @@
 library(ordinal)
-source('../ash.R')
+source('Rcode/ash.R')
 
 # EXPECTATION STEP
 expectation=function(X,likely,theta,beta){
