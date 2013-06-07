@@ -151,8 +151,10 @@ ss = simdata(10000,8000,0,2,1)
 beta.ash=ash(ss$betahat,ss$betasd)
 #compute the usual zscore and corresponding p value
 zscore = ss$betahat/ss$betasd
+
 pval = pchisq(zscore^2,df=1,lower.tail=F)
 qval = qvalue(pval)
+hist(zscore)
 ```
 
 Now, we find the fitted values for $\pi$ are mostly near 0, or at 2 (the alternative value).

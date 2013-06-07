@@ -243,6 +243,7 @@ qval.from.localfdr = function(localfdr){
   return(qvalue)
 }
 
+
 #main adaptive shrinkage function
 #takes a vector of betahats and ses;
 #fits a mixture of normals to it
@@ -258,7 +259,7 @@ qval.from.localfdr = function(localfdr){
 #Things to do: automate choice of sigmavec
 # check sampling routin
 # check number of iterations
-ash = function(betahat,sebetahat,nullcheck=TRUE,df=NULL,randomstart=FALSE, usePointMass = FALSE, onlylogLR = FALSE, localfdr = TRUE, prior=NULL){
+ash = function(betahat,sebetahat,nullcheck=TRUE,df=NULL,randomstart=FALSE, usePointMass = FALSE, onlylogLR = FALSE, localfdr = TRUE, prior=NULL, sigmaavec=NULL){
   #if df specified, convert betahat so that bethata/sebetahat gives the same p value
   #from a z test as the original effects would give under a t test with df=df
   if(!is.null(df)){
@@ -268,11 +269,13 @@ ash = function(betahat,sebetahat,nullcheck=TRUE,df=NULL,randomstart=FALSE, usePo
   if(length(sebetahat)==1){
     sebetahat = rep(sebetahat,length(betahat))
   }
-  if(usePointMass){
-        sigmaavec = c(0,0.0005,0.001,0.002,0.004,0.008,0.016,0.032,0.064,0.128,0.256,0.512,1.024,2.048,4.096,8.192)
-  }else{		
-  	sigmaavec = c(0.00025,0.0005,0.001,0.002,0.004,0.008,0.016,0.032,0.064,0.128,0.256,0.512,1.024,2.048,4.096,8.192)
+  if(is.null(sigmaavec)){
+    sigmaavec = c(0.00025,0.0005,0.001,0.002,0.004,0.008,0.016,0.032,0.064,0.128,0.256,0.512,1.024,2.048,4.096,8.192)
   }
+  if(usePointMass){
+        sigmaavec = c(0,sigmaavec)
+  }
+    
   pi = rep(1, length(sigmaavec))
   pi[1]=length(sigmaavec)
   pi=normalize(pi)
@@ -306,85 +309,6 @@ ash = function(betahat,sebetahat,nullcheck=TRUE,df=NULL,randomstart=FALSE, usePo
 
 
 
-
-
-
-
-
-#ash = function(betahat,sebetahat,df=NULL,randomstart=FALSE, usePointMass = FALSE){
-#  #if df specified, convert betahat so that bethata/sebetahat gives the same p value
-#  #from a z test as the original effects would give under a t test with df=df
-#  if(!is.null(df)){
-#    betahat = effective.effect(betahat,sebetahat,df)
-#  }	
-#  if(usePointMass){
-#        sigmaavec = c(0,0.0005,0.001,0.002,0.004,0.008,0.016,0.032,0.064,0.128,0.256,0.512,1.024,2.048,4.096,8.192)
-#  }else{		
-#  	sigmaavec = c(0.00025,0.0005,0.001,0.002,0.004,0.008,0.016,0.032,0.064,0.128,0.256,0.512,1.024,2.048,4.096,8.192)
-#  }
-#  pi = rep(1, length(sigmaavec))
-#  pi[1]=length(sigmaavec)
-#  pi=normalize(pi)
-#  if(randomstart){pi=rgamma(length(sigmaavec),1,1)}
-#  completeobs = !is.na(betahat) & !is.na(sebetahat)
-#  pi.fit=EMest(betahat[completeobs],sebetahat[completeobs],sigmaavec,pi)
-#
-#  post = posterior_dist(pi.fit$pi,0,sigmaavec,betahat,sebetahat)
-#  PositiveProb = PosteriorProbExceedsT(post$pi,post$mu,post$sigma,0)
-#  PosteriorMean = posterior_mean(post)
-#  if(!usePointMass){
-#   localfdr = ifelse(PositiveProb<0.5,PositiveProb,1-PositiveProb)
-#   o = order(localfdr)
-#   qvalue=rep(NA,length(localfdr))
-#   qvalue[o] = (cumsum(sort(localfdr))/(1:sum(!is.na(localfdr))))
-#  }else{
-#   localfdr=NULL
-#   qvalue=NULL
-#  }
-#  fitted.f= list(pi=pi.fit$pi,sigma=sigmaavec,mu=rep(0,length(sigmaavec)))
-#  #if(nsamp>0){
-#  #  sample = posterior_sample(post,nsamp)
-#  #}
-#  return(list(post=post,fitted.f=fitted.f,PosteriorMean = PosteriorMean,PositiveProb =PositiveProb,localfdr=localfdr,qvalue=qvalue,fit=pi.fit))
-#}
-
-#main adaptive shrinkage function
-#takes a vector of betahats and ses;
-#fits a mixture of normals to it
-# and returns posteriors
-#INPUT: betahat (p vector); sebetahat (p vector of standard errors)
-#df: degrees of freedome used to compute sebetahat
-#randomstart: bool, indicating whether to initialize EM randomly
-#Things to do: automate choice of sigmavec
-# check sampling routin
-# check number of iterations
-#ash = function(betahat,sebetahat,df=NULL,randomstart=FALSE){
-#  #if df specified, convert betahat so that bethata/sebetahat gives the same p value
-#  #from a z test as the original effects would give under a t test with df=df
-#  if(!is.null(df)){
-#    betahat = effective.effect(betahat,sebetahat,df)
-#  }		
-#  sigmaavec = c(0.00025,0.0005,0.001,0.002,0.004,0.008,0.016,0.032,0.064,0.128,0.256,0.512,1.024,2.048,4.096,8.192)
-#  pi = rep(1, length(sigmaavec))
-#  pi[1]=length(sigmaavec)
-#  pi=normalize(pi)
-#  if(randomstart){pi=rgamma(length(sigmaavec),1,1)}
-#  completeobs = !is.na(betahat) & !is.na(sebetahat)
-#  pi.fit=EMest(betahat[completeobs],sebetahat[completeobs],sigmaavec,pi)
-#
-#  post = posterior_dist(pi.fit$pi,0,sigmaavec,betahat,sebetahat)
-#  PositiveProb = PosteriorProbExceedsT(post$pi,post$mu,post$sigma,0)
-#  PosteriorMean = posterior_mean(post)
-#  localfdr = ifelse(PositiveProb<0.5,PositiveProb,1-PositiveProb)
-#  o = order(localfdr)
-#  qvalue=rep(NA,length(localfdr))
-#  qvalue[o] = (cumsum(sort(localfdr))/(1:sum(!is.na(localfdr))))
-#  fitted.f= list(pi=pi.fit$pi,sigma=sigmaavec,mu=rep(0,length(sigmaavec)))
-#  #if(nsamp>0){
-#  #  sample = posterior_sample(post,nsamp)
-#  #}
-#  return(list(post=post,fitted.f=fitted.f,PosteriorMean = PosteriorMean,PositiveProb =PositiveProb,localfdr=localfdr,qvalue=qvalue,fit=pi.fit))
-#}
 
 
 
