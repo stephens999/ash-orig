@@ -24,6 +24,16 @@ matdnorm = function (x, mu, sigma)
   return(matrix(dnorm(d, mu, sigma),nrow=k))
 }
 
+#compute density of mixture of k normals
+#for n-vector x
+#INPUT: pi, mu and sigma are k vectors; x is n-vector
+#OUTPUT: n-vector of densities
+mixdnorm = function (x, pi, mu, sigma) 
+{
+  return (pi %*% matdnorm(x,mu,sigma))
+}
+
+
 #compute mixture log likelihood for data x, for mixture of k normals
 #INPUT: x an n vector of data
 #mixture component parameters pi, mu, sigma, each being k vectors
@@ -243,6 +253,16 @@ qval.from.localfdr = function(localfdr){
   return(qvalue)
 }
 
+# try to select a default range for the sigmaa values
+# that should be used, based on the values of betahat and sebetahat
+autoselect.sigmaavec = function(betahat,sebetahat){
+  sigmaamax = 2*sqrt(max(betahat^2-sebetahat^2)) #this computes a rough largest value you'd want to use
+  sigmaamin = min(sebetahat)/10 #so that the minimum is small compared with measurement precision
+  npoint = ceiling(log2(sigmaamax/sigmaamin))
+  return(2^((-npoint):0) * sigmaamax)
+}
+
+
 
 #main adaptive shrinkage function
 #takes a vector of betahats and ses;
@@ -254,12 +274,13 @@ qval.from.localfdr = function(localfdr){
 #usePointMass: bool, indicating whether to use a point mass at zero as one of components for a mixture distribution
 #onlylogLR (= FALSE) : bool, indicating whether to use this function to get logLR. Skip posterior prob, posterior mean, localfdr...
 #localfdr (=TRUE) : bool,  indicating whether to compute localfdr and q-value
+#auto (=FALSE): bool, whether to try to select the sigmaavec vector automatically (beta functionality)
 #OUTPUT: 
 #logLR : logP(D|mle(pi)) - logP(D|null)
 #Things to do: automate choice of sigmavec
 # check sampling routin
 # check number of iterations
-ash = function(betahat,sebetahat,nullcheck=TRUE,df=NULL,randomstart=FALSE, usePointMass = FALSE, onlylogLR = FALSE, localfdr = TRUE, prior=NULL, sigmaavec=NULL){
+ash = function(betahat,sebetahat,nullcheck=TRUE,df=NULL,randomstart=FALSE, usePointMass = FALSE, onlylogLR = FALSE, localfdr = TRUE, prior=NULL, sigmaavec=NULL, auto=FALSE){
   #if df specified, convert betahat so that bethata/sebetahat gives the same p value
   #from a z test as the original effects would give under a t test with df=df
   if(!is.null(df)){
@@ -270,7 +291,10 @@ ash = function(betahat,sebetahat,nullcheck=TRUE,df=NULL,randomstart=FALSE, usePo
     sebetahat = rep(sebetahat,length(betahat))
   }
   if(is.null(sigmaavec)){
-    sigmaavec = c(0.00025,0.0005,0.001,0.002,0.004,0.008,0.016,0.032,0.064,0.128,0.256,0.512,1.024,2.048,4.096,8.192)
+    sigmaavec = c(0.00025,0.0005,0.001,0.002,0.004,0.008,0.016,0.032,0.064,0.128,0.256,0.512,1.024,2.048,4.096,8.192) 
+  }
+  if(auto==TRUE){
+    sigmaavec= autoselect.sigmaavec(betahat,sebetahat)
   }
   if(usePointMass){
         sigmaavec = c(0,sigmaavec)
@@ -298,7 +322,9 @@ ash = function(betahat,sebetahat,nullcheck=TRUE,df=NULL,randomstart=FALSE, usePo
    		qvalue=NULL
   	}
   	fitted.f= list(pi=pi.fit$pi,sigma=sigmaavec,mu=rep(0,length(sigmaavec)))
-	return(list(post=post,fitted.f=fitted.f,PosteriorMean = PosteriorMean,PositiveProb =PositiveProb,localfdr=localfdr,qvalue=qvalue,fit=pi.fit))
+    result = list(post=post,fitted.f=fitted.f,PosteriorMean = PosteriorMean,PositiveProb =PositiveProb,localfdr=localfdr,qvalue=qvalue,fit=pi.fit)
+	  class(result)= "ash"
+    return(result)
 
   }
   #if(nsamp>0){
@@ -306,9 +332,27 @@ ash = function(betahat,sebetahat,nullcheck=TRUE,df=NULL,randomstart=FALSE, usePo
   #}
 }
 
+print.ash =function(a){
+  a$fitted.f
+}
 
+plot.ash = function(a,xmin,xmax){
+  x = seq(xmin,xmax,length=1000)
+  y = density(a,x)
+  plot(x,y,type="l")
+}
 
-
+#compute the predictive density of an observation
+#given the fitted ash object a and the vector se of standard errors
+#not implemented yet
+predictive=function(a,se){
+  
+}
+  
+#return the density of the fitted underlying hierarchical f
+#a is an ash object
+#x is a vector at which the density should be computed
+density.ash=function(a,x){mixdnorm(x,a$fitted.f$pi,a$fitted.f$mu,a$fitted.f$sigma)}
 
 
 
