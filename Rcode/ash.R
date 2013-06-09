@@ -85,18 +85,22 @@ matrixABF = function(betahat, sebetahat, sigmaavec){
 #Introduced sigma.est with intention of implenting an option to esitmate
 #sigma rather than fixing it, but this not yet implemented.
 
-EMest = function(betahat,sebetahat,sigmaavec,pi,sigma.est=FALSE,nullcheck=TRUE,prior=NULL,ltol=0.01, maxiter=1000){
+EMest = function(betahat,sebetahat,sigmaavec,pi,sigma.est=FALSE,nc=15,nullcheck=TRUE,prior=NULL,ltol=0.0001, maxiter=5000){
   if(sigma.est==TRUE){
-    stop("Error in EMest: sigma.est=TRUE not yet implemented")}
-  
-  k=length(sigmaavec)
+    k=nc
+    sigmaavec=2^(seq(-15,3,length.out=nc))
+  }else{  
+    k=length(sigmaavec)
+  }
   null.comp = which.min(sigmaavec) #which component is the "null"
   if(is.null(prior)){ # set up prior to be 1,1/(k-1),...,1/(k-1) to favour "null"
     prior = rep(1/(k-1),k)
     prior[null.comp] = 1
-  } else if(prior=="uniform"){
-	  prior = rep(1,k)
-	}
+  }else if(prior=="uniform"){
+    prior = rep(1,k)
+  }
+
+
   abf = matrixABF(betahat,sebetahat,sigmaavec)
 
   loglik = rep(0,maxiter)
@@ -112,9 +116,22 @@ EMest = function(betahat,sebetahat,sigmaavec,pi,sigma.est=FALSE,nullcheck=TRUE,p
     
     #if you want to estimate sigma, do EM update for that; not yet implemented
     if(sigma.est==TRUE){
-      break;     
+      sigmaavec=rep(0,k)
+      for(j in 1:k){
+        pj=classprob[,j]
+        f=function(x) sum(betahat^2*pj/(sebetahat^2+x)-pj)
+        if(f(0)<=0){
+          sigmaavec[j]=0.00025
+        }else if(f(100)>=0){
+          sigmaavec[j]=10
+        }else{
+          sigmaavec[j]=sqrt(uniroot(f,c(0,100))$root)          
+        }
+      }
+      abf = matrixABF(betahat,sebetahat,sigmaavec)
     }
     
+
     #Now re-estimate pi
     m  = t(pi * t(abf)) 
     m.rowsum = rowSums(m)
@@ -135,7 +152,7 @@ EMest = function(betahat,sebetahat,sigmaavec,pi,sigma.est=FALSE,nullcheck=TRUE,p
     }
   }
 
-  return(list(pi=pi,classprob=classprob,loglik=loglik[1:i],null.loglik=null.loglik,
+  return(list(pi=pi,classprob=classprob,sigmaavec=sigmaavec,loglik=loglik[1:i],null.loglik=null.loglik,
             abf=abf,niter=i, converged = (i<maxiter), temp1=sum(log(abf[,null.comp])),temp2=loglik[i]))
 }
 
@@ -280,7 +297,7 @@ autoselect.sigmaavec = function(betahat,sebetahat){
 #Things to do: automate choice of sigmavec
 # check sampling routin
 # check number of iterations
-ash = function(betahat,sebetahat,nullcheck=TRUE,df=NULL,randomstart=FALSE, usePointMass = FALSE, onlylogLR = FALSE, localfdr = TRUE, prior=NULL, sigmaavec=NULL, auto=FALSE){
+ash = function(betahat,sebetahat,nullcheck=TRUE,df=NULL,randomstart=FALSE, usePointMass = FALSE, onlylogLR = FALSE, localfdr = TRUE, prior=NULL, sigmaavec=NULL, auto=FALSE, sigma.est=FALSE, nc=16){
   #if df specified, convert betahat so that bethata/sebetahat gives the same p value
   #from a z test as the original effects would give under a t test with df=df
   if(!is.null(df)){
@@ -299,14 +316,20 @@ ash = function(betahat,sebetahat,nullcheck=TRUE,df=NULL,randomstart=FALSE, usePo
   if(usePointMass){
         sigmaavec = c(0,sigmaavec)
   }
-    
-  pi = rep(1, length(sigmaavec))
-  pi[1]=length(sigmaavec)
+  if(sigma.est==TRUE){
+    k=nc  
+  }else{
+    k=length(sigmaavec)
+  }
+  pi = rep(1, k)
+  pi[1]=k
   pi=normalize(pi)
-  if(randomstart){pi=rgamma(length(sigmaavec),1,1)}
+  if(randomstart){pi=rgamma(k,1,1)}
   completeobs = !is.na(betahat) & !is.na(sebetahat)
-  pi.fit=EMest(betahat[completeobs],sebetahat[completeobs],sigmaavec,pi,prior=prior,nullcheck=nullcheck)
-	
+  pi.fit=EMest(betahat[completeobs],sebetahat[completeobs],sigmaavec=sigmaavec,pi=pi,sigma.est=sigma.est,prior=prior,nullcheck=nullcheck,nc=nc)
+  if(sigma.est==TRUE){
+    sigmaavec=pi.fit$sigmaavec
+  }
   if(onlylogLR){
 	logLR = pi.fit$temp2 - pi.fit$temp1
 	return(list(pi=pi.fit$pi, logLR = logLR))
@@ -321,7 +344,7 @@ ash = function(betahat,sebetahat,nullcheck=TRUE,df=NULL,randomstart=FALSE, usePo
    		localfdr=NULL
    		qvalue=NULL
   	}
-  	fitted.f= list(pi=pi.fit$pi,sigma=sigmaavec,mu=rep(0,length(sigmaavec)))
+  	fitted.f= list(pi=pi.fit$pi,sigma=sigmaavec,mu=rep(0,k))
     result = list(post=post,fitted.f=fitted.f,PosteriorMean = PosteriorMean,PositiveProb =PositiveProb,localfdr=localfdr,qvalue=qvalue,fit=pi.fit)
 	  class(result)= "ash"
     return(result)
