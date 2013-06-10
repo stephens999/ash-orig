@@ -177,6 +177,14 @@ x= seq(-4,4,length=1000)
 lines(x,density(beta.ash.auto,x),col=2)
 ```
 
+[for testing: note that the PosteriorMean and PositiveProb don't depend much on sigmaa vec used ]
+```{r}
+plot(beta.ash.auto$PosteriorMean, beta.ash$PosteriorMean, xlab="Shrunk estimate from auto method", ylab="Shrunk estimate from fixed method")
+abline(a=0,b=1)
+plot(beta.ash.auto$localfdr, beta.ash$localfdr, xlab="lfdr from auto method", ylab="ldfr from fixed method")
+abline(a=0,b=1)
+```
+
 
 Also, we can see the effects of shrinkage: small estimates of $\hat\beta$ are
 shrunk to close to 0. Large estimates of $\hat\beta$ are shrunk less strongly because ash recognizes that these larger $\hat\beta$ are likely
