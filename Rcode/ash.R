@@ -310,8 +310,10 @@ ash = function(betahat,sebetahat,nullcheck=TRUE,df=NULL,randomstart=FALSE, usePo
   if(is.null(sigmaavec)){
     sigmaavec = c(0.00025,0.0005,0.001,0.002,0.004,0.008,0.016,0.032,0.064,0.128,0.256,0.512,1.024,2.048,4.096,8.192) 
   }
+  
+  completeobs = !is.na(betahat) & !is.na(sebetahat)
   if(auto==TRUE){
-    sigmaavec= autoselect.sigmaavec(betahat,sebetahat)
+    sigmaavec= autoselect.sigmaavec(betahat[completeobs],sebetahat[completeobs])
   }
   if(usePointMass){
         sigmaavec = c(0,sigmaavec)
@@ -325,7 +327,7 @@ ash = function(betahat,sebetahat,nullcheck=TRUE,df=NULL,randomstart=FALSE, usePo
   pi[1]=k
   pi=normalize(pi)
   if(randomstart){pi=rgamma(k,1,1)}
-  completeobs = !is.na(betahat) & !is.na(sebetahat)
+  
   pi.fit=EMest(betahat[completeobs],sebetahat[completeobs],sigmaavec=sigmaavec,pi=pi,sigma.est=sigma.est,prior=prior,nullcheck=nullcheck,nc=nc)
   if(sigma.est==TRUE){
     sigmaavec=pi.fit$sigmaavec
