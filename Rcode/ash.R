@@ -85,13 +85,13 @@ matrixABF = function(betahat, sebetahat, sigmaavec){
 #Introduced sigma.est with intention of implenting an option to esitmate
 #sigma rather than fixing it, but this not yet implemented.
 
-EMest = function(betahat,sebetahat,sigmaavec,pi,sigma.est=FALSE,nc=15,nullcheck=TRUE,prior=NULL,ltol=0.0001, maxiter=5000){
-  if(sigma.est==TRUE){
-    k=nc
+EMest = function(betahat,sebetahat,sigmaavec,pi,sigma.est=FALSE,nullcheck=TRUE,prior=NULL,nc=NULL,ltol=0.0001, maxiter=5000){ 
+  if(!is.null(nc)&sigma.est==TRUE){
     sigmaavec=2^(seq(-15,3,length.out=nc))
-  }else{  
-    k=length(sigmaavec)
   }
+  k=length(sigmaavec)
+  sigmamin=min(sigmaavec)
+  sigmamax=max(sigmaavec)
   null.comp = which.min(sigmaavec) #which component is the "null"
   if(is.null(prior)){ # set up prior to be 1,1/(k-1),...,1/(k-1) to favour "null"
     prior = rep(1/(k-1),k)
@@ -114,18 +114,17 @@ EMest = function(betahat,sebetahat,sigmaavec,pi,sigma.est=FALSE,nc=15,nullcheck=
     pi = ifelse(pi<0,0,pi) #set any estimates that are less than zero, which can happen with prior<1, to 0
     pi = normalize(pi)
     
-    #if you want to estimate sigma, do EM update for that; not yet implemented
+    #estimate sigma
     if(sigma.est==TRUE){
-      sigmaavec=rep(0,k)
       for(j in 1:k){
         pj=classprob[,j]
         f=function(x) sum(betahat^2*pj/(sebetahat^2+x)-pj)
-        if(f(0)<=0){
-          sigmaavec[j]=0.00025
-        }else if(f(100)>=0){
-          sigmaavec[j]=10
+        if(f(sigmamin^2)<=0){
+          sigmaavec[j]=sigmamin
+        }else if(f(sigmamax^2)>=0){
+          sigmaavec[j]=sigmamax
         }else{
-          sigmaavec[j]=sqrt(uniroot(f,c(0,100))$root)          
+          sigmaavec[j]=sqrt(uniroot(f,c(sigmamin^2,sigmamax^2))$root)          
         }
       }
       abf = matrixABF(betahat,sebetahat,sigmaavec)
@@ -297,7 +296,7 @@ autoselect.sigmaavec = function(betahat,sebetahat){
 #Things to do: automate choice of sigmavec
 # check sampling routin
 # check number of iterations
-ash = function(betahat,sebetahat,nullcheck=TRUE,df=NULL,randomstart=FALSE, usePointMass = FALSE, onlylogLR = FALSE, localfdr = TRUE, prior=NULL, sigmaavec=NULL, auto=FALSE, sigma.est=FALSE, nc=16){
+ash = function(betahat,sebetahat,nullcheck=TRUE,df=NULL,randomstart=FALSE, usePointMass = FALSE, onlylogLR = FALSE, localfdr = TRUE, prior=NULL, sigmaavec=NULL, auto=FALSE, sigma.est=FALSE, nc=NULL){
   #if df specified, convert betahat so that bethata/sebetahat gives the same p value
   #from a z test as the original effects would give under a t test with df=df
   if(!is.null(df)){
@@ -318,8 +317,8 @@ ash = function(betahat,sebetahat,nullcheck=TRUE,df=NULL,randomstart=FALSE, usePo
   if(usePointMass){
         sigmaavec = c(0,sigmaavec)
   }
-  if(sigma.est==TRUE){
-    k=nc  
+  if(sigma.est==TRUE&!is.null(nc)){
+    k=nc
   }else{
     k=length(sigmaavec)
   }
