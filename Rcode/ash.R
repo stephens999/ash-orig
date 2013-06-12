@@ -118,7 +118,7 @@ EMest = function(betahat,sebetahat,sigmaavec,pi,sigma.est=FALSE,nullcheck=TRUE,p
     if(sigma.est==TRUE){
       for(j in 1:k){
         pj=classprob[,j]
-        f=function(x) sum(betahat^2*pj/(sebetahat^2+x)-pj)
+        f=function(x) sum((betahat^2/(sebetahat^2+x)^2-1/(sebetahat^2+x))*pj)
         if(f(sigmamin^2)<=0){
           sigmaavec[j]=sigmamin
         }else if(f(sigmamax^2)>=0){
