@@ -84,8 +84,11 @@ matrixABF = function(betahat, sebetahat, sigmaavec){
 #(may not want to use if prior is used)
 #Introduced sigma.est with intention of implenting an option to esitmate
 #sigma rather than fixing it, but this not yet implemented.
+#VB provides an approach to estimate the approximate posterior distribution
+#of mixture proportions of sigmaa by variational Bayes method
+#(use Dirichlet prior and approximate Dirichlet posterior)
 
-EMest = function(betahat,sebetahat,sigmaavec,pi,sigma.est=FALSE,nullcheck=TRUE,prior=NULL,nc=NULL,ltol=0.0001, maxiter=5000){ 
+EMest = function(betahat,sebetahat,sigmaavec,pi,sigma.est=FALSE,nullcheck=TRUE,prior=NULL,nc=NULL,VB=FALSE,ltol=0.0001, maxiter=5000){ 
   if(!is.null(nc)&sigma.est==TRUE){
     sigmaavec=2^(seq(-15,3,length.out=nc))
   }
@@ -100,48 +103,83 @@ EMest = function(betahat,sebetahat,sigmaavec,pi,sigma.est=FALSE,nullcheck=TRUE,p
     prior = rep(1,k)
   }
 
-
   abf = matrixABF(betahat,sebetahat,sigmaavec)
 
-  loglik = rep(0,maxiter)
-  m  = t(pi * t(abf)) # abf is n by k; so this is also n by k
-  m.rowsum = rowSums(m)
-  loglik[1] = sum(log(m.rowsum))
-  classprob = m/m.rowsum #an n by k matrix
-
-  for(i in 2:maxiter){  
-    pi = colSums(classprob) + prior-1
-    pi = ifelse(pi<0,0,pi) #set any estimates that are less than zero, which can happen with prior<1, to 0
-    pi = normalize(pi)
+  if(VB==TRUE){
+    F1 = rep(0,maxiter)
+    pipost = prior # Dirichlet posterior on pi
+    dnorm.mat = matrix(dnorm(rep(betahat,each=k), rep(0,k*n), sd=sqrt(rep(sebetahat^2,each=k)+rep(sigmaavec^2,n))),ncol=k,byrow=TRUE)
+    avgpipost = matrix(exp(digamma(rep(pipost,n))-digamma(rep(sum(pipost),k*n))),ncol=k,byrow=TRUE)
+    classprob = avgpipost * dnorm.mat
+    classprob = classprob/rowSums(classprob) # n by k matrix
     
-    #estimate sigma
-    if(sigma.est==TRUE){
-      for(j in 1:k){
-        pj=classprob[,j]
-        f=function(x) sum((betahat^2/(sebetahat^2+x)^2-1/(sebetahat^2+x))*pj)
-        if(f(sigmamin^2)<=0){
-          sigmaavec[j]=sigmamin
-        }else if(f(sigmamax^2)>=0){
-          sigmaavec[j]=sigmamax
-        }else{
-          sigmaavec[j]=sqrt(uniroot(f,c(sigmamin^2,sigmamax^2))$root)          
-        }
-      }
-      abf = matrixABF(betahat,sebetahat,sigmaavec)
-    }
+    priorSum = sum(prior)
+    pipostSum = sum(pipost)
+    F1[1] = sum(classprob*log(avgpipost*dnorm.mat)) - diriKL(prior,pipost) #negative free energy
     
-
-    #Now re-estimate pi
-    m  = t(pi * t(abf)) 
+    for(i in 2:maxiter){  
+      pipost = colSums(classprob) + prior
+      
+      #Now re-estimate pipost
+      avgpipost = matrix(exp(digamma(rep(pipost,n))-digamma(rep(sum(pipost),k*n))),ncol=k,byrow=TRUE)
+      classprob = avgpipost*dnorm.mat
+      classprob = classprob/rowSums(classprob) # n by k matrix
+      
+      priorSum = sum(prior)
+      pipostSum = sum(pipost)
+      F1[i] = sum(classprob*log(avgpipost*dnorm.mat)) - diriKL(prior,pipost)
+      
+      if(abs(F1[i]-F1[i-1])<ltol) break;
+    }  
+    pi = pipost/sum(pipost) # use posterior mean to estimate pi
+    
+    m  = t(pi * t(abf)) # abf is n by k; so this is also n by k
     m.rowsum = rowSums(m)
-    loglik[i] = sum(log(m.rowsum))
-    classprob = m/m.rowsum
+    loglik.final = sum(log(m.rowsum))
+    null.loglik = sum(log(abf[,null.comp]))
+    loglik = F1 # actually return F1 not log-likelihood! 
+  }else{
+    loglik = rep(0,maxiter)
+    m  = t(pi * t(abf)) # abf is n by k; so this is also n by k
+    m.rowsum = rowSums(m)
+    loglik[1] = sum(log(m.rowsum))
+    classprob = m/m.rowsum #an n by k matrix
     
-    if(abs(loglik[i]-loglik[i-1])<ltol) break;
+    for(i in 2:maxiter){  
+      pi = colSums(classprob) + prior-1
+      pi = ifelse(pi<0,0,pi) #set any estimates that are less than zero, which can happen with prior<1, to 0
+      pi = normalize(pi)
+      
+      #estimate sigma
+      if(sigma.est==TRUE){
+        for(j in 1:k){
+          pj=classprob[,j]
+          f=function(x) sum((betahat^2/(sebetahat^2+x)^2-1/(sebetahat^2+x))*pj)
+          if(f(sigmamin^2)<=0){
+            sigmaavec[j]=sigmamin
+          }else if(f(sigmamax^2)>=0){
+            sigmaavec[j]=sigmamax
+          }else{
+            sigmaavec[j]=sqrt(uniroot(f,c(sigmamin^2,sigmamax^2))$root)          
+          }
+        }
+        abf = matrixABF(betahat,sebetahat,sigmaavec)
+      }
+      
+      #Now re-estimate pi
+      m  = t(pi * t(abf)) 
+      m.rowsum = rowSums(m)
+      loglik[i] = sum(log(m.rowsum))
+      classprob = m/m.rowsum
+      
+      if(abs(loglik[i]-loglik[i-1])<ltol) break;
+    }
+    null.loglik = sum(log(abf[,null.comp]))
+    loglik.final = loglik[i]
   }
-  null.loglik=sum(log(abf[,null.comp]))
+  
   if(nullcheck==TRUE){
-    if(null.loglik> loglik[i]){ #check whether exceeded "null" likelihood where everything is null
+    if(null.loglik > loglik.final){ #check whether exceeded "null" likelihood where everything is null
       pi=rep(0,k)
       pi[null.comp]=1
       m  = t(pi * t(abf)) 
@@ -152,7 +190,7 @@ EMest = function(betahat,sebetahat,sigmaavec,pi,sigma.est=FALSE,nullcheck=TRUE,p
   }
 
   return(list(pi=pi,classprob=classprob,sigmaavec=sigmaavec,loglik=loglik[1:i],null.loglik=null.loglik,
-            abf=abf,niter=i, converged = (i<maxiter), temp1=sum(log(abf[,null.comp])),temp2=loglik[i]))
+            abf=abf,niter=i, converged = (i<maxiter), temp1=sum(log(abf[,null.comp])),temp2=loglik.final))
 }
 
 normalize = function(x){return(x/sum(x))}
@@ -296,7 +334,7 @@ autoselect.sigmaavec = function(betahat,sebetahat){
 #Things to do: automate choice of sigmavec
 # check sampling routin
 # check number of iterations
-ash = function(betahat,sebetahat,nullcheck=TRUE,df=NULL,randomstart=FALSE, usePointMass = FALSE, onlylogLR = FALSE, localfdr = TRUE, prior=NULL, sigmaavec=NULL, auto=FALSE, sigma.est=FALSE, nc=NULL){
+ash = function(betahat,sebetahat,nullcheck=TRUE,df=NULL,randomstart=FALSE, usePointMass = FALSE, onlylogLR = FALSE, localfdr = TRUE, prior=NULL, sigmaavec=NULL, auto=FALSE, sigma.est=FALSE, nc=NULL, VB=FALSE){
   #if df specified, convert betahat so that bethata/sebetahat gives the same p value
   #from a z test as the original effects would give under a t test with df=df
   if(!is.null(df)){
@@ -327,7 +365,7 @@ ash = function(betahat,sebetahat,nullcheck=TRUE,df=NULL,randomstart=FALSE, usePo
   pi=normalize(pi)
   if(randomstart){pi=rgamma(k,1,1)}
   
-  pi.fit=EMest(betahat[completeobs],sebetahat[completeobs],sigmaavec=sigmaavec,pi=pi,sigma.est=sigma.est,prior=prior,nullcheck=nullcheck,nc=nc)
+  pi.fit=EMest(betahat[completeobs],sebetahat[completeobs],sigmaavec=sigmaavec,pi=pi,sigma.est=sigma.est,prior=prior,nullcheck=nullcheck,nc=nc,VB=VB)  
   if(sigma.est==TRUE){
     sigmaavec=pi.fit$sigmaavec
   }
@@ -377,6 +415,3 @@ predictive=function(a,se){
 #a is an ash object
 #x is a vector at which the density should be computed
 density.ash=function(a,x){mixdnorm(x,a$fitted.f$pi,a$fitted.f$mu,a$fitted.f$sigma)}
-
-
-
