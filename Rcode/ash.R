@@ -76,6 +76,16 @@ matrixABF = function(betahat, sebetahat, sigmaavec){
   return(exp(labf))
 }
 
+#return the KL-divergence between 2 dirichlet distributions
+#p,q are the vectors of dirichlet parameters of same lengths
+diriKL = function(p,q){
+  p.sum = sum(p)
+  q.sum = sum(q)
+  k = length(q)
+  KL = log(gamma(q.sum)/gamma(p.sum))+sum((q-p)*(digamma(q)-digamma(rep(q.sum,k))))+sum(log(gamma(p))-log(gamma(q)))
+  return(KL)
+}
+
 #estimate mixture proportions of sigmaa by EM algorithm
 #prior gives the parameter of a Dirichlet prior on pi
 #(prior is used to encourage results towards smallest value of sigma when
