@@ -165,8 +165,8 @@ Now, we find the fitted values for $\pi$ are mostly near 0, or at 2 (the alterna
 ```{r}
 beta.ash$fitted.f
 beta.ash.auto$fitted.f
-beta.ash.vb.uniform$fitted.f
-beta.ash.vb.null$fitted.f
+#beta.ash.vb.uniform$fitted.f
+#beta.ash.vb.null$fitted.f
 ```
 
 Plot the fitted underlying distribution on top of true values for beta

@@ -82,7 +82,7 @@ diriKL = function(p,q){
   p.sum = sum(p)
   q.sum = sum(q)
   k = length(q)
-  KL = lgamma(q.sum)-lgamma(p.sum)+sum((q-p)*(digamma(q)-digamma(rep(q.sum,k))))+sum(lgamma(p))-lgamma(q)
+  KL = lgamma(q.sum)-lgamma(p.sum)+sum((q-p)*(digamma(q)-digamma(rep(q.sum,k))))+sum(lgamma(p)-lgamma(q))
   return(KL)
 }
 
