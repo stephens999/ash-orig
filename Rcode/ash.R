@@ -82,7 +82,7 @@ diriKL = function(p,q){
   p.sum = sum(p)
   q.sum = sum(q)
   k = length(q)
-  KL = log(gamma(q.sum)/gamma(p.sum))+sum((q-p)*(digamma(q)-digamma(rep(q.sum,k))))+sum(log(gamma(p))-log(gamma(q)))
+  KL = lgamma(q.sum)-lgamma(p.sum)+sum((q-p)*(digamma(q)-digamma(rep(q.sum,k))))+sum(lgamma(p))-lgamma(q)
   return(KL)
 }
 
@@ -103,6 +103,7 @@ EMest = function(betahat,sebetahat,sigmaavec,pi,sigma.est=FALSE,nullcheck=TRUE,p
     sigmaavec=2^(seq(-15,3,length.out=nc))
   }
   k=length(sigmaavec)
+  n = length(betahat)
   sigmamin=min(sigmaavec)
   sigmamax=max(sigmaavec)
   null.comp = which.min(sigmaavec) #which component is the "null"
