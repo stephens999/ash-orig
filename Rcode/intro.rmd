@@ -44,6 +44,9 @@ $$L(\pi; \hat\beta, s) := p(\hat\beta, s | \pi) = \int p(\hat\beta, s, \beta | \
 Then, given this estimate $\hat\pi$, we compute the conditional distributions $$p(\beta_j | \hat\pi, \hat\beta, s) \propto g(\beta_j; \pi) L(\beta_j; \hat\beta_j, s_j).$$ 
 In principle we would
 prefer to take a full Bayes approach that accounts for uncertainty in $\pi$, but, at least for now, we compromise this principle for the simplicity of the EB approach.
+[Note: a Variational Bayes version of this is
+also implemented, and may become our preferred approach
+after testing]
 
 [put picture of hierarchical model here]
 
@@ -81,7 +84,7 @@ $\hat\beta_j$ and $s_j$. Then if we observed these data
 the likelihood for $\beta$ would be 
 $p(D_j | \beta_j)$, and a Taylor series expansion of the log likelihood around the maximum likelihood estimate $\hat\beta_j$  yields $$l(\beta_j) \approx l(\hat\beta_j) + 0.5* (\beta_j - \hat\beta_j)^2 l''(\hat\beta_j).$$ [Fill in details?]
 
-The idea of using a mixture of normal distributions for $g$ 
+Using a mixture of normal distributions for $g$ 
 also seems very natural: mixtures of normals provide a flexible family of distributions able to provide a good approximation to any true underlying $g$; and 
 when combined with the normal likelihood they give
 an analytic form for the conditional distribution $p(\beta_j | \hat\pi, \hat\beta_j, s_j)$ (also a mixture of normals).
@@ -98,7 +101,7 @@ plausible, but represents a compromise between simplicity
 and flexibility.
 In cases where this assumption seems wildly inappropriate one could perhaps
 improve results by applying the
-model separately to positive and negative values of $\betahat$.) 
+model separately to positive and negative values of $\hat\beta$.) 
 
 
 Finally, using a large number of normal components with a wide range of variances,
@@ -109,7 +112,47 @@ in $\pi$. Obtaining maximum likelihood estimates for the variances could certain
 be implemented with a little
 more work, but it is unclear whether this would result in practically-important gains in many situations of interest. 
 
+### The False Sign Rate
+
+The usual definition of the local False Discovery Rate (lfdr) for observation $j$ is
+$\text{lfdr}_j = p(\beta_j = 0 | \hat\beta, s)$.
+The lfdr terminology comes from using "discovery" to refer to rejecting the null ($H_j:\beta_j=0$), so lfdr 
+gives the probability that we make a mistake if we reject
+$H_j$, that is the probability that, if we reject $H_j$,
+it is a  "false discovery".  
+
+As pointed out by Gelman et al, there are settings where
+$\beta_j=0$ is implausible, in which case the lfdr is not
+a useful concept: if every $\beta_j$ is non-zero then there
+is no such thing as a false discovery and the lfdr will be 0. Gelman et al suggest that in such settings we
+might replace the concept of a false discovery with the
+concept of an "error in sign". The idea is that, in settings where $\beta_j=0$ is implausible, the most fundamental
+inference objective is to ask which $\beta_j$ are positive and which are negative. Indeed, even in settings where some
+$\beta_j$ are exactly zero, it could be argued that identifying which are positive and which negative is
+fundamentally more interesting and useful than identifying which are non-zero. However, in such settings this usually comes down to something similar in practice: the observations that one can tell are non-zero are also the ones whose
+sign can be reliably inferred. In this sense the
+local false sign rate is a natural generalization of
+the local false discovery rate.
+
+
+Following these ideas of Gelman et al, we define the local False Sign Rate (lfsr) as 
+$$\text{lfsr}_j = \min[ p(\beta_j \geq 0| \hat\beta, s), p(\beta_j \leq 0| \hat\beta, s) ].$$
+To give the intuition behind this, suppose for concreteness
+that the minimum is achieved by the first term, $p(\beta_j \geq 0| \hat\beta, s)=0.05$ say. Then, if we were to declare that $\beta_j$ is negative, the probability that we have
+made an error in sign would be 0.05.
+
+Note that $\text{lfsr}_j \geq \text{lfdr}_j$ 
+because both the events $\beta_j \geq 0$
+and $\beta_j \leq 0$ include the event $\beta_j=0$.
+Thus, lfsr gives an upper bound for the lfdr,
+and so can be used as a conservative estimate of the lfdr
+if an lfdr is desired. (This may be helpful when comparing
+with methods that compute an lfdr.)
+
+
+
 ### Computation Outline
+
 
 As outlined above, we fit the model using the following Empirical Bayes procedure:
 1. Estimate $\pi$ by maximizing the likelihood $L(\pi)$.
@@ -210,6 +253,8 @@ abline(a=0,b=1,col=2)
 
 
 ### Some additional notes
+
+
 
 #### Do we need a point mass at zero?
 
