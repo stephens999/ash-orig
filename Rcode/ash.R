@@ -288,12 +288,12 @@ posterior_mean = function(post){
   return(colSums(post$pi * post$mu))
 }
 
-#return posterior of being >T for a mixture of Gaussians
+#return posterior of being <T (or >T) for a mixture of Gaussians
 # each of pi1, mu1, sigma1 is a k by n matrix
 # jth column provides parameters for jth mixture of gauusians 
 # return an n vector of probabilities
-PosteriorProbExceedsT = function(pi1,mu1,sigma1,T=0){
-  return(apply(pi1 * pnorm(T,mu1,sigma1,lower.tail=FALSE),2,sum))
+pnormmix = function(T,pi1,mu1,sigma1,lower.tail=TRUE){
+  return(apply(pi1 * pnorm(T,mu1,sigma1,lower.tail),2,sum))
 }
   
 #return the "effective" estimate
@@ -385,17 +385,19 @@ ash = function(betahat,sebetahat,nullcheck=TRUE,df=NULL,randomstart=FALSE, usePo
 	return(list(pi=pi.fit$pi, logLR = logLR))
   }else{
    	post = posterior_dist(pi.fit$pi,0,sigmaavec,betahat,sebetahat)
-  	PositiveProb = PosteriorProbExceedsT(post$pi,post$mu,post$sigma,0)
-  	PosteriorMean = posterior_mean(post)
+  	PositiveProb = pnormmix(0,post$pi,post$mu,post$sigma,lower.tail=FALSE)
+  	ZeroProb = colSums(post$pi[sigmaavec==0,,drop=FALSE])
+    NegativeProb =  1- PositiveProb-ZeroProb    
+    PosteriorMean = posterior_mean(post)
   	if(localfdr){
-   		localfdr = ifelse(PositiveProb<0.5,PositiveProb,1-PositiveProb)
+   		localfdr = ifelse(PositiveProb<NegativeProb,PositiveProb+ZeroProb,NegativeProb+ZeroProb)
    		qvalue = qval.from.localfdr(localfdr)
   	}else{
    		localfdr=NULL
    		qvalue=NULL
   	}
   	fitted.f= list(pi=pi.fit$pi,sigma=sigmaavec,mu=rep(0,k))
-    result = list(post=post,fitted.f=fitted.f,PosteriorMean = PosteriorMean,PositiveProb =PositiveProb,localfdr=localfdr,qvalue=qvalue,fit=pi.fit)
+    result = list(post=post,fitted.f=fitted.f,PosteriorMean = PosteriorMean,PositiveProb =PositiveProb,NegativeProb=NegativeProb, ZeroProb=ZeroProb,localfdr=localfdr,qvalue=qvalue,fit=pi.fit)
 	  class(result)= "ash"
     return(result)
 
