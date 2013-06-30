@@ -246,11 +246,9 @@ and we analyze it without a point mass, we may underestimate
 the false sign rate by a factor of 2. Therefore, to be conservative, we might prefer to analyze the data allowing for the point mass, or, if analyzed without a point mass, multiply estimated false sign rates by 2.
 
 
-Note that to compare ash $q$ values with fdr-type $q$ values we
-multiply them by 2 (this is because the ash $q$ values indicate the
-probability of an error of sign, which is half as large as the
-probability of a false discovery: half the false discoveries would
-have the right sign by random guessing)
+#### Comparison with qvalue
+
+Here we compare ash $q$ values with those from the qvalue package. Because of the issue above, we multiply the ash  $q$ values by 2.
 ```{r}
 plot(qval$q,2*beta.ash$qval,main="comparison of ash and q value qvalues",xlab="qvalue", ylab="twice ash q values")
 abline(a=0,b=1)
