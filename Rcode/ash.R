@@ -132,7 +132,7 @@ EMest = function(betahat,sebetahat,sigmaavec,pi,sigma.est=FALSE,nullcheck=TRUE,p
       pipost = colSums(classprob) + prior
       
       #Now re-estimate pipost
-      avgpipost = matrix(exp(digamma(rep(pipost,n))-digamma(rep(sum(pipost),k*n))),ncol=k,byrow=TRUE)
+      avgpipost = matrix(exp(rep(digamma(pipost),n)-rep(digamma(sum(pipost)),k*n)),ncol=k,byrow=TRUE)
       classprob = avgpipost*dnorm.mat
       classprob = classprob/rowSums(classprob) # n by k matrix
       

@@ -9,16 +9,72 @@ the traditional focus of shrinkage-based methods, \emph{and} improved assessment
 By ``adaptive" shrinkage we 
 have two key properties in mind. First, the appropriate amount of shrinkage is determined from the data, rather than being pre-specified. Second, the amount of shrinkage undergone by each $\hat\beta_j$ will depend on the standard error $s_j$: measurements with high standard error will undergo more shrinkage than measurements with low standard error.
 
-As an important special case, we intend these methods to address the "multiple comparisons" problem, where interest usually focuses on which $\beta_j$ can be confidently inferred to be non-zero. Such problems are usually tackled by computing a $p$ value for each $j$, often by applying a $t$ test to $\hat\beta_j/s_j$,
+As an important special case, these methods address the "multiple comparisons" setting, where interest focuses on which $\beta_j$ can be confidently inferred to be non-zero. Such problems are usually tackled by computing a $p$ value for each $j$, often by applying a $t$ test to $\hat\beta_j/s_j$,
 and then applying a generic procedure, such as that of Benjamini 
 and Hochberg (1995?) or Storey (2001?), designed to control or
 estimate the false discovery rate (FDR) or the positive FDR (Storey, 2001?). In essence we aim to provide analagous
 generic methods that work directly with two numbers for each 
 measurement $(\hat\beta_j,s_j$), rather than a single number (e.g.~ the $p$ value, or $t$ statistic). Working with these two numbers has two important benefits: first, it permits estimation and not only testing; second, the 
-uncertainty in each measurement $\hat\beta_j$ can be more fully accounted for, reducing the impact of ``high-noise" measurements (large $s_j$) that can reduce the effectiveness of a standard FDR analysis. The potential for shrinkage-based estimation to
-help address multiple comparisons problems has been highlighted
+uncertainty in each measurement $\hat\beta_j$ can be more fully accounted for, reducing the impact of ``high-noise" measurements (large $s_j$) that can reduce the effectiveness of a standard FDR analysis. 
+
+The potential for shrinkage-based estimation to
+address the multiple comparisons setting 
+has been highlighted
 previously, including Greenland and Robins (1991),
-Efron (2008) and Gelman et al (2012). [Note, check also Louis, JASA, 1984]
+Efron (2008) and Gelman et al (2012). [Note, check also Louis, JASA, 1984] 
+
+Performing multiple comparisons, or multiple tests, is often
+regarded as a "problem". However, here we regard it instead as an opportunity - an opportunity to combine (or "pool") information across tests or comparisons.
+
+
+Imagine that you are preparing to perform 1 million tests,
+each based on a $Z$ score that is assumed to be $N(0,1)$ under the null.
+You first order these tests randomly, and begin by 
+performing the first test, which returns a $Z$ score of 4.
+At this point you are interrupted by a friend, who asks how the analysis is going. "It's early days, but looking promising" you reply. Well, who wouldn't? If the aim is to find lots of significant differences, a strong first result is surely a good outcome. 
+
+At this point you have reason to expect that many of the
+subsequent tests also output strong results.
+
+Now consider two alternative scenarios for the remaining 999,999 tests. In the first scenario, the remaining tests
+produce $Z$ values that fit very well with the null, closely following a standard normal distribution; in the second
+scenario a large proportion of the remaining tests, say 50 percent, show outcomes that lie outside of $[-4,4]$. 
+
+If your friend enquired after your analysis again, your
+response would surely differ in the first scenario ("Oh, it didn't pan out so well after all") vs the second ("It went great"). Further,
+in the first scenario, if your friend pressed you further about the results of the first test,
+you would likely, I think, be inclined to put them down to chance. In contrast, in the second scenario, the first test turned out to be, as you hoped, a harbinger of good things to come, and in this scenario you would likely regard that test as likely corresponding to a true discovery.
+
+The key point is that it is the *outcomes* of the tests, not the *number* of tests, that impacts interpretation of that first test. 
+
+
+
+
+
+
+(Some may by pondering whether the fact that you are about to perform another
+999,999 tests should be considered pertinent in responding to your friend. Our view is that it is  irrelevant.
+The standard frequentist framework would disagree, because
+it requires the analyst to consider hypothetical repetitions
+of the "experiment", and so the fact that the experiment
+consists of a million tests is pertinent. However, this
+argument is a distraction from the main point.)
+
+
+
+
+
+
+
+Indeed, we believe that the practice of focussing on the *number* of tests performed is 
+
+Focussing on the number of tests performed can be
+seen as an approximation. 
+
+The standard argument is that,
+when performing multiple tests, some will be significant
+just by chance.
+
 
 
 

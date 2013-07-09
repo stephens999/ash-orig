@@ -1,0 +1,11 @@
+library(GSA)
+source('Rcode/cash.R')
+data=read.table('data/GSEA/Leukemia/Leukemia_collapsed_symbols.gct',header=T,sep='\t',quote='',skip=2)
+C1=GSA.read.gmt('data/GSEA/c1.symbols.gmt')$genesets
+C1sets=function(gene){sapply(C1,is.element,el=gene)}
+X=matrix(as.numeric(t(apply(as.matrix(data[,1]),1,C1sets))),nrow=length(data[,1]))
+alphahat=function(data){mean(as.numeric(data[3:26]))-mean(as.numeric(data[27:50]))}
+alpha=apply(data,1,alphahat)
+shat=function(data){sqrt((var(as.numeric(data[3:26]))+var(as.numeric(data[27:50])))/24)}
+s=apply(data,1,shat)
+temp=cash(alpha,s,as.matrix(X[,1]))
