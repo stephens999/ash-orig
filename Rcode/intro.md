@@ -244,10 +244,6 @@ source("../Rcode/ash.R")
 library("qvalue")
 ```
 
-```
-## Error: there is no package called 'qvalue'
-```
-
 
 
 ```r
@@ -279,13 +275,6 @@ zscore = ss$betahat/ss$betasd
 
 pval = pchisq(zscore^2, df = 1, lower.tail = F)
 qval = qvalue(pval)
-```
-
-```
-## Error: could not find function "qvalue"
-```
-
-```r
 hist(zscore)
 ```
 
@@ -476,19 +465,10 @@ Here we compare ash $q$ values with those from the qvalue package. Because of th
 ```r
 plot(qval$q, 2 * beta.ash$qval, main = "comparison of ash and q value qvalues", 
     xlab = "qvalue", ylab = "twice ash q values")
-```
-
-```
-## Error: object 'qval' not found
-```
-
-```r
 abline(a = 0, b = 1)
 ```
 
-```
-## Error: plot.new has not been called yet
-```
+![plot of chunk unnamed-chunk-10](figure/unnamed-chunk-10.png) 
 
 
 In this example we see that qval overestimates the actual FDR. (This
@@ -498,27 +478,11 @@ is because it assumes all the $p$ values near 1 are null, when they are not.)
 o = order(beta.ash$qval)
 plot(cumsum(ss$null[o])/(1:10000), qval$qval[o], col = 2, type = "l", xlab = "actual FDR", 
     ylab = "q value", main = "Comparison of actual FDR with q value")
-```
-
-```
-## Error: object 'qval' not found
-```
-
-```r
 lines(cumsum(ss$null[o])/(1:10000), 2 * beta.ash$qval[o])
-```
-
-```
-## Error: plot.new has not been called yet
-```
-
-```r
 abline(a = 0, b = 1)
 ```
 
-```
-## Error: plot.new has not been called yet
-```
+![plot of chunk unnamed-chunk-11](figure/unnamed-chunk-11.png) 
 
 
 ### Miscellaneous 
@@ -539,44 +503,33 @@ beta.ash = ash(betahat, s)
 zscore = betahat/s
 pval = pchisq(zscore^2, df = 1, lower.tail = F)
 qval = qvalue(pval)
-```
-
-```
-## Error: could not find function "qvalue"
-```
-
-```r
 
 plot(betahat, beta.ash$PosteriorMean, xlab = "Observed betahat", ylab = "Estimated beta (posterior mean)", 
     ylim = c(-7, 4), xlim = c(-7, 4))
 abline(h = 0)
 abline(a = 0, b = 1, col = 2)
-
-plot(qval$q, 2 * beta.ash$qval, main = "comparison of ash and q value qvalues")
 ```
 
-```
-## Error: object 'qval' not found
-```
+![plot of chunk unnamed-chunk-12](figure/unnamed-chunk-121.png) 
 
 ```r
+
+plot(qval$q, 2 * beta.ash$qval, main = "comparison of ash and q value qvalues")
 abline(a = 0, b = 1)
+```
+
+![plot of chunk unnamed-chunk-12](figure/unnamed-chunk-122.png) 
+
+```r
 
 o = order(beta.ash$qval)
 
 plot(cumsum(truenull[o])/(1:10000), qval$qval[o], col = 2, type = "l")
-```
-
-```
-## Error: object 'qval' not found
-```
-
-```r
 lines(cumsum(truenull[o])/(1:10000), 2 * beta.ash$qval[o])
 abline(a = 0, b = 1)
 ```
 
-![plot of chunk unnamed-chunk-12](figure/unnamed-chunk-12.png) 
+![plot of chunk unnamed-chunk-12](figure/unnamed-chunk-123.png) 
 
 
 It seems that in this case the ash q values underestimate the
@@ -616,54 +569,22 @@ beta.ash = ash(betahat, s)
 zscore = betahat/s
 pval = pchisq(zscore^2, df = 1, lower.tail = F)
 qval = qvalue(pval)
-```
-
-```
-## Error: could not find function "qvalue"
-```
-
-```r
 plot(qval$q, 2 * beta.ash$qval, main = "comparison of ash and q value qvalues")
-```
-
-```
-## Error: object 'qval' not found
-```
-
-```r
 abline(a = 0, b = 1)
 ```
 
-```
-## Error: plot.new has not been called yet
-```
+![plot of chunk unnamed-chunk-14](figure/unnamed-chunk-141.png) 
 
 ```r
 
 o = order(beta.ash$qval)
 
 plot(cumsum(truenull[o])/(1:10000), qval$qval[o], col = 2, type = "l")
-```
-
-```
-## Error: object 'qval' not found
-```
-
-```r
 lines(cumsum(truenull[o])/(1:10000), 2 * beta.ash$qval[o])
-```
-
-```
-## Error: plot.new has not been called yet
-```
-
-```r
 abline(a = 0, b = 1)
 ```
 
-```
-## Error: plot.new has not been called yet
-```
+![plot of chunk unnamed-chunk-14](figure/unnamed-chunk-142.png) 
 
 ```r
 
