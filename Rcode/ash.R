@@ -86,6 +86,39 @@ diriKL = function(p,q){
   return(KL)
 }
 
+#input abf is n by k matrix of p(obs n | comes from component k)
+#prior: a k vector of dirichlet prior parameters
+#output: post: a vector of the posterior dirichlet parameters
+#B: the values of the likelihood lower bounds
+#converged: boolean for whether it converged
+VBEM = function(abf, prior, tol=0.0001, maxiter=5000){
+  n=nrow(abf)
+  k=ncol(abf)
+  B = rep(0,maxiter)
+  pipost = prior # Dirichlet posterior on pi
+  avgpipost = matrix(exp(rep(digamma(pipost),n)-rep(digamma(sum(pipost)),k*n)),ncol=k,byrow=TRUE)
+  classprob = avgpipost * abf
+  classprob = classprob/rowSums(classprob) # n by k matrix  
+  B[1] = sum(classprob*log(avgpipost*abf)) - diriKL(prior,pipost) #negative free energy
+  
+  for(i in 2:maxiter){  
+    pipost = colSums(classprob) + prior
+    
+    #Now re-estimate pipost
+    avgpipost = matrix(exp(rep(digamma(pipost),n)-rep(digamma(sum(pipost)),k*n)),ncol=k,byrow=TRUE)
+    classprob = avgpipost*abf
+    classprob = classprob/rowSums(classprob) # n by k matrix
+    
+    B[i] = sum(classprob*log(avgpipost*abf)) - diriKL(prior,pipost)
+    
+    if(abs(B[i]-B[i-1])<tol) break;
+  }
+  return(list(post = pipost, B=B[1:min(c(i,maxiter))], converged=(i<maxiter)))
+}
+  
+
+
+
 #estimate mixture proportions of sigmaa by EM algorithm
 #prior gives the parameter of a Dirichlet prior on pi
 #(prior is used to encourage results towards smallest value of sigma when
