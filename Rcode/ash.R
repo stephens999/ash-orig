@@ -324,6 +324,14 @@ pnormmix = function(T,pi1,mu1,sigma1,lower.tail=TRUE){
   return(apply(pi1 * pnorm(T,mu1,sigma1,lower.tail),2,sum))
 }
   
+#return posterior of being <T (or >T) for a mixture of Gaussians
+# each of pi1, mu1, sigma1 is a k-vector
+# jth element provides parameters for jth mixture of gauusians 
+# return a probabilities
+pnormmix.vec = function(T,pi1,mu1,sigma1,lower.tail=TRUE){
+  return(sum(pi1 * pnorm(T,mu1,sigma1,lower.tail)))
+}
+
 #return the "effective" estimate
 #that is the effect size betanew whose z score betanew/se
 #would give the same p value as betahat/se compared to a t with df
@@ -458,3 +466,10 @@ predictive=function(a,se){
 #a is an ash object
 #x is a vector at which the density should be computed
 density.ash=function(a,x){mixdnorm(x,a$fitted.f$pi,a$fitted.f$mu,a$fitted.f$sigma)}
+
+#return the cdf of the fitted underlying hierarchical f
+#a is an ash object
+#x is a vector at which the density should be computed
+cdf.ash=function(a,x,lower.tail=TRUE){
+ return(vapply(x,pnormmix.vec, 0,pi1=a$fitted.f$pi,mu1=a$fitted.f$mu,sigma1=a$fitted.f$sigma,lower.tail=lower.tail))    
+}

@@ -220,8 +220,14 @@ beta.ash.vb.null$fitted.f
 Plot the fitted underlying distribution on top of true values for beta
 ```{r}
 hist(ss$beta,prob=TRUE,breaks=seq(-7,7,length=20))
-x= seq(-4,4,length=1000)
+x= seq(-7,7,length=1000)
 lines(x,density(beta.ash,x),col=2)
+
+plot(sort(ss$beta),(1:length(ss$beta))/length(ss$beta),main="cdf of ss$beta, with fitted f overlaid",xlab="beta",ylab="cdf")
+lines(x,cdf.ash(beta.ash,x),col=2,lwd=2)
+lines(x,cdf.ash(beta.ash.auto,x),col=3,lwd=2)
+lines(x,cdf.ash(beta.ash.vb.uniform,x),col=4,lwd=2)
+lines(x,cdf.ash(beta.ash.vb.null,x),col=5,lwd=2)
 ```
 
 [for testing: compare with the results from the automatic way for selecting sigma]
@@ -304,6 +310,7 @@ Our conclusion: if we simulate data with a point mass,
 and we analyze it without a point mass, we may underestimate
 the lfsr by a factor of 2. Therefore, to be conservative, we might prefer to analyze the data allowing for the point mass, or, if analyzed without a point mass, multiply estimated false sign rates by 2. In fact the latter might be preferable: even if we analyze the data with a point mass, there is going to be some unidentifiability
 that means estimating the pi value on the point mass will be somewhat unreliable, and we still might underestimate the false sign rate if we rely on that estimate.  
+TO THINK ABOUT: does multiplying the smaller of Pr(<0) and Pr(>0) by 2, and adding to Pr(=0) solve the problem in either case?
 
 #### Comparison with qvalue
 
