@@ -86,21 +86,32 @@ diriKL = function(p,q){
   return(KL)
 }
 
+#helper function for VBEM
+VB.update = function(abf, pipost){
+  avgpipost = matrix(exp(rep(digamma(pipost),n)-rep(digamma(sum(pipost)),k*n)),ncol=k,byrow=TRUE)
+  classprob = avgpipost * abf
+  classprob = classprob/rowSums(classprob) # n by k matrix  
+  B = sum(classprob*log(avgpipost*abf)) - diriKL(prior,pipost) #negative free energy
+  return(list(classprob=classprob,B=B))
+}
+
 #input abf is n by k matrix of p(obs n | comes from component k)
 #prior: a k vector of dirichlet prior parameters
 #output: post: a vector of the posterior dirichlet parameters
 #B: the values of the likelihood lower bounds
 #converged: boolean for whether it converged
-VBEM = function(abf, prior, tol=0.0001, maxiter=5000){
+#nullcheck: not implemented
+VBEM = function(abf, prior, tol=0.0001, maxiter=5000,nullcheck=TRUE){
   n=nrow(abf)
   k=ncol(abf)
   B = rep(0,maxiter)
   pipost = prior # Dirichlet posterior on pi
+  
   avgpipost = matrix(exp(rep(digamma(pipost),n)-rep(digamma(sum(pipost)),k*n)),ncol=k,byrow=TRUE)
   classprob = avgpipost * abf
   classprob = classprob/rowSums(classprob) # n by k matrix  
   B[1] = sum(classprob*log(avgpipost*abf)) - diriKL(prior,pipost) #negative free energy
-  
+ 
   for(i in 2:maxiter){  
     pipost = colSums(classprob) + prior
     
@@ -113,7 +124,10 @@ VBEM = function(abf, prior, tol=0.0001, maxiter=5000){
     
     if(abs(B[i]-B[i-1])<tol) break;
   }
-  return(list(post = pipost, B=B[1:min(c(i,maxiter))], converged=(i<maxiter)))
+  
+  if(i>maxiter){i=maxiter}
+   
+  return(list(post = pipost, B=B[1:i], niter = i, converged=(i<maxiter)))
 }
   
 
@@ -150,38 +164,17 @@ EMest = function(betahat,sebetahat,sigmaavec,pi,sigma.est=FALSE,nullcheck=TRUE,p
   abf = matrixABF(betahat,sebetahat,sigmaavec)
 
   if(VB==TRUE){
-    F1 = rep(0,maxiter)
-    pipost = prior # Dirichlet posterior on pi
-    dnorm.mat = matrix(dnorm(rep(betahat,each=k), rep(0,k*n), sd=sqrt(rep(sebetahat^2,each=k)+rep(sigmaavec^2,n))),ncol=k,byrow=TRUE)
-    avgpipost = matrix(exp(digamma(rep(pipost,n))-digamma(rep(sum(pipost),k*n))),ncol=k,byrow=TRUE)
-    classprob = avgpipost * dnorm.mat
-    classprob = classprob/rowSums(classprob) # n by k matrix
-    
-    priorSum = sum(prior)
-    pipostSum = sum(pipost)
-    F1[1] = sum(classprob*log(avgpipost*dnorm.mat)) - diriKL(prior,pipost) #negative free energy
-    
-    for(i in 2:maxiter){  
-      pipost = colSums(classprob) + prior
-      
-      #Now re-estimate pipost
-      avgpipost = matrix(exp(rep(digamma(pipost),n)-rep(digamma(sum(pipost)),k*n)),ncol=k,byrow=TRUE)
-      classprob = avgpipost*dnorm.mat
-      classprob = classprob/rowSums(classprob) # n by k matrix
-      
-      priorSum = sum(prior)
-      pipostSum = sum(pipost)
-      F1[i] = sum(classprob*log(avgpipost*dnorm.mat)) - diriKL(prior,pipost)
-      
-      if(abs(F1[i]-F1[i-1])<ltol) break;
-    }  
-    pi = pipost/sum(pipost) # use posterior mean to estimate pi
-    
+    vb=VBEM(abf,prior,ltol, maxiter)
+
+    pi = vb$post/sum(vb$post) # use posterior mean to estimate pi    
     m  = t(pi * t(abf)) # abf is n by k; so this is also n by k
     m.rowsum = rowSums(m)
+    classprob = m/m.rowsum
     loglik.final = sum(log(m.rowsum))
     null.loglik = sum(log(abf[,null.comp]))
-    loglik = F1 # actually return F1 not log-likelihood! 
+    loglik = vb$B # actually return log lower bound not log-likelihood! 
+    converged = vb$converged
+    niter = vb$niter
   }else{
     loglik = rep(0,maxiter)
     m  = t(pi * t(abf)) # abf is n by k; so this is also n by k
@@ -219,22 +212,24 @@ EMest = function(betahat,sebetahat,sigmaavec,pi,sigma.est=FALSE,nullcheck=TRUE,p
       if(abs(loglik[i]-loglik[i-1])<ltol) break;
     }
     null.loglik = sum(log(abf[,null.comp]))
-    loglik.final = loglik[i]
-  }
-  
-  if(nullcheck==TRUE){
-    if(null.loglik > loglik.final){ #check whether exceeded "null" likelihood where everything is null
-      pi=rep(0,k)
-      pi[null.comp]=1
-      m  = t(pi * t(abf)) 
-      m.rowsum = rowSums(m)
-      loglik[i] = sum(log(m.rowsum))
-      classprob = m/m.rowsum
+    converged = (i< maxiter)
+    niter= min(c(i,maxiter))
+    loglik.final = loglik[niter]
+    
+    if(nullcheck==TRUE){
+      if(null.loglik > loglik.final){ #check whether exceeded "null" likelihood where everything is null
+        pi=rep(0,k)
+        pi[null.comp]=1
+        m  = t(pi * t(abf)) 
+        m.rowsum = rowSums(m)
+        loglik[niter] = sum(log(m.rowsum))
+        classprob = m/m.rowsum
+      }
     }
   }
-
-  return(list(pi=pi,classprob=classprob,sigmaavec=sigmaavec,loglik=loglik[1:i],null.loglik=null.loglik,
-            abf=abf,niter=i, converged = (i<maxiter), temp1=sum(log(abf[,null.comp])),temp2=loglik.final))
+  
+  return(list(pi=pi,classprob=classprob,sigmaavec=sigmaavec,loglik=loglik[1:niter],null.loglik=null.loglik,
+            abf=abf,converged = converged, temp1=sum(log(abf[,null.comp])),temp2=loglik.final))
 }
 
 normalize = function(x){return(x/sum(x))}
@@ -378,7 +373,7 @@ autoselect.sigmaavec = function(betahat,sebetahat){
 #Things to do: automate choice of sigmavec
 # check sampling routin
 # check number of iterations
-ash = function(betahat,sebetahat,nullcheck=TRUE,df=NULL,randomstart=FALSE, usePointMass = FALSE, onlylogLR = FALSE, localfdr = TRUE, prior=NULL, sigmaavec=NULL, auto=FALSE, sigma.est=FALSE, nc=NULL, VB=FALSE){
+ash = function(betahat,sebetahat,nullcheck=TRUE,df=NULL,randomstart=FALSE, usePointMass = FALSE, onlylogLR = FALSE, localfsr = TRUE, prior=NULL, sigmaavec=NULL, auto=FALSE, sigma.est=FALSE, nc=NULL, VB=FALSE){
   #if df specified, convert betahat so that bethata/sebetahat gives the same p value
   #from a z test as the original effects would give under a t test with df=df
   if(!is.null(df)){
@@ -422,15 +417,17 @@ ash = function(betahat,sebetahat,nullcheck=TRUE,df=NULL,randomstart=FALSE, usePo
   	ZeroProb = colSums(post$pi[sigmaavec==0,,drop=FALSE])
     NegativeProb =  1- PositiveProb-ZeroProb    
     PosteriorMean = posterior_mean(post)
-  	if(localfdr){
-   		localfdr = ifelse(PositiveProb<NegativeProb,PositiveProb+ZeroProb,NegativeProb+ZeroProb)
-   		qvalue = qval.from.localfdr(localfdr)
+  	if(localfsr){
+   		localfsr = ifelse(PositiveProb<NegativeProb,PositiveProb+ZeroProb,NegativeProb+ZeroProb)
+   		localfdr = 2* localfsr
+      qvalue = qval.from.localfdr(localfdr)
   	}else{
    		localfdr=NULL
    		qvalue=NULL
   	}
+   
   	fitted.f= list(pi=pi.fit$pi,sigma=sigmaavec,mu=rep(0,k))
-    result = list(post=post,fitted.f=fitted.f,PosteriorMean = PosteriorMean,PositiveProb =PositiveProb,NegativeProb=NegativeProb, ZeroProb=ZeroProb,localfdr=localfdr,qvalue=qvalue,fit=pi.fit)
+    result = list(post=post,fitted.f=fitted.f,PosteriorMean = PosteriorMean,PositiveProb =PositiveProb,NegativeProb=NegativeProb, ZeroProb=ZeroProb,localfsr = localfsr, localfdr=localfdr,qvalue=qvalue,fit=pi.fit)
 	  class(result)= "ash"
     return(result)
 
