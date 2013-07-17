@@ -357,8 +357,12 @@ qval.from.localfdr = function(localfdr){
 # try to select a default range for the sigmaa values
 # that should be used, based on the values of betahat and sebetahat
 autoselect.sigmaavec = function(betahat,sebetahat){
-  sigmaamax = 2*sqrt(max(betahat^2-sebetahat^2)) #this computes a rough largest value you'd want to use
   sigmaamin = min(sebetahat)/10 #so that the minimum is small compared with measurement precision
+  if(all(betahat^2<sebetahat^2)){
+    sigmaamax = 8*sigmaamin #to deal with the occassional odd case where this could happen, just arbitrarily use 4 normals.
+  } else {
+    sigmaamax = 2*sqrt(max(betahat^2-sebetahat^2)) #this computes a rough largest value you'd want to use, based on idea that sigmaamax^2 + sebetahat^2 should be at least betahat^2   
+  }
   npoint = ceiling(log2(sigmaamax/sigmaamin))
   return(2^((-npoint):0) * sigmaamax)
 }
