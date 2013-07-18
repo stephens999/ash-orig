@@ -477,3 +477,35 @@ density.ash=function(a,x){mixdnorm(x,a$fitted.f$pi,a$fitted.f$mu,a$fitted.f$sigm
 cdf.ash=function(a,x,lower.tail=TRUE){
  return(vapply(x,pnormmix.vec, 0,pi1=a$fitted.f$pi,mu1=a$fitted.f$mu,sigma1=a$fitted.f$sigma,lower.tail=lower.tail))    
 }
+
+#density function of a convolution of uniform[a,b] with normal(0,sigma)
+#note, we don't need a<b
+dconvolve.uninorm=function(x,a,b,sigma){
+  return((pnorm((x-a)/sigma)-pnorm((x-b)/sigma))/(b-a))
+}
+
+#return density for  convolution of uniform[0,b]
+#where b is a vector, at vector of betahat and standard errors
+#INPUT b: a k-vector of parameters
+#betahat, sebetahat: each n vectors of observations and standard errors
+#OUTPUT a n by k matrix of the densities
+
+dconvolve.uninorm.matrix = function(betahat, sebetahat,b){
+  k = length(b)
+  n = length(betahat)
+  ld = matrix(0,nrow=n, ncol=k)
+  for(i in 1:k){
+    ld[,i] = log(dconvolve.uninorm(betahat,0,b[i],sebetahat))
+  }
+  maxld = apply(ld, 1, max)
+  ld = ld - maxld
+  return(exp(ld))
+}
+
+#density of mixture of uniforms[a,b]
+#INPUT: pi = mixture proportions (k vector), [a,b] k vectors
+dunimix=function(x,pi, a,b){
+  l = ifelse(a<b,a,b) #lower
+  u = ifelse(a<b,b,a) # upper
+  return(sum((pi/(u-l))[x<u & x>l]))
+}
