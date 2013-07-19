@@ -1,0 +1,56 @@
+source("ash.R")
+
+#Test VBEM
+abf = rbind(c(1,0,0,0),c(0,1,0,0),c(0,0,1,0),c(0,0,1,0),c(0,0,1,0))
+eps = 1e-10
+abf[abf==0] = eps #replace 0 with small number
+print(all.equal(VBEM(abf,c(1,1,1,1))$post,c(2,2,4,1)))
+print(all.equal(VBEM(abf,c(1,2,1,1))$post,c(2,3,4,1)))
+
+#simulate n beta-hat values, nnull under the null
+#with altmean and altsd being the mean and sd of beta under the alternative
+simdata=function(n, nnull, altmean, altsd, betasd){
+  null = c(rep(1,nnull),rep(0,n-nnull))
+  beta = c(rep(0,nnull),rnorm(n-nnull,altmean,altsd))
+  betahat = rnorm(n,beta,betasd)
+  return(list(null=null,beta=beta,betahat=betahat,betasd=betasd))
+}
+
+ss = simdata(10000,8000,0,2,1)
+
+system.time((beta.ash=ash(ss$betahat,ss$betasd)))
+system.time((beta.ash.auto = ash(ss$betahat, ss$betasd,auto=TRUE)))
+system.time((beta.ash.vb.uniform = ash(ss$betahat, ss$betasd,auto=TRUE, VB=TRUE, prior="uniform")))
+system.time((beta.ash.vb.null = ash(ss$betahat, ss$betasd,auto=TRUE, VB=TRUE, prior=NULL)))
+
+
+
+hist(ss$beta,prob=TRUE,breaks=seq(-7,7,length=20))
+x= seq(-4,4,length=10000)
+lines(x,density(beta.ash,x),col=2)
+lines(x,density(beta.ash.auto,x),col=3)
+lines(x,density(beta.ash.vb.uniform,x),col=4)
+lines(x,density(beta.ash.vb.null,x),col=5)
+beta.ash$fitted.f
+beta.ash.auto$fitted.f
+beta.ash.vb.uniform$fitted.f
+
+ss = simdata(10000,10000,0,2,1)
+system.time((beta.ash=ash(ss$betahat,ss$betasd)))
+system.time((beta.ash.auto = ash(ss$betahat, ss$betasd,auto=TRUE)))
+system.time((beta.ash.vb.uniform = ash(ss$betahat, ss$betasd,auto=TRUE, VB=TRUE, prior="uniform")))
+system.time((beta.ash.vb.null = ash(ss$betahat, ss$betasd,auto=TRUE, VB=TRUE, prior=NULL)))
+
+hist(ss$beta,prob=TRUE,breaks=seq(-7,7,length=20))
+x= seq(-4,4,length=10000)
+lines(x,density(beta.ash,x),col=2)
+lines(x,density(beta.ash.auto,x),col=3)
+lines(x,density(beta.ash.vb.uniform,x),col=4)
+lines(x,density(beta.ash.vb.null,x),col=5)
+beta.ash$fitted.f
+beta.ash.auto$fitted.f
+beta.ash.vb.uniform$fitted.f
+beta.ash.vb.null$fitted.f
+
+beta.ash.vb.uniform$fit$loglik
+beta.ash.vb.uniform$fit$converged

@@ -1,8 +1,8 @@
 This repository contains ongoing work on Bayesian FDR and Adaptive Shrinkage.
 
-To get more information download the repository, and look at Rcode/readme.html
+To get more information download the repository, and look at Rcode/intro.html and Rcode/readme.html
 
-(This html file is generated from Rcode/readme.rmd and can be
+(These html files are generated from Rcode/intro.rmd and Rcode/readme.rmd and can be
 reproduced using the R package knitr. R studio provides a nice interface to accomplish this.
 See for example http://jeromyanglim.blogspot.com/2012/05/getting-started-with-r-markdown-knitr.html)
 
