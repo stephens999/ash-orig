@@ -86,6 +86,53 @@ diriKL = function(p,q){
   return(KL)
 }
 
+#helper function for VBEM
+VB.update = function(abf, pipost){
+  avgpipost = matrix(exp(rep(digamma(pipost),n)-rep(digamma(sum(pipost)),k*n)),ncol=k,byrow=TRUE)
+  classprob = avgpipost * abf
+  classprob = classprob/rowSums(classprob) # n by k matrix  
+  B = sum(classprob*log(avgpipost*abf)) - diriKL(prior,pipost) #negative free energy
+  return(list(classprob=classprob,B=B))
+}
+
+#input abf is n by k matrix of p(obs n | comes from component k)
+#prior: a k vector of dirichlet prior parameters
+#output: post: a vector of the posterior dirichlet parameters
+#B: the values of the likelihood lower bounds
+#converged: boolean for whether it converged
+#nullcheck: not implemented
+VBEM = function(abf, prior, tol=0.0001, maxiter=5000,nullcheck=TRUE){
+  n=nrow(abf)
+  k=ncol(abf)
+  B = rep(0,maxiter)
+  pipost = prior # Dirichlet posterior on pi
+  
+  avgpipost = matrix(exp(rep(digamma(pipost),n)-rep(digamma(sum(pipost)),k*n)),ncol=k,byrow=TRUE)
+  classprob = avgpipost * abf
+  classprob = classprob/rowSums(classprob) # n by k matrix  
+  B[1] = sum(classprob*log(avgpipost*abf)) - diriKL(prior,pipost) #negative free energy
+ 
+  for(i in 2:maxiter){  
+    pipost = colSums(classprob) + prior
+    
+    #Now re-estimate pipost
+    avgpipost = matrix(exp(rep(digamma(pipost),n)-rep(digamma(sum(pipost)),k*n)),ncol=k,byrow=TRUE)
+    classprob = avgpipost*abf
+    classprob = classprob/rowSums(classprob) # n by k matrix
+    
+    B[i] = sum(classprob*log(avgpipost*abf)) - diriKL(prior,pipost)
+    
+    if(abs(B[i]-B[i-1])<tol) break;
+  }
+  
+  if(i>maxiter){i=maxiter}
+   
+  return(list(post = pipost, B=B[1:i], niter = i, converged=(i<maxiter)))
+}
+  
+
+
+
 #estimate mixture proportions of sigmaa by EM algorithm
 #prior gives the parameter of a Dirichlet prior on pi
 #(prior is used to encourage results towards smallest value of sigma when
@@ -117,38 +164,17 @@ EMest = function(betahat,sebetahat,sigmaavec,pi,sigma.est=FALSE,nullcheck=TRUE,p
   abf = matrixABF(betahat,sebetahat,sigmaavec)
 
   if(VB==TRUE){
-    F1 = rep(0,maxiter)
-    pipost = prior # Dirichlet posterior on pi
-    dnorm.mat = matrix(dnorm(rep(betahat,each=k), rep(0,k*n), sd=sqrt(rep(sebetahat^2,each=k)+rep(sigmaavec^2,n))),ncol=k,byrow=TRUE)
-    avgpipost = matrix(exp(digamma(rep(pipost,n))-digamma(rep(sum(pipost),k*n))),ncol=k,byrow=TRUE)
-    classprob = avgpipost * dnorm.mat
-    classprob = classprob/rowSums(classprob) # n by k matrix
-    
-    priorSum = sum(prior)
-    pipostSum = sum(pipost)
-    F1[1] = sum(classprob*log(avgpipost*dnorm.mat)) - diriKL(prior,pipost) #negative free energy
-    
-    for(i in 2:maxiter){  
-      pipost = colSums(classprob) + prior
-      
-      #Now re-estimate pipost
-      avgpipost = matrix(exp(rep(digamma(pipost),n)-rep(digamma(sum(pipost)),k*n)),ncol=k,byrow=TRUE)
-      classprob = avgpipost*dnorm.mat
-      classprob = classprob/rowSums(classprob) # n by k matrix
-      
-      priorSum = sum(prior)
-      pipostSum = sum(pipost)
-      F1[i] = sum(classprob*log(avgpipost*dnorm.mat)) - diriKL(prior,pipost)
-      
-      if(abs(F1[i]-F1[i-1])<ltol) break;
-    }  
-    pi = pipost/sum(pipost) # use posterior mean to estimate pi
-    
+    vb=VBEM(abf,prior,ltol, maxiter)
+
+    pi = vb$post/sum(vb$post) # use posterior mean to estimate pi    
     m  = t(pi * t(abf)) # abf is n by k; so this is also n by k
     m.rowsum = rowSums(m)
+    classprob = m/m.rowsum
     loglik.final = sum(log(m.rowsum))
     null.loglik = sum(log(abf[,null.comp]))
-    loglik = F1 # actually return F1 not log-likelihood! 
+    loglik = vb$B # actually return log lower bound not log-likelihood! 
+    converged = vb$converged
+    niter = vb$niter
   }else{
     loglik = rep(0,maxiter)
     m  = t(pi * t(abf)) # abf is n by k; so this is also n by k
@@ -186,22 +212,24 @@ EMest = function(betahat,sebetahat,sigmaavec,pi,sigma.est=FALSE,nullcheck=TRUE,p
       if(abs(loglik[i]-loglik[i-1])<ltol) break;
     }
     null.loglik = sum(log(abf[,null.comp]))
-    loglik.final = loglik[i]
-  }
-  
-  if(nullcheck==TRUE){
-    if(null.loglik > loglik.final){ #check whether exceeded "null" likelihood where everything is null
-      pi=rep(0,k)
-      pi[null.comp]=1
-      m  = t(pi * t(abf)) 
-      m.rowsum = rowSums(m)
-      loglik[i] = sum(log(m.rowsum))
-      classprob = m/m.rowsum
+    converged = (i< maxiter)
+    niter= min(c(i,maxiter))
+    loglik.final = loglik[niter]
+    
+    if(nullcheck==TRUE){
+      if(null.loglik > loglik.final){ #check whether exceeded "null" likelihood where everything is null
+        pi=rep(0,k)
+        pi[null.comp]=1
+        m  = t(pi * t(abf)) 
+        m.rowsum = rowSums(m)
+        loglik[niter] = sum(log(m.rowsum))
+        classprob = m/m.rowsum
+      }
     }
   }
-
-  return(list(pi=pi,classprob=classprob,sigmaavec=sigmaavec,loglik=loglik[1:i],null.loglik=null.loglik,
-            abf=abf,niter=i, converged = (i<maxiter), temp1=sum(log(abf[,null.comp])),temp2=loglik.final))
+  
+  return(list(pi=pi,classprob=classprob,sigmaavec=sigmaavec,loglik=loglik[1:niter],null.loglik=null.loglik,
+            abf=abf,converged = converged, temp1=sum(log(abf[,null.comp])),temp2=loglik.final))
 }
 
 normalize = function(x){return(x/sum(x))}
@@ -296,6 +324,14 @@ pnormmix = function(T,pi1,mu1,sigma1,lower.tail=TRUE){
   return(apply(pi1 * pnorm(T,mu1,sigma1,lower.tail),2,sum))
 }
   
+#return posterior of being <T (or >T) for a mixture of Gaussians
+# each of pi1, mu1, sigma1 is a k-vector
+# jth element provides parameters for jth mixture of gauusians 
+# return a probabilities
+pnormmix.vec = function(T,pi1,mu1,sigma1,lower.tail=TRUE){
+  return(sum(pi1 * pnorm(T,mu1,sigma1,lower.tail)))
+}
+
 #return the "effective" estimate
 #that is the effect size betanew whose z score betanew/se
 #would give the same p value as betahat/se compared to a t with df
@@ -321,8 +357,12 @@ qval.from.localfdr = function(localfdr){
 # try to select a default range for the sigmaa values
 # that should be used, based on the values of betahat and sebetahat
 autoselect.sigmaavec = function(betahat,sebetahat){
-  sigmaamax = 2*sqrt(max(betahat^2-sebetahat^2)) #this computes a rough largest value you'd want to use
   sigmaamin = min(sebetahat)/10 #so that the minimum is small compared with measurement precision
+  if(all(betahat^2<sebetahat^2)){
+    sigmaamax = 8*sigmaamin #to deal with the occassional odd case where this could happen, just arbitrarily use 4 normals.
+  } else {
+    sigmaamax = 2*sqrt(max(betahat^2-sebetahat^2)) #this computes a rough largest value you'd want to use, based on idea that sigmaamax^2 + sebetahat^2 should be at least betahat^2   
+  }
   npoint = ceiling(log2(sigmaamax/sigmaamin))
   return(2^((-npoint):0) * sigmaamax)
 }
@@ -345,7 +385,7 @@ autoselect.sigmaavec = function(betahat,sebetahat){
 #Things to do: automate choice of sigmavec
 # check sampling routin
 # check number of iterations
-ash = function(betahat,sebetahat,nullcheck=TRUE,df=NULL,randomstart=FALSE, usePointMass = FALSE, onlylogLR = FALSE, localfdr = TRUE, prior=NULL, sigmaavec=NULL, auto=FALSE, sigma.est=FALSE, nc=NULL, VB=FALSE){
+ash = function(betahat,sebetahat,nullcheck=TRUE,df=NULL,randomstart=FALSE, usePointMass = FALSE, onlylogLR = FALSE, localfsr = TRUE, prior=NULL, sigmaavec=NULL, auto=FALSE, sigma.est=FALSE, nc=NULL, VB=FALSE){
   #if df specified, convert betahat so that bethata/sebetahat gives the same p value
   #from a z test as the original effects would give under a t test with df=df
   if(!is.null(df)){
@@ -389,15 +429,17 @@ ash = function(betahat,sebetahat,nullcheck=TRUE,df=NULL,randomstart=FALSE, usePo
   	ZeroProb = colSums(post$pi[sigmaavec==0,,drop=FALSE])
     NegativeProb =  1- PositiveProb-ZeroProb    
     PosteriorMean = posterior_mean(post)
-  	if(localfdr){
-   		localfdr = ifelse(PositiveProb<NegativeProb,PositiveProb+ZeroProb,NegativeProb+ZeroProb)
-   		qvalue = qval.from.localfdr(localfdr)
+  	if(localfsr){
+   		localfsr = ifelse(PositiveProb<NegativeProb,PositiveProb+ZeroProb,NegativeProb+ZeroProb)
+   		localfdr = 2* localfsr
+      qvalue = qval.from.localfdr(localfdr)
   	}else{
    		localfdr=NULL
    		qvalue=NULL
   	}
+   
   	fitted.f= list(pi=pi.fit$pi,sigma=sigmaavec,mu=rep(0,k))
-    result = list(post=post,fitted.f=fitted.f,PosteriorMean = PosteriorMean,PositiveProb =PositiveProb,NegativeProb=NegativeProb, ZeroProb=ZeroProb,localfdr=localfdr,qvalue=qvalue,fit=pi.fit)
+    result = list(post=post,fitted.f=fitted.f,PosteriorMean = PosteriorMean,PositiveProb =PositiveProb,NegativeProb=NegativeProb, ZeroProb=ZeroProb,localfsr = localfsr, localfdr=localfdr,qvalue=qvalue,fit=pi.fit)
 	  class(result)= "ash"
     return(result)
 
@@ -428,3 +470,42 @@ predictive=function(a,se){
 #a is an ash object
 #x is a vector at which the density should be computed
 density.ash=function(a,x){mixdnorm(x,a$fitted.f$pi,a$fitted.f$mu,a$fitted.f$sigma)}
+
+#return the cdf of the fitted underlying hierarchical f
+#a is an ash object
+#x is a vector at which the density should be computed
+cdf.ash=function(a,x,lower.tail=TRUE){
+ return(vapply(x,pnormmix.vec, 0,pi1=a$fitted.f$pi,mu1=a$fitted.f$mu,sigma1=a$fitted.f$sigma,lower.tail=lower.tail))    
+}
+
+#density function of a convolution of uniform[a,b] with normal(0,sigma)
+#note, we don't need a<b
+dconvolve.uninorm=function(x,a,b,sigma){
+  return((pnorm((x-a)/sigma)-pnorm((x-b)/sigma))/(b-a))
+}
+
+#return density for  convolution of uniform[0,b]
+#where b is a vector, at vector of betahat and standard errors
+#INPUT b: a k-vector of parameters
+#betahat, sebetahat: each n vectors of observations and standard errors
+#OUTPUT a n by k matrix of the densities
+
+dconvolve.uninorm.matrix = function(betahat, sebetahat,b){
+  k = length(b)
+  n = length(betahat)
+  ld = matrix(0,nrow=n, ncol=k)
+  for(i in 1:k){
+    ld[,i] = log(dconvolve.uninorm(betahat,0,b[i],sebetahat))
+  }
+  maxld = apply(ld, 1, max)
+  ld = ld - maxld
+  return(exp(ld))
+}
+
+#density of mixture of uniforms[a,b]
+#INPUT: pi = mixture proportions (k vector), [a,b] k vectors
+dunimix=function(x,pi, a,b){
+  l = ifelse(a<b,a,b) #lower
+  u = ifelse(a<b,b,a) # upper
+  return(sum((pi/(u-l))[x<u & x>l]))
+}
