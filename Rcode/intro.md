@@ -9,16 +9,72 @@ the traditional focus of shrinkage-based methods, \emph{and} improved assessment
 By ``adaptive" shrinkage we 
 have two key properties in mind. First, the appropriate amount of shrinkage is determined from the data, rather than being pre-specified. Second, the amount of shrinkage undergone by each $\hat\beta_j$ will depend on the standard error $s_j$: measurements with high standard error will undergo more shrinkage than measurements with low standard error.
 
-As an important special case, we intend these methods to address the "multiple comparisons" problem, where interest usually focuses on which $\beta_j$ can be confidently inferred to be non-zero. Such problems are usually tackled by computing a $p$ value for each $j$, often by applying a $t$ test to $\hat\beta_j/s_j$,
+As an important special case, these methods address the "multiple comparisons" setting, where interest focuses on which $\beta_j$ can be confidently inferred to be non-zero. Such problems are usually tackled by computing a $p$ value for each $j$, often by applying a $t$ test to $\hat\beta_j/s_j$,
 and then applying a generic procedure, such as that of Benjamini 
 and Hochberg (1995?) or Storey (2001?), designed to control or
 estimate the false discovery rate (FDR) or the positive FDR (Storey, 2001?). In essence we aim to provide analagous
 generic methods that work directly with two numbers for each 
 measurement $(\hat\beta_j,s_j$), rather than a single number (e.g.~ the $p$ value, or $t$ statistic). Working with these two numbers has two important benefits: first, it permits estimation and not only testing; second, the 
-uncertainty in each measurement $\hat\beta_j$ can be more fully accounted for, reducing the impact of ``high-noise" measurements (large $s_j$) that can reduce the effectiveness of a standard FDR analysis. The potential for shrinkage-based estimation to
-help address multiple comparisons problems has been highlighted
+uncertainty in each measurement $\hat\beta_j$ can be more fully accounted for, reducing the impact of ``high-noise" measurements (large $s_j$) that can reduce the effectiveness of a standard FDR analysis. 
+
+The potential for shrinkage-based estimation to
+address the multiple comparisons setting 
+has been highlighted
 previously, including Greenland and Robins (1991),
-Efron (2008) and Gelman et al (2012). [Note, check also Louis, JASA, 1984]
+Efron (2008) and Gelman et al (2012). [Note, check also Louis, JASA, 1984] 
+
+Performing multiple comparisons, or multiple tests, is often
+regarded as a "problem". However, here we regard it instead as an opportunity - an opportunity to combine (or "pool") information across tests or comparisons.
+
+
+Imagine that you are preparing to perform 1 million tests,
+each based on a $Z$ score that is assumed to be $N(0,1)$ under the null.
+You first order these tests randomly, and begin by 
+performing the first test, which returns a $Z$ score of 4.
+At this point you are interrupted by a friend, who asks how the analysis is going. "It's early days, but looking promising" you reply. Well, who wouldn't? If the aim is to find lots of significant differences, a strong first result is surely a good outcome. 
+
+At this point you have reason to expect that many of the
+subsequent tests also output strong results.
+
+Now consider two alternative scenarios for the remaining 999,999 tests. In the first scenario, the remaining tests
+produce $Z$ values that fit very well with the null, closely following a standard normal distribution; in the second
+scenario a large proportion of the remaining tests, say 50 percent, show outcomes that lie outside of $[-4,4]$. 
+
+If your friend enquired after your analysis again, your
+response would surely differ in the first scenario ("Oh, it didn't pan out so well after all") vs the second ("It went great"). Further,
+in the first scenario, if your friend pressed you further about the results of the first test,
+you would likely, I think, be inclined to put them down to chance. In contrast, in the second scenario, the first test turned out to be, as you hoped, a harbinger of good things to come, and in this scenario you would likely regard that test as likely corresponding to a true discovery.
+
+The key point is that it is the *outcomes* of the tests, not the *number* of tests, that impacts interpretation of that first test. 
+
+
+
+
+
+
+(Some may by pondering whether the fact that you are about to perform another
+999,999 tests should be considered pertinent in responding to your friend. Our view is that it is  irrelevant.
+The standard frequentist framework would disagree, because
+it requires the analyst to consider hypothetical repetitions
+of the "experiment", and so the fact that the experiment
+consists of a million tests is pertinent. However, this
+argument is a distraction from the main point.)
+
+
+
+
+
+
+
+Indeed, we believe that the practice of focussing on the *number* of tests performed is 
+
+Focussing on the number of tests performed can be
+seen as an approximation. 
+
+The standard argument is that,
+when performing multiple tests, some will be significant
+just by chance.
+
 
 
 
@@ -44,6 +100,9 @@ $$L(\pi; \hat\beta, s) := p(\hat\beta, s | \pi) = \int p(\hat\beta, s, \beta | \
 Then, given this estimate $\hat\pi$, we compute the conditional distributions $$p(\beta_j | \hat\pi, \hat\beta, s) \propto g(\beta_j; \pi) L(\beta_j; \hat\beta_j, s_j).$$ 
 In principle we would
 prefer to take a full Bayes approach that accounts for uncertainty in $\pi$, but, at least for now, we compromise this principle for the simplicity of the EB approach.
+[Note: a Variational Bayes version of this is
+also implemented, and may become our preferred approach
+after testing]
 
 [put picture of hierarchical model here]
 
@@ -81,7 +140,7 @@ $\hat\beta_j$ and $s_j$. Then if we observed these data
 the likelihood for $\beta$ would be 
 $p(D_j | \beta_j)$, and a Taylor series expansion of the log likelihood around the maximum likelihood estimate $\hat\beta_j$  yields $$l(\beta_j) \approx l(\hat\beta_j) + 0.5* (\beta_j - \hat\beta_j)^2 l''(\hat\beta_j).$$ [Fill in details?]
 
-The idea of using a mixture of normal distributions for $g$ 
+Using a mixture of normal distributions for $g$ 
 also seems very natural: mixtures of normals provide a flexible family of distributions able to provide a good approximation to any true underlying $g$; and 
 when combined with the normal likelihood they give
 an analytic form for the conditional distribution $p(\beta_j | \hat\pi, \hat\beta_j, s_j)$ (also a mixture of normals).
@@ -98,7 +157,7 @@ plausible, but represents a compromise between simplicity
 and flexibility.
 In cases where this assumption seems wildly inappropriate one could perhaps
 improve results by applying the
-model separately to positive and negative values of $\betahat$.) 
+model separately to positive and negative values of $\hat\beta$.) 
 
 
 Finally, using a large number of normal components with a wide range of variances,
@@ -109,7 +168,47 @@ in $\pi$. Obtaining maximum likelihood estimates for the variances could certain
 be implemented with a little
 more work, but it is unclear whether this would result in practically-important gains in many situations of interest. 
 
+### The False Sign Rate
+
+The usual definition of the local False Discovery Rate (lfdr) for observation $j$ is
+$\text{lfdr}_j = p(\beta_j = 0 | \hat\beta, s)$.
+The lfdr terminology comes from using "discovery" to refer to rejecting the null ($H_j:\beta_j=0$), so lfdr 
+gives the probability that we make a mistake if we reject
+$H_j$, that is the probability that, if we reject $H_j$,
+it is a  "false discovery".  
+
+As pointed out by Gelman et al, there are settings where
+$\beta_j=0$ is implausible, in which case the lfdr is not
+a useful concept: if every $\beta_j$ is non-zero then there
+is no such thing as a false discovery and the lfdr will be 0. Gelman et al suggest that in such settings we
+might replace the concept of a false discovery with the
+concept of an "error in sign". The idea is that, in settings where $\beta_j=0$ is implausible, the most fundamental
+inference objective is to ask which $\beta_j$ are positive and which are negative. Indeed, even in settings where some
+$\beta_j$ are exactly zero, it could be argued that identifying which are positive and which negative is
+fundamentally more interesting and useful than identifying which are non-zero. However, in such settings this usually comes down to something similar in practice: the observations that one can tell are non-zero are also the ones whose
+sign can be reliably inferred. In this sense the
+local false sign rate is a natural generalization of
+the local false discovery rate.
+
+
+Following these ideas of Gelman et al, we define the local False Sign Rate (lfsr) as 
+$$\text{lfsr}_j = \min[ p(\beta_j \geq 0| \hat\beta, s), p(\beta_j \leq 0| \hat\beta, s) ].$$
+To give the intuition behind this, suppose for concreteness
+that the minimum is achieved by the first term, $p(\beta_j \geq 0| \hat\beta, s)=0.05$ say. Then, if we were to declare that $\beta_j$ is negative, the probability that we have
+made an error in sign would be 0.05.
+
+Note that $\text{lfsr}_j \geq \text{lfdr}_j$ 
+because both the events $\beta_j \geq 0$
+and $\beta_j \leq 0$ include the event $\beta_j=0$.
+Thus, lfsr gives an upper bound for the lfdr,
+and so can be used as a conservative estimate of the lfdr
+if an lfdr is desired. (This may be helpful when comparing
+with methods that compute an lfdr.)
+
+
+
 ### Computation Outline
+
 
 As outlined above, we fit the model using the following Empirical Bayes procedure:
 1. Estimate $\pi$ by maximizing the likelihood $L(\pi)$.
@@ -121,23 +220,29 @@ yields a simple EM algorithm
 for estimating $\pi$ in Step 1, and simple analytic forms for the conditional
 distributions in Step 2.
 
+
+
+
+
+
 ### A simple example
 
 Load in some functions.
 
 ```r
 setwd("~/Documents/git/ash/Rcode/")
-```
-
-```
-## Error: cannot change working directory
-```
-
-```r
 set.seed(32327)
 ## load Poisson_binomial and ash functions
 source("../Rcode/ash.R")
 library("qvalue")
+```
+
+```
+## Loading Tcl/Tk interface ...
+```
+
+```
+## done
 ```
 
 
@@ -162,8 +267,9 @@ ss = simdata(10000, 8000, 0, 2, 1)
 
 beta.ash = ash(ss$betahat, ss$betasd)
 beta.ash.auto = ash(ss$betahat, ss$betasd, auto = TRUE)
-beta.ash.vb.uniform = ash(ss$betahat, ss$betasd, auto = TRUE, VB = TRUE, prior = "uniform")
-beta.ash.vb.null = ash(ss$betahat, ss$betasd, auto = TRUE, VB = TRUE, prior = NULL)
+# these to test the VB version beta.ash.vb.uniform = ash(ss$betahat,
+# ss$betasd,auto=TRUE, VB=TRUE, prior='uniform') beta.ash.vb.null =
+# ash(ss$betahat, ss$betasd,auto=TRUE, VB=TRUE, prior=NULL)
 
 # compute the usual zscore and corresponding p value
 zscore = ss$betahat/ss$betasd
@@ -274,11 +380,88 @@ abline(a = 0, b = 1, col = 2)
 ![plot of chunk unnamed-chunk-8](figure/unnamed-chunk-8.png) 
 
 
-Note that to compare ash $q$ values with fdr-type $q$ values we
-multiply them by 2 (this is because the ash $q$ values indicate the
-probability of an error of sign, which is half as large as the
-probability of a false discovery: half the false discoveries would
-have the right sign by random guessing)
+
+
+### Some additional notes
+
+
+
+#### Do we need a point mass at zero?
+
+In some settings it is the convention to focus on testing whether $\beta_j=0$. However some dislike this focus, objecting that it is unlikely to be the case that $\beta_j=0$ exactly. For example, when comparing the average expression of a gene in human samples vs chimp samples, it might be considered unlikely that the expression
+is *exactly* the same in both. Whether or not $\beta_j=0$
+is considered unlikely may depend on the context.
+However, in most contexts, finite data cannot
+distinguish between $\beta_j=0$ and $\beta_j$ being very close to zero. Thus finite data cannot usually convince a skeptic that $\beta_j$ is exactly zero, rather than just very small. In contrast it is easy to imagine data that would convince a doubter that $\beta_j$ is truly non-zero. In this sense there is an assymetry between the inferences "$\beta_j$ is zero" and "$\beta_j$ is non-zero", an assymetry that is reflected in the admonition "failure to reject the null does not imply it to be true".
+
+Thus any analysis that purports to distinguish between these cases must be making an assumption. 
+
+Consider two analyses of the same data, using two different "priors" $g$ for $\beta_j$, that effectively differ only in their assumptions about whether or not $\beta_j$ can be exactly zero. For concreteness, consider
+\[ g_1(\cdot) = \pi \delta_0(\cdot) + (1-\pi) N(\cdot; 0,\sigma^2) \]
+and
+\[g_2(\cdot) = \pi N(\cdot; 0, \epsilon^2) + (1-\pi) N(\cdot; 0, \sigma^2).\]
+If $\epsilon^2$ is sufficiently small, then these 
+priors are "approximately the same", and will lead to "approximately the same" posteriors and inferences in many senses. To discuss these, let $p_j$ denote the posterior under prior $g_j$. Then, for any given (small) $\delta$, we will have $p_1(|\beta_j|<\delta) \approx p_2(|\beta_j|< \delta)$. However, we will not have $p_1(\beta_j=0) \approx p_2(\beta_j=0)$: the latter will always be zero, while the former could be appreciable.
+
+ What if, instead, we examine $p_1(\beta_j >0)$ and $p_2(\beta_j >0)$? Again, these will differ. If this probability is big in the first analysis, say $1-\alpha$ with $\alpha$ small, then it could be as big as $1-\alpha/2$ in the second analysis. This is because if $p_1(\beta_j>0)=1-\alpha$, then $p_1(\beta_j=0)$ will often be close to $\alpha$, so for small $\epsilon$ $p_2(\beta_j)$ will have mass $\alpha$ near 0, of which half will be positive and half will be negative. 
+Thus if we do an analysis without a point mass, but allow
+for mass near 0, then we may predict what the results would have been if we had used a point mass.
+
+Let's try: 
+
+```r
+beta.ash.pm = ash(ss$betahat, ss$betasd, auto = TRUE, usePointMass = TRUE)
+beta.ash.pm$fitted.f
+```
+
+```
+## $pi
+##  [1] 0.767403 0.006769 0.005198 0.000000 0.000000 0.000000 0.220630
+##  [8] 0.000000 0.000000 0.000000
+## 
+## $sigma
+##  [1]  0.00000  0.05804  0.11608  0.23215  0.46431  0.92861  1.85722
+##  [8]  3.71445  7.42890 14.85780
+## 
+## $mu
+##  [1] 0 0 0 0 0 0 0 0 0 0
+```
+
+```r
+beta.ash.auto$fitted.f
+```
+
+```
+## $pi
+## [1] 0.772576 0.007762 0.000000 0.000000 0.000000 0.219662 0.000000 0.000000
+## [9] 0.000000
+## 
+## $sigma
+## [1]  0.05804  0.11608  0.23215  0.46431  0.92861  1.85722  3.71445  7.42890
+## [9] 14.85780
+## 
+## $mu
+## [1] 0 0 0 0 0 0 0 0 0
+```
+
+```r
+plot(beta.ash.auto$localfdr, beta.ash.pm$localfdr, main = "comparison of ash localfdr, with and without point mass", 
+    xlab = "no point mass", ylab = "with point mass", xlim = c(0, 1), ylim = c(0, 
+        1))
+abline(a = 0, b = 2)
+```
+
+![plot of chunk unnamed-chunk-9](figure/unnamed-chunk-9.png) 
+
+
+Our conclusion: if we simulate data with a point mass,
+and we analyze it without a point mass, we may underestimate
+the false sign rate by a factor of 2. Therefore, to be conservative, we might prefer to analyze the data allowing for the point mass, or, if analyzed without a point mass, multiply estimated false sign rates by 2.
+
+
+#### Comparison with qvalue
+
+Here we compare ash $q$ values with those from the qvalue package. Because of the issue above, we multiply the ash  $q$ values by 2.
 
 ```r
 plot(qval$q, 2 * beta.ash$qval, main = "comparison of ash and q value qvalues", 
@@ -286,7 +469,7 @@ plot(qval$q, 2 * beta.ash$qval, main = "comparison of ash and q value qvalues",
 abline(a = 0, b = 1)
 ```
 
-![plot of chunk unnamed-chunk-9](figure/unnamed-chunk-9.png) 
+![plot of chunk unnamed-chunk-10](figure/unnamed-chunk-10.png) 
 
 
 In this example we see that qval overestimates the actual FDR. (This
@@ -300,7 +483,7 @@ lines(cumsum(ss$null[o])/(1:10000), 2 * beta.ash$qval[o])
 abline(a = 0, b = 1)
 ```
 
-![plot of chunk unnamed-chunk-10](figure/unnamed-chunk-10.png) 
+![plot of chunk unnamed-chunk-11](figure/unnamed-chunk-11.png) 
 
 
 ### Miscellaneous 
@@ -328,7 +511,7 @@ abline(h = 0)
 abline(a = 0, b = 1, col = 2)
 ```
 
-![plot of chunk unnamed-chunk-11](figure/unnamed-chunk-111.png) 
+![plot of chunk unnamed-chunk-12](figure/unnamed-chunk-121.png) 
 
 ```r
 
@@ -336,7 +519,7 @@ plot(qval$q, 2 * beta.ash$qval, main = "comparison of ash and q value qvalues")
 abline(a = 0, b = 1)
 ```
 
-![plot of chunk unnamed-chunk-11](figure/unnamed-chunk-112.png) 
+![plot of chunk unnamed-chunk-12](figure/unnamed-chunk-122.png) 
 
 ```r
 
@@ -347,7 +530,7 @@ lines(cumsum(truenull[o])/(1:10000), 2 * beta.ash$qval[o])
 abline(a = 0, b = 1)
 ```
 
-![plot of chunk unnamed-chunk-11](figure/unnamed-chunk-113.png) 
+![plot of chunk unnamed-chunk-12](figure/unnamed-chunk-123.png) 
 
 
 It seems that in this case the ash q values underestimate the
@@ -367,7 +550,7 @@ plot(cumsum(truenull[o])/(1:10000), 2 * qv[o], type = "l")
 abline(a = 0, b = 1)
 ```
 
-![plot of chunk unnamed-chunk-12](figure/unnamed-chunk-12.png) 
+![plot of chunk unnamed-chunk-13](figure/unnamed-chunk-13.png) 
 
 No, that's not it.
 
@@ -391,7 +574,7 @@ plot(qval$q, 2 * beta.ash$qval, main = "comparison of ash and q value qvalues")
 abline(a = 0, b = 1)
 ```
 
-![plot of chunk unnamed-chunk-13](figure/unnamed-chunk-131.png) 
+![plot of chunk unnamed-chunk-14](figure/unnamed-chunk-141.png) 
 
 ```r
 
@@ -402,7 +585,7 @@ lines(cumsum(truenull[o])/(1:10000), 2 * beta.ash$qval[o])
 abline(a = 0, b = 1)
 ```
 
-![plot of chunk unnamed-chunk-13](figure/unnamed-chunk-132.png) 
+![plot of chunk unnamed-chunk-14](figure/unnamed-chunk-142.png) 
 
 ```r
 
