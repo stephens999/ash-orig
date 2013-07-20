@@ -6,7 +6,7 @@ source(file.path(course.repodir,"code/Rcode/PoissonBinomial.funcs.R")) #Set the 
 source(file.path(ash.repodir,"/Rcode/ash.R"))
 source(file.path(course.repodir,"code/Rcode/log_exp_plus_one_of_mixture_of_gaussians_moments.R")) 
 source(file.path(course.repodir,"code/Rcode/deltamethod.R")) 
-source(file.path(course.repodir,"code/BMSMShrink/Rport/bash.R")) 
+source(file.path(ash.repodir,"/Rcode/bash.R")) 
 
 #interleave two vectors
 interleave=function(x,y){
