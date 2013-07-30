@@ -385,7 +385,8 @@ autoselect.sigmaavec = function(betahat,sebetahat){
 #Things to do: automate choice of sigmavec
 # check sampling routin
 # check number of iterations
-ash = function(betahat,sebetahat,nullcheck=TRUE,df=NULL,randomstart=FALSE, usePointMass = FALSE, onlylogLR = FALSE, localfsr = TRUE, prior=NULL, sigmaavec=NULL, auto=FALSE, sigma.est=FALSE, nc=NULL, VB=FALSE){
+ash = function(betahat,sebetahat,nullcheck=TRUE,df=NULL,randomstart=FALSE, usePointMass = FALSE, onlylogLR = FALSE, localfdr = TRUE, localfsr = TRUE, prior=NULL, sigmaavec=NULL, auto=FALSE, sigma.est=FALSE, nc=NULL, VB=FALSE){
+
   #if df specified, convert betahat so that bethata/sebetahat gives the same p value
   #from a z test as the original effects would give under a t test with df=df
   if(!is.null(df)){
@@ -429,10 +430,10 @@ ash = function(betahat,sebetahat,nullcheck=TRUE,df=NULL,randomstart=FALSE, usePo
   	ZeroProb = colSums(post$pi[sigmaavec==0,,drop=FALSE])
     NegativeProb =  1- PositiveProb-ZeroProb    
     PosteriorMean = posterior_mean(post)
-  	if(localfsr){
+  	if(localfsr & localfdr){
    		localfsr = ifelse(PositiveProb<NegativeProb,PositiveProb+ZeroProb,NegativeProb+ZeroProb)
    		localfdr = 2* localfsr
-      qvalue = qval.from.localfdr(localfdr)
+      		qvalue = qval.from.localfdr(localfdr)
   	}else{
    		localfdr=NULL
    		qvalue=NULL
