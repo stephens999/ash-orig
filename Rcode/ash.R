@@ -92,7 +92,7 @@ VB.update = function(matrix_loglik, pipost){
 #B: the values of the likelihood lower bounds
 #converged: boolean for whether it converged
 #nullcheck: not implemented
-VBEM = function(matrix_loglik, prior, tol=0.0001, maxiter=5000,nullcheck=TRUE){
+VBEM = function(matrix_loglik, prior, tol=0.0001, maxiter=5000){
   n=nrow(matrix_loglik)
   k=ncol(matrix_loglik)
   B = rep(0,maxiter)
@@ -122,8 +122,50 @@ VBEM = function(matrix_loglik, prior, tol=0.0001, maxiter=5000,nullcheck=TRUE){
 }
   
 
+EM = function(matrix_loglik, prior, tol=0.0001, maxiter=5000,sigma.est=FALSE){
+  n=nrow(matrix_loglik)
+  k=ncol(matrix_loglik)
+  B = rep(0,maxiter)
+  pi = rep(1/k,k)# Use as starting point for pi
+  
+  loglik = rep(0,maxiter)
+  m  = t(pi * t(matrix_loglik)) # matrix_loglik is n by k; so this is also n by k
+  m.rowsum = rowSums(m)
+  loglik[1] = sum(log(m.rowsum))
+  classprob = m/m.rowsum #an n by k matrix
+  
+  for(i in 2:maxiter){  
+    pi = colSums(classprob) + prior-1
+    pi = ifelse(pi<0,0,pi) #set any estimates that are less than zero, which can happen with prior<1, to 0
+    pi = normalize(pi)
+    
+    #estimate sigma
+    if(sigma.est==TRUE){
+      for(j in 1:k){
+        pj=classprob[,j]
+        f=function(x) sum((betahat^2/(sebetahat^2+x)^2-1/(sebetahat^2+x))*pj)
+        if(f(sigmamin^2)<=0){
+          sigmaavec[j]=sigmamin
+        }else if(f(sigmamax^2)>=0){
+          sigmaavec[j]=sigmamax
+        }else{
+          sigmaavec[j]=sqrt(uniroot(f,c(sigmamin^2,sigmamax^2))$root)          
+        }
+      }
+      matrix_loglik = matrix_ldens(betahat,sebetahat,sigmaavec)
+    }
+    
+    #Now re-estimate pi
+    m  = t(pi * t(matrix_loglik)) 
+    m.rowsum = rowSums(m)
+    loglik[i] = sum(log(m.rowsum))
+    classprob = m/m.rowsum
+    
+    if(abs(loglik[i]-loglik[i-1])<tol) break;
+  }
 
-
+  return(list(post = pi, B=loglik[1:i], niter = i, converged=(i<maxiter)))
+}
 #estimate mixture proportions of sigmaa by EM algorithm
 #prior gives the parameter of a Dirichlet prior on pi
 #(prior is used to encourage results towards smallest value of sigma when
@@ -155,67 +197,29 @@ EMest = function(betahat,sebetahat,sigmaavec,pi,sigma.est=FALSE,nullcheck=TRUE,p
   matrix_loglik = matrix_ldens(betahat,sebetahat,sigmaavec)
 
   if(VB==TRUE){
-    vb=VBEM(matrix_loglik,prior,ltol, maxiter)
-
-    pi = vb$post/sum(vb$post) # use posterior mean to estimate pi    
-    m  = t(pi * t(matrix_loglik)) # matrix_loglik is n by k; so this is also n by k
-    m.rowsum = rowSums(m)
-    classprob = m/m.rowsum
-    loglik.final = sum(log(m.rowsum))
-    null.loglik = sum(log(matrix_loglik[,null.comp]))
-    loglik = vb$B # actually return log lower bound not log-likelihood! 
-    converged = vb$converged
-    niter = vb$niter
-  }else{
-    loglik = rep(0,maxiter)
-    m  = t(pi * t(matrix_loglik)) # matrix_loglik is n by k; so this is also n by k
-    m.rowsum = rowSums(m)
-    loglik[1] = sum(log(m.rowsum))
-    classprob = m/m.rowsum #an n by k matrix
-    
-    for(i in 2:maxiter){  
-      pi = colSums(classprob) + prior-1
-      pi = ifelse(pi<0,0,pi) #set any estimates that are less than zero, which can happen with prior<1, to 0
-      pi = normalize(pi)
-      
-      #estimate sigma
-      if(sigma.est==TRUE){
-        for(j in 1:k){
-          pj=classprob[,j]
-          f=function(x) sum((betahat^2/(sebetahat^2+x)^2-1/(sebetahat^2+x))*pj)
-          if(f(sigmamin^2)<=0){
-            sigmaavec[j]=sigmamin
-          }else if(f(sigmamax^2)>=0){
-            sigmaavec[j]=sigmamax
-          }else{
-            sigmaavec[j]=sqrt(uniroot(f,c(sigmamin^2,sigmamax^2))$root)          
-          }
-        }
-        matrix_loglik = matrix_ldens(betahat,sebetahat,sigmaavec)
-      }
-      
-      #Now re-estimate pi
+    EMfit=VBEM(matrix_loglik,prior,ltol, maxiter)}
+  else{
+    EMfit = EM(matrix_loglik,prior,ltol, maxiter,sigma.est)
+  }
+  
+  pi = EMfit$post/sum(EMfit$post) # use posterior mean to estimate pi    
+  m  = t(pi * t(matrix_loglik)) # matrix_loglik is n by k; so this is also n by k
+  m.rowsum = rowSums(m)
+  classprob = m/m.rowsum
+  loglik.final = sum(log(m.rowsum))
+  null.loglik = sum(log(matrix_loglik[,null.comp]))
+  loglik = EMfit$B # actually return log lower bound not log-likelihood! 
+  converged = EMfit$converged
+  niter = EMfit$niter
+ 
+  if(nullcheck==TRUE){
+    if(null.loglik > loglik.final){ #check whether exceeded "null" likelihood where everything is null
+      pi=rep(0,k)
+      pi[null.comp]=1
       m  = t(pi * t(matrix_loglik)) 
       m.rowsum = rowSums(m)
-      loglik[i] = sum(log(m.rowsum))
+      loglik[niter] = sum(log(m.rowsum))
       classprob = m/m.rowsum
-      
-      if(abs(loglik[i]-loglik[i-1])<ltol) break;
-    }
-    null.loglik = sum(log(matrix_loglik[,null.comp]))
-    converged = (i< maxiter)
-    niter= min(c(i,maxiter))
-    loglik.final = loglik[niter]
-    
-    if(nullcheck==TRUE){
-      if(null.loglik > loglik.final){ #check whether exceeded "null" likelihood where everything is null
-        pi=rep(0,k)
-        pi[null.comp]=1
-        m  = t(pi * t(matrix_loglik)) 
-        m.rowsum = rowSums(m)
-        loglik[niter] = sum(log(m.rowsum))
-        classprob = m/m.rowsum
-      }
     }
   }
   
