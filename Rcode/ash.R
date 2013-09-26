@@ -1,28 +1,14 @@
-#return ABF for vector of betahat and standard errors
-ABF = function(betahat, sebetahat,sigmaa){
-  T = betahat/sebetahat
-  lambda = sebetahat^2/(sebetahat^2+sigmaa^2)
-  return((sqrt(lambda) * exp(0.5*T^2 *(1-lambda))))
-}
-
-logABF = function(betahat,sebetahat,sigmaa){
-  T = betahat/sebetahat
-  lambda = sebetahat^2/(sebetahat^2+sigmaa^2)
-  return(0.5*log(lambda) + 0.5*T^2 *(1-lambda))
-# the following line is same up to a constant, and probably faster:
-# return(dnorm(betahat,0,sqrt(sebetahat^2+sigmaa^2),log=TRUE))
-}
-
 #compute normal density for n-vector x
 #at each of k values of mu and sigma
 #OUTPUT: k by n matrix of normal densities
-matdnorm = function (x, mu, sigma) 
+matdnorm = function (x, mu, sigma, log=FALSE) 
 {
   k=length(mu)
   n=length(x)
   d = matrix(rep(x,rep(k,n)),nrow=k)
-  return(matrix(dnorm(d, mu, sigma),nrow=k))
+  return(matrix(dnorm(d, mu, sigma, log),nrow=k))
 }
+
 
 #compute density of mixture of k normals
 #for n-vector x
@@ -60,21 +46,22 @@ mixseLoglik = function(x,pi,mu,sigma,se,FUN="+"){
 }
 
 
+
 #return matrix of ABFs for vector of sigma-a values
 #normalized by maximum of each column
 #betahat is n vector, sebetahat is n vector, sigmaavec is k vector
-#return is n by k matrix of ABFs
+#return is n by k matrix of the normal likelihoods, 
+# with (i,k)th element the density of N(betahat_i; mean=0, var = sebetahat_i^2 + sigmaavec_k^2)
+#normalized to have maximum 1 in each column
 matrixABF = function(betahat, sebetahat, sigmaavec){
   k = length(sigmaavec)
   n = length(betahat)
-  labf = matrix(0,nrow=n, ncol=k)
-  for(i in 1:k){
-  labf[,i] = logABF(betahat,sebetahat,sigmaavec[i])
-  }
-  maxlabf = apply(labf, 1, max)
-  labf = labf - maxlabf
-  return(exp(labf))
+  ldens = dnorm(betahat,0,sqrt(outer(sebetahat^2,sigmaavec^2,FUN="+")),log=TRUE)
+  maxldens = apply(ldens, 1, max)
+  ldens = ldens - maxldens
+  return(exp(ldens))
 }
+
 
 #return the KL-divergence between 2 dirichlet distributions
 #p,q are the vectors of dirichlet parameters of same lengths
@@ -380,10 +367,13 @@ autoselect.sigmaavec = function(betahat,sebetahat){
 #onlylogLR (= FALSE) : bool, indicating whether to use this function to get logLR. Skip posterior prob, posterior mean, localfdr...
 #localfdr (=TRUE) : bool,  indicating whether to compute localfdr and q-value
 #auto (=FALSE): bool, whether to try to select the sigmaavec vector automatically (beta functionality)
+#sigma.est: bool, whether to estimate sigma rather than fixing (Beta version)
+#nc: number of components to use (only relevant when sigma.est=TRUE)
+#
 #OUTPUT: 
 #logLR : logP(D|mle(pi)) - logP(D|null)
-#Things to do: automate choice of sigmavec
-# check sampling routin
+#Things to do:
+# check sampling routine
 # check number of iterations
 ash = function(betahat,sebetahat,nullcheck=TRUE,df=NULL,randomstart=FALSE, usePointMass = FALSE, onlylogLR = FALSE, localfdr = TRUE, localfsr = TRUE, prior=NULL, sigmaavec=NULL, auto=FALSE, sigma.est=FALSE, nc=NULL, VB=FALSE){
 
@@ -418,9 +408,11 @@ ash = function(betahat,sebetahat,nullcheck=TRUE,df=NULL,randomstart=FALSE, usePo
   if(randomstart){pi=rgamma(k,1,1)}
   
   pi.fit=EMest(betahat[completeobs],sebetahat[completeobs],sigmaavec=sigmaavec,pi=pi,sigma.est=sigma.est,prior=prior,nullcheck=nullcheck,nc=nc,VB=VB)  
+
   if(sigma.est==TRUE){
     sigmaavec=pi.fit$sigmaavec
   }
+  
   if(onlylogLR){
 	logLR = pi.fit$temp2 - pi.fit$temp1
 	return(list(pi=pi.fit$pi, logLR = logLR))
@@ -433,7 +425,7 @@ ash = function(betahat,sebetahat,nullcheck=TRUE,df=NULL,randomstart=FALSE, usePo
   	if(localfsr & localfdr){
    		localfsr = ifelse(PositiveProb<NegativeProb,PositiveProb+ZeroProb,NegativeProb+ZeroProb)
    		localfdr = 2* localfsr
-      		qvalue = qval.from.localfdr(localfdr)
+      qvalue = qval.from.localfdr(localfdr)
   	}else{
    		localfdr=NULL
    		qvalue=NULL
