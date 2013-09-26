@@ -21,6 +21,17 @@ and the first 500 observations have good precision, and the next 500 have poor p
 # biocLite('qvalue')
 setwd("~/Documents/git/ash/Rcode/")
 library("qvalue")
+```
+
+```
+## Loading Tcl/Tk interface ...
+```
+
+```
+## done
+```
+
+```r
 library("lattice")  #library for some of the plots
 
 # set up some data with mixture of values of s
@@ -166,7 +177,7 @@ sum(hh.ash$qvalue < 0.05)
 ```
 
 ```
-## [1] 423
+## [1] 245
 ```
 
 ```r
@@ -195,7 +206,7 @@ cat(sum(hh.ash$qvalue < 0.05), sum(hh.ash2$qvalue < 0.05))
 ```
 
 ```
-## 423 730
+## 245 376
 ```
 
 ```r
@@ -203,7 +214,7 @@ cat(sum(hh.ash$localfdr < 0.05), sum(hh.ash2$localfdr < 0.05))
 ```
 
 ```
-## 214 368
+## 125 186
 ```
 
 ```r
@@ -234,7 +245,7 @@ cat(mixseLoglik(hh.betahat, hh.ash$fitted.f$pi, hh.ash$fitted.f$mu, hh.ash$fitte
 ```
 
 ```
-## -1907 -1801
+## -1912 -1800
 ```
 
 Looks like the second model fits better.
@@ -264,7 +275,7 @@ cat(hh.ash2$fitted.f$pi[1], hh.q$pi0)
 ```
 
 ```
-## 0.00393 0.6651
+## 4.084e-05 0.6651
 ```
 
 At first I was really worried about this - the pi0 estimate
@@ -328,7 +339,7 @@ sum(errorinsign[zsim2.ash$qvalue < 0.05])/sum(zsim2.ash$qvalue < 0.05)
 ```
 
 ```
-## [1] 0.06349
+## [1] 0.03077
 ```
 
 
@@ -441,7 +452,7 @@ cat(sum(test1.ash1$qval < 0.05), sum(test1.ash2$qval < 0.05))
 ```
 
 ```
-## 906 609
+## 663 443
 ```
 
 ```r
@@ -452,7 +463,7 @@ cat(sum(test2.ash1$qval < 0.05), sum(test2.ash2$qval < 0.05))
 ```
 
 ```
-## 167 488
+## 87 270
 ```
 
 ```r
@@ -464,7 +475,7 @@ mixseLoglik(bhat.test, test1.ash1$fitted.f$pi, test1.ash1$fitted.f$mu, test1.ash
 ```
 
 ```
-## [1] -1498
+## [1] -1497
 ```
 
 ```r
@@ -473,7 +484,7 @@ mixseLoglik(bhat.test, test1.ash2$fitted.f$pi, test1.ash2$fitted.f$mu, sqrt(test
 ```
 
 ```
-## [1] -1832
+## [1] -1831
 ```
 
 ```r
