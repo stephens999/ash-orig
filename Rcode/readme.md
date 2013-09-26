@@ -518,12 +518,26 @@ nsim = 1000
 pmax = 10000
 z = matrix(rnorm(nsim * pmax), ncol = pmax)
 abf = ABF(z, 1, 1)
+```
+
+```
+## Error: could not find function "ABF"
+```
+
+```r
 pvec = c(5, 10, 20, 50, 100, 1000, 10000)
 q = rep(0, length(pvec))
 for (i in 1:length(pvec)) {
     abf.m = rowMeans(abf[, 1:pvec[i]])
     q[i] = quantile(abf.m, 0.95)
 }
+```
+
+```
+## Error: object 'abf' not found
+```
+
+```r
 plot(q)
 ```
 
@@ -541,6 +555,13 @@ for (i in 1:length(Wvec)) {
     abf = ABF(z, 1, Wvec[i])
     q[i] = quantile(abf, 0.95)
 }
+```
+
+```
+## Error: could not find function "ABF"
+```
+
+```r
 plot(q)
 ```
 
