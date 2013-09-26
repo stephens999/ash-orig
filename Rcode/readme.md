@@ -275,7 +275,7 @@ cat(hh.ash2$fitted.f$pi[1], hh.q$pi0)
 ```
 
 ```
-## 4.015e-05 0.6651
+## 4.084e-05 0.6651
 ```
 
 At first I was really worried about this - the pi0 estimate
@@ -339,7 +339,7 @@ sum(errorinsign[zsim2.ash$qvalue < 0.05])/sum(zsim2.ash$qvalue < 0.05)
 ```
 
 ```
-## [1] 0.03154
+## [1] 0.03077
 ```
 
 
@@ -452,7 +452,7 @@ cat(sum(test1.ash1$qval < 0.05), sum(test1.ash2$qval < 0.05))
 ```
 
 ```
-## 676 448
+## 663 443
 ```
 
 ```r
@@ -463,7 +463,7 @@ cat(sum(test2.ash1$qval < 0.05), sum(test2.ash2$qval < 0.05))
 ```
 
 ```
-## 104 294
+## 87 270
 ```
 
 ```r
@@ -494,7 +494,7 @@ mixseLoglik(bhat2.test, test2.ash1$fitted.f$pi, test2.ash1$fitted.f$mu, test2.as
 ```
 
 ```
-## [1] -1451
+## [1] -1452
 ```
 
 ```r

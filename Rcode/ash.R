@@ -57,7 +57,7 @@ mixseLoglik = function(x,pi,mu,sigma,se,FUN="+"){
 #return is n by k matrix of the normal likelihoods, 
 # with (j,k)th element the density of N(betahat_j; mean=0, var = sebetahat_j^2 + sigmaavec_k^2)
 #normalized to have maximum 1 in each column
-matrix_ldens = function(betahat, sebetahat, sigmaavec){
+matrix_dens = function(betahat, sebetahat, sigmaavec){
   k = length(sigmaavec)
   n = length(betahat)
   ldens = dnorm(betahat,0,sqrt(outer(sebetahat^2,sigmaavec^2,FUN="+")),log=TRUE)
@@ -78,58 +78,60 @@ diriKL = function(p,q){
 }
 
 #helper function for VBEM
-VB.update = function(matrix_loglik, pipost){
+VB.update = function(matrix_lik, pipost){
   avgpipost = matrix(exp(rep(digamma(pipost),n)-rep(digamma(sum(pipost)),k*n)),ncol=k,byrow=TRUE)
-  classprob = avgpipost * matrix_loglik
+  classprob = avgpipost * matrix_lik
   classprob = classprob/rowSums(classprob) # n by k matrix  
-  B = sum(classprob*log(avgpipost*matrix_loglik)) - diriKL(prior,pipost) #negative free energy
+  B = sum(classprob*log(avgpipost*matrix_lik)) - diriKL(prior,pipost) #negative free energy
   return(list(classprob=classprob,B=B))
 }
 
-#input matrix_loglik is n by k matrix of p(obs n | comes from component k)
+#input matrix_lik is n by k matrix of p(obs n | comes from component k)
 #prior: a k vector of dirichlet prior parameters
 #output: post: a vector of the posterior dirichlet parameters
 #B: the values of the likelihood lower bounds
 #converged: boolean for whether it converged
 #nullcheck: not implemented
-VBEM = function(matrix_loglik, prior, tol=0.0001, maxiter=5000){
-  n=nrow(matrix_loglik)
-  k=ncol(matrix_loglik)
+VBEM = function(matrix_lik, prior, tol=0.0001, maxiter=5000){
+  n=nrow(matrix_lik)
+  k=ncol(matrix_lik)
   B = rep(0,maxiter)
   pipost = prior # Dirichlet posterior on pi
   
   avgpipost = matrix(exp(rep(digamma(pipost),n)-rep(digamma(sum(pipost)),k*n)),ncol=k,byrow=TRUE)
-  classprob = avgpipost * matrix_loglik
+  classprob = avgpipost * matrix_lik
   classprob = classprob/rowSums(classprob) # n by k matrix  
-  B[1] = sum(classprob*log(avgpipost*matrix_loglik)) - diriKL(prior,pipost) #negative free energy
+  B[1] = sum(classprob*log(avgpipost*matrix_lik)) - diriKL(prior,pipost) #negative free energy
  
   for(i in 2:maxiter){  
     pipost = colSums(classprob) + prior
     
     #Now re-estimate pipost
     avgpipost = matrix(exp(rep(digamma(pipost),n)-rep(digamma(sum(pipost)),k*n)),ncol=k,byrow=TRUE)
-    classprob = avgpipost*matrix_loglik
+    classprob = avgpipost*matrix_lik
     classprob = classprob/rowSums(classprob) # n by k matrix
     
-    B[i] = sum(classprob*log(avgpipost*matrix_loglik)) - diriKL(prior,pipost)
+    B[i] = sum(classprob*log(avgpipost*matrix_lik)) - diriKL(prior,pipost)
     
     if(abs(B[i]-B[i-1])<tol) break;
   }
   
   if(i>maxiter){i=maxiter}
    
-  return(list(post = pipost, B=B[1:i], niter = i, converged=(i<maxiter)))
+  return(list(pihat = pipost/sum(pipost), B=B[1:i], niter = i, converged=(i<maxiter)))
 }
   
 
-EM = function(matrix_loglik, prior, tol=0.0001, maxiter=5000,sigma.est=FALSE){
-  n=nrow(matrix_loglik)
-  k=ncol(matrix_loglik)
+EM = function(matrix_lik, prior, pi.init = NULL,tol=0.0001, maxiter=5000,sigma.est=FALSE){
+  n=nrow(matrix_lik)
+  k=ncol(matrix_lik)
   B = rep(0,maxiter)
-  pi = rep(1/k,k)# Use as starting point for pi
-  
+  pi = pi.init
+  if(is.null(pi.init)){
+    pi = rep(1/k,k)# Use as starting point for pi
+  } 
   loglik = rep(0,maxiter)
-  m  = t(pi * t(matrix_loglik)) # matrix_loglik is n by k; so this is also n by k
+  m  = t(pi * t(matrix_lik)) # matrix_lik is n by k; so this is also n by k
   m.rowsum = rowSums(m)
   loglik[1] = sum(log(m.rowsum))
   classprob = m/m.rowsum #an n by k matrix
@@ -152,11 +154,11 @@ EM = function(matrix_loglik, prior, tol=0.0001, maxiter=5000,sigma.est=FALSE){
           sigmaavec[j]=sqrt(uniroot(f,c(sigmamin^2,sigmamax^2))$root)          
         }
       }
-      matrix_loglik = matrix_ldens(betahat,sebetahat,sigmaavec)
+      matrix_lik = matrix_dens(betahat,sebetahat,sigmaavec)
     }
     
     #Now re-estimate pi
-    m  = t(pi * t(matrix_loglik)) 
+    m  = t(pi * t(matrix_lik)) 
     m.rowsum = rowSums(m)
     loglik[i] = sum(log(m.rowsum))
     classprob = m/m.rowsum
@@ -164,7 +166,7 @@ EM = function(matrix_loglik, prior, tol=0.0001, maxiter=5000,sigma.est=FALSE){
     if(abs(loglik[i]-loglik[i-1])<tol) break;
   }
 
-  return(list(post = pi, B=loglik[1:i], niter = i, converged=(i<maxiter)))
+  return(list(pihat = pi, B=loglik[1:i], niter = i, converged=(i<maxiter)))
 }
 #estimate mixture proportions of sigmaa by EM algorithm
 #prior gives the parameter of a Dirichlet prior on pi
@@ -178,7 +180,7 @@ EM = function(matrix_loglik, prior, tol=0.0001, maxiter=5000,sigma.est=FALSE){
 #of mixture proportions of sigmaa by variational Bayes method
 #(use Dirichlet prior and approximate Dirichlet posterior)
 
-EMest = function(betahat,sebetahat,sigmaavec,pi,sigma.est=FALSE,nullcheck=TRUE,prior=NULL,nc=NULL,VB=FALSE,ltol=0.0001, maxiter=5000){ 
+EMest = function(betahat,sebetahat,sigmaavec,pi.init,sigma.est=FALSE,nullcheck=TRUE,prior=NULL,nc=NULL,VB=FALSE,ltol=0.0001, maxiter=5000){ 
   if(!is.null(nc)&sigma.est==TRUE){
     sigmaavec=2^(seq(-15,3,length.out=nc))
   }
@@ -194,37 +196,34 @@ EMest = function(betahat,sebetahat,sigmaavec,pi,sigma.est=FALSE,nullcheck=TRUE,p
     prior = rep(1,k)
   }
 
-  matrix_loglik = matrix_ldens(betahat,sebetahat,sigmaavec)
+  matrix_lik = matrix_dens(betahat,sebetahat,sigmaavec)
 
   if(VB==TRUE){
-    EMfit=VBEM(matrix_loglik,prior,ltol, maxiter)}
+    EMfit=VBEM(matrix_lik,prior,ltol, maxiter)}
   else{
-    EMfit = EM(matrix_loglik,prior,ltol, maxiter,sigma.est)
+    EMfit = EM(matrix_lik,prior,pi.init,ltol, maxiter,sigma.est)
   }
   
-  pi = EMfit$post/sum(EMfit$post) # use posterior mean to estimate pi    
-  m  = t(pi * t(matrix_loglik)) # matrix_loglik is n by k; so this is also n by k
-  m.rowsum = rowSums(m)
-  classprob = m/m.rowsum
-  loglik.final = sum(log(m.rowsum))
-  null.loglik = sum(log(matrix_loglik[,null.comp]))
+  pi = EMfit$pihat     
   loglik = EMfit$B # actually return log lower bound not log-likelihood! 
   converged = EMfit$converged
   niter = EMfit$niter
- 
+  loglik.final = EMfit$B[niter]
+  
+  null.loglik = sum(log(matrix_lik[,null.comp]))  
+  
   if(nullcheck==TRUE){
     if(null.loglik > loglik.final){ #check whether exceeded "null" likelihood where everything is null
       pi=rep(0,k)
       pi[null.comp]=1
-      m  = t(pi * t(matrix_loglik)) 
+      m  = t(pi * t(matrix_lik)) 
       m.rowsum = rowSums(m)
       loglik[niter] = sum(log(m.rowsum))
-      classprob = m/m.rowsum
     }
   }
   
-  return(list(pi=pi,classprob=classprob,sigmaavec=sigmaavec,loglik=loglik[1:niter],null.loglik=null.loglik,
-            matrix_loglik=matrix_loglik,converged = converged, temp1=sum(log(matrix_loglik[,null.comp])),temp2=loglik.final))
+  return(list(pi=pi,sigmaavec=sigmaavec,loglik=loglik[1:niter],null.loglik=null.loglik,
+            matrix_lik=matrix_lik,converged = converged))
 }
 
 normalize = function(x){return(x/sum(x))}
@@ -232,7 +231,7 @@ normalize = function(x){return(x/sum(x))}
 #return the posterior on beta given a prior
 #that is a mixture of normals (pi0,mu0,sigma0)
 #and observation betahat \sim N(beta,sebetahat)
-#current matrix_loglik is only for mu0=0, so would need to
+#current matrix_lik is only for mu0=0, so would need to
 #generalize that for general application
 #INPUT: priors: pi0, mu0, sigma0, all k vectors
 #       data, betahat (n vector), sebetahat (n vector)
@@ -242,7 +241,7 @@ posterior_dist = function(pi0,mu0,sigma0,betahat,sebetahat){
   k= length(pi0)
   n= length(betahat)
   
-  pi1 = pi0 * t(matrix_ldens(betahat,sebetahat,sigma0))
+  pi1 = pi0 * t(matrix_dens(betahat,sebetahat,sigma0))
   pi1 = apply(pi1, 2, normalize) #pi1 is now an k by n matrix
 
   #make k by n matrix versions of sigma0^2 and sebetahat^2
