@@ -421,7 +421,7 @@ ash = function(betahat,sebetahat,nullcheck=TRUE,df=NULL,randomstart=FALSE, usePo
   }
   
   if(onlylogLR){
-	logLR = pi.fit$temp2 - pi.fit$temp1
+	logLR = tail(pi.fit$loglik,1) - pi.fit$null.loglik
 	return(list(pi=pi.fit$pi, logLR = logLR))
   }else{
    	post = posterior_dist(pi.fit$pi,0,sigmaavec,betahat,sebetahat)
