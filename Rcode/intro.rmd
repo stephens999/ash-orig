@@ -211,10 +211,10 @@ hist(zscore)
 
 Now, we find the fitted values for $\pi$ are mostly near 0, or at 2 (the alternative value).
 ```{r}
-beta.ash$fitted.f
-beta.ash.auto$fitted.f
-beta.ash.vb.uniform$fitted.f
-beta.ash.vb.null$fitted.f
+print(beta.ash)
+print(beta.ash.auto)
+print(beta.ash.vb.uniform)
+print(beta.ash.vb.null)
 ```
 
 Plot the fitted underlying distribution on top of true values for beta
@@ -299,8 +299,8 @@ for mass near 0, then we may predict what the results would have been if we had 
 Let's try: 
 ```{r}
 beta.ash.pm = ash(ss$betahat, ss$betasd, auto=TRUE, usePointMass=TRUE)
-beta.ash.pm$fitted.f
-beta.ash.auto$fitted.f
+print(beta.ash.pm)
+print(beta.ash.auto)
 plot(beta.ash.auto$localfsr,beta.ash.pm$localfsr,main="comparison of ash localfsr, with and without point mass",xlab="no point mass", ylab="with point mass",xlim=c(0,1),ylim=c(0,1))
 abline(a=0,b=1)
 abline(a=0,b=2)
