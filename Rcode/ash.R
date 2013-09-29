@@ -1,3 +1,8 @@
+#TODO: Add nullcheck for VB?
+#Separate out the optimization over sigma from the EM algorithm
+
+source("mix.R")
+
 #compute normal density for n-vector x
 #at each of k values of mu and sigma
 #OUTPUT: k by n matrix of normal densities
@@ -212,7 +217,7 @@ EMest = function(betahat,sebetahat,sigmaavec,pi.init,sigma.est=FALSE,nullcheck=T
   
   null.loglik = sum(log(matrix_lik[,null.comp]))  
   
-  if(nullcheck==TRUE){
+  if(nullcheck==TRUE & VB==FALSE){ #null check doesn't work with VB yet
     if(null.loglik > loglik.final){ #check whether exceeded "null" likelihood where everything is null
       pi=rep(0,k)
       pi[null.comp]=1
@@ -222,22 +227,27 @@ EMest = function(betahat,sebetahat,sigmaavec,pi.init,sigma.est=FALSE,nullcheck=T
     }
   }
   
+  g=normalmix(pi,rep(0,k),sigmaavec)
   return(list(pi=pi,sigmaavec=sigmaavec,loglik=loglik[1:niter],null.loglik=null.loglik,
-            matrix_lik=matrix_lik,converged = converged))
+            matrix_lik=matrix_lik,converged = converged,g=g))
 }
 
 normalize = function(x){return(x/sum(x))}
 
 #return the posterior on beta given a prior
-#that is a mixture of normals (pi0,mu0,sigma0)
+#that is a mixture of normals (g)
 #and observation betahat \sim N(beta,sebetahat)
 #current matrix_lik is only for mu0=0, so would need to
 #generalize that for general application
-#INPUT: priors: pi0, mu0, sigma0, all k vectors
+#INPUT: g: a normalmix with components indicating the prior
 #       data, betahat (n vector), sebetahat (n vector)
 #OUTPUT list (pi1,mu1,sigma1) whose components are each k by n matrices
 #k is number of mixture components, n is number of observations
-posterior_dist = function(pi0,mu0,sigma0,betahat,sebetahat){
+posterior_dist = function(g,betahat,sebetahat){
+  pi0 = g$pi
+  mu0 = g$mean
+  sigma0 = g$sd
+  
   k= length(pi0)
   n= length(betahat)
   
@@ -424,8 +434,9 @@ ash = function(betahat,sebetahat,nullcheck=TRUE,df=NULL,randomstart=FALSE, usePo
 	logLR = tail(pi.fit$loglik,1) - pi.fit$null.loglik
 	return(list(pi=pi.fit$pi, logLR = logLR))
   }else{
-   	post = posterior_dist(pi.fit$pi,0,sigmaavec,betahat,sebetahat)
-  	PositiveProb = pnormmix(0,post$pi,post$mu,post$sigma,lower.tail=FALSE)
+   	post = posterior_dist(pi.fit$g,betahat,sebetahat)
+
+    PositiveProb = pnormmix(0,post$pi,post$mu,post$sigma,lower.tail=FALSE)
   	ZeroProb = colSums(post$pi[sigmaavec==0,,drop=FALSE])
     NegativeProb =  1- PositiveProb-ZeroProb    
     PosteriorMean = posterior_mean(post)
@@ -438,8 +449,7 @@ ash = function(betahat,sebetahat,nullcheck=TRUE,df=NULL,randomstart=FALSE, usePo
    		qvalue=NULL
   	}
    
-  	fitted.f= list(pi=pi.fit$pi,sigma=sigmaavec,mu=rep(0,k))
-    result = list(post=post,fitted.f=fitted.f,PosteriorMean = PosteriorMean,PositiveProb =PositiveProb,NegativeProb=NegativeProb, ZeroProb=ZeroProb,localfsr = localfsr, localfdr=localfdr,qvalue=qvalue,fit=pi.fit)
+    result = list(post=post,fitted.g=pi.fit$g,PosteriorMean = PosteriorMean,PositiveProb =PositiveProb,NegativeProb=NegativeProb, ZeroProb=ZeroProb,localfsr = localfsr, localfdr=localfdr,qvalue=qvalue,fit=pi.fit)
 	  class(result)= "ash"
     return(result)
 
@@ -450,7 +460,7 @@ ash = function(betahat,sebetahat,nullcheck=TRUE,df=NULL,randomstart=FALSE, usePo
 }
 
 print.ash =function(a){
-  a$fitted.f
+  print(a$fitted.g)
 }
 
 plot.ash = function(a,xmin,xmax){
@@ -466,16 +476,16 @@ predictive=function(a,se){
   
 }
   
-#return the density of the fitted underlying hierarchical f
+#return the density of the fitted underlying hierarchical g
 #a is an ash object
 #x is a vector at which the density should be computed
-density.ash=function(a,x){mixdnorm(x,a$fitted.f$pi,a$fitted.f$mu,a$fitted.f$sigma)}
+density.ash=function(a,x){dens(a$fitted.g,x)}
 
-#return the cdf of the fitted underlying hierarchical f
+#return the cdf of the fitted underlying hierarchical g
 #a is an ash object
-#x is a vector at which the density should be computed
+#x is a vector at which the cdf should be computed
 cdf.ash=function(a,x,lower.tail=TRUE){
- return(vapply(x,pnormmix.vec, 0,pi1=a$fitted.f$pi,mu1=a$fitted.f$mu,sigma1=a$fitted.f$sigma,lower.tail=lower.tail))    
+ return(mixcdf(a$fitted.g,x,lower.tail))
 }
 
 #density function of a convolution of uniform[a,b] with normal(0,sigma)
