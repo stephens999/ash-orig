@@ -15,10 +15,10 @@ matdnorm = function (x, mu, sigma, log=FALSE)
 # find matrix of densities at y, for each component of the mixture
 # INPUT y is an n-vector
 # OUTPUT k by n matrix of densities
-matdens = function(x,y,log=FALSE){
-  UseMethod("matdens")
+compdens = function(x,y,log=FALSE){
+  UseMethod("compdens")
 }
-matdens.default = function(x,y,log=FALSE){
+compdens.default = function(x,y,log=FALSE){
   stop("No such class")
 }
 
@@ -35,7 +35,7 @@ dens = function(x,y){
   UseMethod("dens")
 }
 dens.default = function(x,y){
-  return (x$pi %*% matdens(x, y))
+  return (x$pi %*% compdens(x, y))
 }
 
 #find log likelihood of data in y
@@ -105,6 +105,42 @@ cdf_post.default=function(m,c,betahat,sebetahat){
   colSums(comppostprob(m,betahat,sebetahat)*compcdf_post(m,c,betahat,sebetahat))
 }
 
+#find nice limits of mixture m for plotting
+min_lim = function(m){
+  UseMethod("min_lim")
+}
+min_lim.default=function(m){
+  -5
+}
+
+max_lim = function(m){
+  UseMethod("max_lim")
+}
+max_lim.default=function(m){
+  5
+}
+
+
+#plot density of mixture
+plot_dens = function(m,npoints=100,...){
+  UseMethod("plot_dens")
+}
+plot_dens.default = function(m,npoints=100,...){
+  x = seq(min_lim(m),max_lim(m),length=npoints)
+  plot(x,dens(m,x),type="l",xlab="density",ylab="x",...)
+}
+
+plot_post_cdf = function(m,betahat,sebetahat,npoints=100,...){
+  UseMethod("plot_post_cdf")
+}
+plot_post_cdf.default = function(m,betahat,sebetahat,npoints=100,...){
+  x = seq(min_lim(m),max_lim(m),length=npoints)
+  x_cdf = vapply(x,cdf_post,FUN.VALUE=betahat,m=m,betahat=betahat,sebetahat=sebetahat)
+  plot(x,x_cdf,type="l",xlab="x",ylab="cdf",...)
+ # for(i in 2:nrow(x_cdf)){
+ #   lines(x,x_cdf[i,],col=i)
+ # }
+}
 
 ############################### METHODS FOR normalmix class ###########################
 
@@ -114,12 +150,23 @@ normalmix = function(pi,mean,sd){
 }
 
 
-matdens.normalmix = function(x,y,log=FALSE){
+compdens.normalmix = function(x,y,log=FALSE){
   k=length(x$mean)
   n=length(y)
   d = matrix(rep(y,rep(k,n)),nrow=k)
   return(matrix(dnorm(d, x$mean, x$sd, log),nrow=k))  
 }
+
+#density of convolution of each component of a normal mixture with N(0,s^2) at x
+# x an n-vector at which density is to be evaluated
+#return a k by n matrix
+#Note that convolution of two normals is normal, so it works that way
+compdens_conv.normalmix = function(m, x, s){
+  if(length(s)==1){s=rep(s,length(x))}
+  sdmat = sqrt(outer(s^2,m$sd^2,FUN="+")) #n by k matrix of standard deviations of convolutions
+  return(t(dnorm(outer(x,m$mean,FUN="-")/sdmat)/sdmat))
+}
+
 
 mixcdf.normalmix = function(x,y,lower.tail=TRUE){
   x$pi %*%  vapply(y,pnorm,x$mean,x$mean,x$sd,lower.tail)
@@ -135,7 +182,7 @@ unimix = function(pi,a,b){
   structure(data.frame(pi,a,b),class="unimix")
 }
 
-matdens.unimix = function(x,y,log=FALSE){
+compdens.unimix = function(x,y,log=FALSE){
   k=length(x$a)
   n=length(y)
   d = matrix(rep(y,rep(k,n)),nrow=k)
@@ -157,31 +204,52 @@ compdens_conv.unimix = function(m, x, s){
 #sebetahat an n vector of standard errors
 #return a k by n matrix of the posterior cdf
 compcdf_post.unimix=function(m,c,betahat,sebetahat){
-  c = ifelse(c>m$b,m$b,c)
-  c = ifelse(c<m$a,m$a,c)
-  pna = pnorm(outer(betahat,m$a,FUN="-")/sebetahat)
-  pnc = pnorm(outer(betahat,c,FUN="-")/sebetahat)
-  pnb = pnorm(outer(betahat,m$b,FUN="-")/sebetahat)
-  t((pnc-pna)/(pnb-pna))
+  k = length(m$pi)
+  n=length(betahat)
+  tmp = matrix(1,nrow=k,ncol=n)
+  tmp[m$a >= c,] = 0
+  subset = m$a<c & m$b>c # subset of components (1..k) with nontrivial cdf
+  if(sum(subset)>0){
+    pna = pnorm(outer(betahat,m$a[subset],FUN="-")/sebetahat)
+    pnc = pnorm(outer(betahat,c,FUN="-")/sebetahat)
+    pnb = pnorm(outer(betahat,m$b[subset],FUN="-")/sebetahat)
+    tmp[subset,] = t((pnc-pna)/(pnb-pna))
+  }
+  tmp
 }
 
 
 ################################# TESTING #####################################
+
 temp = normalmix(c(0.5,0.5),c(-3,2),c(1,1))
 x = seq(-5,5,length=100)
 plot(x,dens(temp,x),type="l")
-all.equal(matdens(temp,x),matdnorm(x, temp$mean,temp$sd))
+all.equal(compdens(temp,x),matdnorm(x, temp$mean,temp$sd))
 
 plot(x,mixcdf(temp,x),type="l")
 
+plot(x,compdens_conv(temp,x,0.01)[1,],type="l")
+plot(x,compdens_conv(temp,x,0.1)[2,],type="l")
+plot(x,dens_conv(temp,x,0.2),type="l")
+plot(x,dens_conv(temp,x,0.001),type="l")
+plot(x,dens_conv(temp,x,10),type="l")
+
+
+
 temp2 = unimix(c(0.5,0.5),c(-3,3),c(-1,4))
-plot(x,dens(temp2,x),type="l")
+plot_dens(temp2)
 
 plot(x,compdens_conv(temp2,x,0.01)[1,],type="l")
 plot(x,compdens_conv(temp2,x,0.1)[2,],type="l")
 plot(x,dens_conv(temp2,x,0.2),type="l")
 
+
+
 #Note the second of these gives errors - need
 #to rewrite to deal with the numerical problems
 compcdf_post(temp2,0,c(1,2,3),c(10,10,10))
-compcdf_post(temp2,-2,c(-2),c(0.1))
+compcdf_post(temp2,-2,c(-2,3),c(0.1,1))
+
+plot_post_cdf(temp2,betahat=c(-2),sebetahat=10)
+plot_post_cdf(temp2,betahat=c(-2),sebetahat=1,col=2)
+
