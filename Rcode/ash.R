@@ -86,8 +86,8 @@ diriKL = function(p,q){
 VB.update = function(matrix_lik, pipost){
   avgpipost = matrix(exp(rep(digamma(pipost),n)-rep(digamma(sum(pipost)),k*n)),ncol=k,byrow=TRUE)
   classprob = avgpipost * matrix_lik
-  classprob = classprob/rowSums(classprob) # n by k matrix  
-  B = sum(classprob*log(avgpipost*matrix_lik)) - diriKL(prior,pipost) #negative free energy
+  classprob = classprob/rowSums(classprob) # n by k matrix
+  B = sum(classprob*log(avgpipost*matrix_lik),na.rm=TRUE) - diriKL(prior,pipost) #negative free energy
   return(list(classprob=classprob,B=B))
 }
 
@@ -106,7 +106,7 @@ VBEM = function(matrix_lik, prior, tol=0.0001, maxiter=5000){
   avgpipost = matrix(exp(rep(digamma(pipost),n)-rep(digamma(sum(pipost)),k*n)),ncol=k,byrow=TRUE)
   classprob = avgpipost * matrix_lik
   classprob = classprob/rowSums(classprob) # n by k matrix  
-  B[1] = sum(classprob*log(avgpipost*matrix_lik)) - diriKL(prior,pipost) #negative free energy
+  B[1] = sum(classprob*log(avgpipost*matrix_lik),na.rm=TRUE) - diriKL(prior,pipost) #negative free energy
  
   for(i in 2:maxiter){  
     pipost = colSums(classprob) + prior
@@ -116,7 +116,7 @@ VBEM = function(matrix_lik, prior, tol=0.0001, maxiter=5000){
     classprob = avgpipost*matrix_lik
     classprob = classprob/rowSums(classprob) # n by k matrix
     
-    B[i] = sum(classprob*log(avgpipost*matrix_lik)) - diriKL(prior,pipost)
+    B[i] = sum(classprob*log(avgpipost*matrix_lik),na.rm=TRUE) - diriKL(prior,pipost)
     
     if(abs(B[i]-B[i-1])<tol) break;
   }
