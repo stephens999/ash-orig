@@ -1,4 +1,7 @@
+```{r}
+
 source("ash.R")
+set.seed(100)
 
 #Test VBEM
 abf = rbind(c(1,0,0,0),c(0,1,0,0),c(0,0,1,0),c(0,0,1,0),c(0,0,1,0))
@@ -54,3 +57,5 @@ beta.ash.vb.null$fitted.f
 
 beta.ash.vb.uniform$fit$loglik
 beta.ash.vb.uniform$fit$converged
+
+```

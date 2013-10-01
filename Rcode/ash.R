@@ -123,7 +123,7 @@ VBEM = function(matrix_lik, prior, tol=0.0001, maxiter=5000){
   
   if(i>maxiter){i=maxiter}
    
-  return(list(pihat = pipost/sum(pipost), B=B[1:i], niter = i, converged=(i<maxiter)))
+  return(list(pihat = pipost/sum(pipost), B=B[1:i], niter = i, converged=(i<maxiter),post=pipost))
 }
   
 
