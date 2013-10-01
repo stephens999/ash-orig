@@ -1,3 +1,12 @@
+############## HELPER FUNCTIONS #################################################
+#OUTPUT: k by n matrix of normal densities
+matdnorm = function (x, mu, sigma, log=FALSE) 
+{
+  k=length(mu)
+  n=length(x)
+  d = matrix(rep(x,rep(k,n)),nrow=k)
+  return(matrix(dnorm(d, mu, sigma, log),nrow=k))
+}
 
 
 ################################# TESTING #####################################
