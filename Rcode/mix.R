@@ -1,3 +1,5 @@
+library(truncnorm)
+
 ################################## GENERIC FUNCTIONS ############################
 # find matrix of densities at y, for each component of the mixture
 # INPUT y is an n-vector
@@ -7,6 +9,14 @@ compdens = function(x,y,log=FALSE){
 }
 compdens.default = function(x,y,log=FALSE){
   stop("No such class")
+}
+
+#number of components
+ncomp = function(m){
+  UseMethod("ncomp")
+}
+ncomp.default = function(m){
+  return(length(m$pi))
 }
 
 #find cdf at y, a generic function
@@ -159,7 +169,7 @@ normalmix = function(pi,mean,sd){
 
 
 compdens.normalmix = function(x,y,log=FALSE){
-  k=length(x$mean)
+  k=ncomp(x)
   n=length(y)
   d = matrix(rep(y,rep(k,n)),nrow=k)
   return(matrix(dnorm(d, x$mean, x$sd, log),nrow=k))  
@@ -214,7 +224,7 @@ unimix = function(pi,a,b){
 }
 
 compdens.unimix = function(x,y,log=FALSE){
-  k=length(x$a)
+  k=ncomp(x)
   n=length(y)
   d = matrix(rep(y,rep(k,n)),nrow=k)
   return(matrix(dunif(d, x$a, x$b, log),nrow=k))  
@@ -247,6 +257,34 @@ compcdf_post.unimix=function(m,c,betahat,sebetahat){
     tmp[subset,] = t((pnc-pna)/(pnb-pna))
   }
   tmp
+}
+
+#return posterior mean for each component of prior m, given observations betahat and sebetahat
+#input, m is a mixture with k components
+#betahat, sebetahat are n vectors
+#output is a k by n matrix
+#note that with uniform prior, posterior is truncated normal, so
+#this is computed using formula for mean of truncated normal 
+comp_postmean.unimix = function(m,betahat,sebetahat){
+#   k= ncomp(m)
+#   n=length(betahat)
+#   a = matrix(m$a,nrow=n,ncol=k,byrow=TRUE)
+#   b = matrix(m$b,nrow=n,ncol=k,byrow=TRUE)
+#   matrix(etruncnorm(a,b,betahat,sebetahat),nrow=k,byrow=TRUE)
+  #note: etruncnorm is more stable for a and b negative than positive
+  #so maybe use this, and standardize to make the whole more stable.
+  
+  alpha = outer(-betahat, m$a,FUN="+")/sebetahat
+  beta = outer(-betahat, m$b, FUN="+")/sebetahat
+
+  t(
+    betahat + sebetahat* 
+      exp(dnorm(alpha,log=TRUE)- pnorm(alpha,log=TRUE))
+   * 
+      (-expm1(dnorm(beta,log=TRUE)-dnorm(alpha,log=TRUE)))
+    /
+      (expm1(pnorm(beta,log=TRUE)-pnorm(alpha,log=TRUE)))
+  )
 }
 
 
