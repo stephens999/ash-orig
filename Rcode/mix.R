@@ -1,16 +1,3 @@
-############## HELPER FUNCTIONS #################################################
-
-#OUTPUT: k by n matrix of normal densities
-matdnorm = function (x, mu, sigma, log=FALSE) 
-{
-  k=length(mu)
-  n=length(x)
-  d = matrix(rep(x,rep(k,n)),nrow=k)
-  return(matrix(dnorm(d, mu, sigma, log),nrow=k))
-}
-
-
-
 ################################## GENERIC FUNCTIONS ############################
 # find matrix of densities at y, for each component of the mixture
 # INPUT y is an n-vector
@@ -105,6 +92,27 @@ cdf_post.default=function(m,c,betahat,sebetahat){
   colSums(comppostprob(m,betahat,sebetahat)*compcdf_post(m,c,betahat,sebetahat))
 }
 
+#output posterior mean for beta for prior mixture m,
+#given observations betahat, sebetahat
+postmean = function(m, betahat,sebetahat){
+  UseMethod("postmean")
+}
+postmean.default = function(m,betahat,sebetahat){
+   colSums(comppostprob(m,betahat,sebetahat) * comp_postmean(m,betahat,sebetahat))
+}
+
+
+
+#output posterior mean for beta for each component of prior mixture m,
+#given observations betahat, sebetahat
+comp_postmean = function(m, betahat,sebetahat){
+  UseMethod("comp_postmean")
+}
+comp_postmean.default = function(m,betahat,sebetahat){
+  stop("method comp_postmean not written for this class")
+}
+
+
 #find nice limits of mixture m for plotting
 min_lim = function(m){
   UseMethod("min_lim")
@@ -171,6 +179,29 @@ compdens_conv.normalmix = function(m, x, s){
 mixcdf.normalmix = function(x,y,lower.tail=TRUE){
   x$pi %*%  vapply(y,pnorm,x$mean,x$mean,x$sd,lower.tail)
 }
+
+#c is a scalar
+#m a mixture with k components
+#betahat a vector of n observations
+#sebetahat an n vector of standard errors
+#return a k by n matrix of the posterior cdf
+compcdf_post.normalmix=function(m,c,betahat,sebetahat){
+  k = length(m$pi)
+  n=length(betahat)
+  #compute posterior standard deviation (s1) and posterior mean (m1)
+  s1 = sqrt(outer(sebetahat^2,m$sd^2,FUN="*")/outer(sebetahat^2,m$sd^2,FUN="+"))
+  m1 = t(comp_postmean(m,betahat,sebetahat))
+  t(pnorm(c,mean=m1,sd=s1))
+}
+
+#return posterior mean for each component of prior m, given observations betahat and sebetahat
+#input, m is a mixture with k components
+#betahat, sebetahat are n vectors
+#output is a k by n matrix
+comp_postmean.normalmix = function(m,betahat,sebetahat){
+  t((outer(sebetahat^2,m$mean, FUN="*") + outer(betahat,m$sd^2, FUN="*"))/outer(sebetahat^2,m$sd^2,FUN="+"))
+}
+
 
 
 ############################### METHODS FOR unimix class ###########################

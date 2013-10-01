@@ -434,12 +434,14 @@ ash = function(betahat,sebetahat,nullcheck=TRUE,df=NULL,randomstart=FALSE, usePo
 	logLR = tail(pi.fit$loglik,1) - pi.fit$null.loglik
 	return(list(pi=pi.fit$pi, logLR = logLR))
   }else{
-   	post = posterior_dist(pi.fit$g,betahat,sebetahat)
+#   	post = posterior_dist(pi.fit$g,betahat,sebetahat)
 
-    PositiveProb = pnormmix(0,post$pi,post$mu,post$sigma,lower.tail=FALSE)
-  	ZeroProb = colSums(post$pi[sigmaavec==0,,drop=FALSE])
-    NegativeProb =  1- PositiveProb-ZeroProb    
-    PosteriorMean = posterior_mean(post)
+   	NegativeProb = cdf_post(pi.fit$g, 0, betahat,sebetahat)    
+   	ZeroProb = colSums(comppostprob(pi.fit$g,betahat,sebetahat)[sigmaavec==0,,drop=FALSE])     
+   	PositiveProb =  1- NegativeProb-ZeroProb    
+     
+    PosteriorMean = postmean(pi.fit$g,betahat,sebetahat)
+     
   	if(localfsr & localfdr){
    		localfsr = ifelse(PositiveProb<NegativeProb,PositiveProb+ZeroProb,NegativeProb+ZeroProb)
    		localfdr = 2* localfsr
@@ -449,7 +451,7 @@ ash = function(betahat,sebetahat,nullcheck=TRUE,df=NULL,randomstart=FALSE, usePo
    		qvalue=NULL
   	}
    
-    result = list(post=post,fitted.g=pi.fit$g,PosteriorMean = PosteriorMean,PositiveProb =PositiveProb,NegativeProb=NegativeProb, ZeroProb=ZeroProb,localfsr = localfsr, localfdr=localfdr,qvalue=qvalue,fit=pi.fit)
+    result = list(fitted.g=pi.fit$g,PosteriorMean = PosteriorMean,PositiveProb =PositiveProb,NegativeProb=NegativeProb, ZeroProb=ZeroProb,localfsr = localfsr, localfdr=localfdr,qvalue=qvalue,fit=pi.fit)
 	  class(result)= "ash"
     return(result)
 
@@ -457,6 +459,12 @@ ash = function(betahat,sebetahat,nullcheck=TRUE,df=NULL,randomstart=FALSE, usePo
   #if(nsamp>0){
   #  sample = posterior_sample(post,nsamp)
   #}
+}
+
+summary.ash=function(a){
+  print(a$fitted.g)
+  print(tail(a$fit$loglik,1),digits=10)
+  print(a$fit$converged)
 }
 
 print.ash =function(a){
