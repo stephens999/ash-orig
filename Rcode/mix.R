@@ -259,6 +259,25 @@ compcdf_post.unimix=function(m,c,betahat,sebetahat){
   tmp
 }
 
+my_etruncnorm= function(a,b,mean=0,sd=1){
+  alpha = (a-mean)/sd
+  beta =  (b-mean)/sd
+ #Flip the onese where both are positive, as the computations are more stable
+  #when both negative
+  flip = (alpha>0 & beta>0)
+  alpha[flip]= -alpha[flip]
+  beta[flip]=-beta[flip]
+  
+  tmp= (-1)^flip * (mean+sd*etruncnorm(alpha,beta,0,1))
+  
+  max_alphabeta = ifelse(alpha<beta, beta,alpha)
+  max_ab = ifelse(alpha<beta,b,a)
+  toobig = max_alphabeta<(-30)
+  tmp[toobig] = max_ab[toobig]
+  tmp
+}
+  
+  
 #return posterior mean for each component of prior m, given observations betahat and sebetahat
 #input, m is a mixture with k components
 #betahat, sebetahat are n vectors
@@ -276,15 +295,15 @@ comp_postmean.unimix = function(m,betahat,sebetahat){
   
   alpha = outer(-betahat, m$a,FUN="+")/sebetahat
   beta = outer(-betahat, m$b, FUN="+")/sebetahat
-
-  t(
-    betahat + sebetahat* 
-      exp(dnorm(alpha,log=TRUE)- pnorm(alpha,log=TRUE))
-   * 
-      (-expm1(dnorm(beta,log=TRUE)-dnorm(alpha,log=TRUE)))
-    /
-      (expm1(pnorm(beta,log=TRUE)-pnorm(alpha,log=TRUE)))
-  )
+  t(betahat + sebetahat*my_etruncnorm(alpha,beta,0,1))
+#   t(
+#     betahat + sebetahat* 
+#       exp(dnorm(alpha,log=TRUE)- pnorm(alpha,log=TRUE))
+#    * 
+#       (-expm1(dnorm(beta,log=TRUE)-dnorm(alpha,log=TRUE)))
+#     /
+#       (expm1(pnorm(beta,log=TRUE)-pnorm(alpha,log=TRUE)))
+#   )
 }
 
 

@@ -48,6 +48,24 @@ plot_post_cdf(temp2,betahat=c(-2),sebetahat=1,col=2)
 ```
 
 ```{r}
+etruncnorm(10,20,0,1)
+my_etruncnorm(10,20,0,1)
+
+etruncnorm(-20,-10,0,1)
+my_etruncnorm(-20,-10,0,1)
+
+etruncnorm(-20,-10,5,1)
+my_etruncnorm(-20,-10,5,1)
+
+etruncnorm(-30,-20,5,2)
+my_etruncnorm(-30,-20,5,2)
+
+etruncnorm(-Inf,-38,0,1)
+my_etruncnorm(-Inf,-38,0,1)
+
+```
+
+```{r}
   comp_postmean(temp2, c(1,2,3), c(10,10,10))
   comp_postmean(temp2, c(1,2,3), c(0.1,0.1,0.1))
 ```
