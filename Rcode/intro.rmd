@@ -393,8 +393,14 @@ abline(a=0,b=1)
 ```
 No, that's not it.
 
+
 So maybe it is the non-monotonic behaviour of the true beta values in this case.
-Let's try putting in a component at -1.5 to make the data fit this assumption better:
+Let's try putting in a component at -1.5 to make the data fit this assumption better.
+
+### Illustration of halfuniform method
+
+I will also use this to illustrate the halfuniform method, which
+allows for asymmetry.
 
 
 ```{r}
@@ -404,6 +410,23 @@ s= rep(1,10000)
 betahat = rnorm(10000,beta,s)
 
 beta.ash=ash(betahat,s)
+beta.ash.halfu = ash(betahat,s,"halfuniform")
+
+hist(beta,prob=TRUE)
+x = seq(-8,4,length=1000)
+lines(x,density(beta.ash,x),col=2)
+lines(x,density(beta.ash.halfu,x),col=3)
+
+```
+
+See how the use of the asymmtric uniform component does a better job capturing
+the underlying density. Probably clearer in the cdf plot:
+```{r}
+plot(sort(beta),(1:length(beta))/length(beta),main="cdf of beta, with fitted f overlaid",xlab="beta",ylab="cdf")
+lines(x,cdf.ash(beta.ash,x),col=2,lwd=2)
+lines(x,cdf.ash(beta.ash.halfu,x),col=3,lwd=2)
+
+
 #compute the usual zscore and corresponding p value
 zscore = betahat/s
 pval = pchisq(zscore^2,df=1,lower.tail=F)
@@ -411,10 +434,13 @@ qval = qvalue(pval)
 plot(qval$q,beta.ash$qval,main="comparison of ash and q value qvalues")
 abline(a=0,b=1)
 
+o = order(qval$qval)
+plot(cumsum(truenull[o])/(1:10000),qval$qval[o],col=1,type="l")
 o = order(beta.ash$qval)
+lines(cumsum(truenull[o])/(1:10000),beta.ash$qval[o],col=2)
+o2 = order(beta.ash.halfu$qval)
+lines(cumsum(truenull[o2])/(1:10000),beta.ash.halfu$qval[o2],col=3)
 
-plot(cumsum(truenull[o])/(1:10000),qval$qval[o],col=2,type="l")
-lines(cumsum(truenull[o])/(1:10000),beta.ash$qval[o])
 abline(a=0,b=1)
 
 
