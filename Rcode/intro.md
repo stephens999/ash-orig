@@ -177,12 +177,11 @@ setwd("~/Documents/git/ash/Rcode/")
 set.seed(32327)
 ## load Poisson_binomial and ash functions
 source("../Rcode/ash.R")
+library("qvalue")
 ```
 
-![plot of chunk unnamed-chunk-1](figure/unnamed-chunk-11.png) ![plot of chunk unnamed-chunk-1](figure/unnamed-chunk-12.png) ![plot of chunk unnamed-chunk-1](figure/unnamed-chunk-13.png) 
-
-```r
-library("qvalue")
+```
+## Warning: couldn't connect to display ":0"
 ```
 
 
@@ -211,6 +210,15 @@ beta.ash.auto = ash(ss$betahat, ss$betasd, auto = TRUE)
 beta.ash.vb.uniform = ash(ss$betahat, ss$betasd, auto = TRUE, VB = TRUE, prior = "uniform")
 beta.ash.vb.null = ash(ss$betahat, ss$betasd, auto = TRUE, VB = TRUE, prior = NULL)
 
+beta.ash.pm = ash(ss$betahat, ss$betasd, usePointMass = TRUE)
+```
+
+```
+## Error: missing value where TRUE/FALSE needed
+```
+
+```r
+
 # compute the usual zscore and corresponding p value
 zscore = ss$betahat/ss$betasd
 
@@ -230,21 +238,22 @@ print(beta.ash)
 
 ```
 ## $pi
-##  [1] 0.680981 0.009060 0.009060 0.009060 0.009060 0.009060 0.009062
-##  [8] 0.009069 0.009096 0.009213 0.009758 0.012940 0.033330 0.181252
-## [15] 0.000000 0.000000
+##  [1] 0.66698 0.01103 0.01103 0.01103 0.01103 0.01103 0.01103 0.01104
+##  [9] 0.01108 0.01121 0.01176 0.01409 0.02518 0.07443 0.10412 0.00393
 ## 
-## $mean
-##  [1] 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+## $a
+##  [1] -0.00025 -0.00050 -0.00100 -0.00200 -0.00400 -0.00800 -0.01600
+##  [8] -0.03200 -0.06400 -0.12800 -0.25600 -0.51200 -1.02400 -2.04800
+## [15] -4.09600 -8.19200
 ## 
-## $sd
+## $b
 ##  [1] 0.00025 0.00050 0.00100 0.00200 0.00400 0.00800 0.01600 0.03200
 ##  [9] 0.06400 0.12800 0.25600 0.51200 1.02400 2.04800 4.09600 8.19200
 ## 
 ## attr(,"row.names")
 ##  [1]  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16
 ## attr(,"class")
-## [1] "normalmix"
+## [1] "unimix"
 ```
 
 ```r
@@ -253,20 +262,21 @@ print(beta.ash.auto)
 
 ```
 ## $pi
-## [1] 0.772576 0.007762 0.000000 0.000000 0.000000 0.219662 0.000000 0.000000
+## [1] 0.632956 0.050500 0.050237 0.049262 0.046325 0.040239 0.120797 0.009683
 ## [9] 0.000000
 ## 
-## $mean
-## [1] 0 0 0 0 0 0 0 0 0
+## $a
+## [1]  -0.05804  -0.11608  -0.23215  -0.46431  -0.92861  -1.85722  -3.71445
+## [8]  -7.42890 -14.85780
 ## 
-## $sd
+## $b
 ## [1]  0.05804  0.11608  0.23215  0.46431  0.92861  1.85722  3.71445  7.42890
 ## [9] 14.85780
 ## 
 ## attr(,"row.names")
 ## [1] 1 2 3 4 5 6 7 8 9
 ## attr(,"class")
-## [1] "normalmix"
+## [1] "unimix"
 ```
 
 ```r
@@ -275,20 +285,21 @@ print(beta.ash.vb.uniform)
 
 ```
 ## $pi
-## [1] 0.3601452 0.2721677 0.1156223 0.0332935 0.0122755 0.2018693 0.0042466
-## [8] 0.0002416 0.0001384
+## [1] 0.2162485 0.2115077 0.1942139 0.1449539 0.0738032 0.0297778 0.1189938
+## [8] 0.0103439 0.0001573
 ## 
-## $mean
-## [1] 0 0 0 0 0 0 0 0 0
+## $a
+## [1]  -0.05804  -0.11608  -0.23215  -0.46431  -0.92861  -1.85722  -3.71445
+## [8]  -7.42890 -14.85780
 ## 
-## $sd
+## $b
 ## [1]  0.05804  0.11608  0.23215  0.46431  0.92861  1.85722  3.71445  7.42890
 ## [9] 14.85780
 ## 
 ## attr(,"row.names")
 ## [1] 1 2 3 4 5 6 7 8 9
 ## attr(,"class")
-## [1] "normalmix"
+## [1] "unimix"
 ```
 
 ```r
@@ -297,20 +308,29 @@ print(beta.ash.vb.null)
 
 ```
 ## $pi
-## [1] 7.802e-01 1.252e-05 1.252e-05 1.252e-05 1.252e-05 2.197e-01 1.252e-05
-## [8] 1.252e-05 1.251e-05
+## [1] 8.535e-01 1.252e-05 1.252e-05 1.252e-05 1.252e-05 1.252e-05 1.376e-01
+## [8] 8.826e-03 1.251e-05
 ## 
-## $mean
-## [1] 0 0 0 0 0 0 0 0 0
+## $a
+## [1]  -0.05804  -0.11608  -0.23215  -0.46431  -0.92861  -1.85722  -3.71445
+## [8]  -7.42890 -14.85780
 ## 
-## $sd
+## $b
 ## [1]  0.05804  0.11608  0.23215  0.46431  0.92861  1.85722  3.71445  7.42890
 ## [9] 14.85780
 ## 
 ## attr(,"row.names")
 ## [1] 1 2 3 4 5 6 7 8 9
 ## attr(,"class")
-## [1] "normalmix"
+## [1] "unimix"
+```
+
+```r
+print(beta.ash.pm)
+```
+
+```
+## Error: object 'beta.ash.pm' not found
 ```
 
 
@@ -328,13 +348,82 @@ lines(x, density(beta.ash, x), col = 2)
 
 plot(sort(ss$beta), (1:length(ss$beta))/length(ss$beta), main = "cdf of ss$beta, with fitted f overlaid", 
     xlab = "beta", ylab = "cdf")
-lines(x, cdf.ash(beta.ash, x), col = 2, lwd = 2)
-lines(x, cdf.ash(beta.ash.auto, x), col = 3, lwd = 2)
-lines(x, cdf.ash(beta.ash.vb.uniform, x), col = 4, lwd = 2)
-lines(x, cdf.ash(beta.ash.vb.null, x), col = 5, lwd = 2)
 ```
 
 ![plot of chunk unnamed-chunk-5](figure/unnamed-chunk-52.png) 
+
+```r
+lines(x, cdf.ash(beta.ash, x), col = 2, lwd = 2)
+```
+
+```
+## Error: No such class
+```
+
+```r
+lines(x, cdf.ash(beta.ash.auto, x), col = 3, lwd = 2)
+```
+
+```
+## Error: No such class
+```
+
+```r
+lines(x, cdf.ash(beta.ash.vb.uniform, x), col = 4, lwd = 2)
+```
+
+```
+## Error: No such class
+```
+
+```r
+lines(x, cdf.ash(beta.ash.vb.null, x), col = 5, lwd = 2)
+```
+
+```
+## Error: No such class
+```
+
+```r
+lines(x, cdf.ash(beta.ash.pm, x), col = 6, lwd = 2)
+```
+
+```
+## Error: object 'beta.ash.pm' not found
+```
+
+
+[for testing: compare results with point mass and without]
+
+```r
+plot(beta.ash$PositiveProb)
+```
+
+![plot of chunk unnamed-chunk-6](figure/unnamed-chunk-6.png) 
+
+```r
+points(beta.ash.pm$PositiveProb, col = 2)
+```
+
+```
+## Error: object 'beta.ash.pm' not found
+```
+
+
+
+```r
+plot(beta.ash$ZeroProb)
+```
+
+![plot of chunk unnamed-chunk-7](figure/unnamed-chunk-7.png) 
+
+```r
+points(beta.ash.pm$ZeroProb, col = 2)
+```
+
+```
+## Error: object 'beta.ash.pm' not found
+```
 
 
 [for testing: compare with the results from the automatic way for selecting sigma]
@@ -345,7 +434,7 @@ x = seq(-4, 4, length = 1000)
 lines(x, density(beta.ash.auto, x), col = 2)
 ```
 
-![plot of chunk unnamed-chunk-6](figure/unnamed-chunk-6.png) 
+![plot of chunk unnamed-chunk-8](figure/unnamed-chunk-8.png) 
 
 
 [for testing: note that the PosteriorMean and PositiveProb don't depend much on sigmaa vec used ]
@@ -357,7 +446,7 @@ plot(beta.ash.auto$PosteriorMean, beta.ash$PosteriorMean, xlab = "Shrunk estimat
 abline(a = 0, b = 1)
 ```
 
-![plot of chunk unnamed-chunk-7](figure/unnamed-chunk-71.png) 
+![plot of chunk unnamed-chunk-9](figure/unnamed-chunk-91.png) 
 
 ```r
 plot(beta.ash.auto$localfdr, beta.ash$localfdr, xlab = "lfdr from auto method", 
@@ -365,7 +454,7 @@ plot(beta.ash.auto$localfdr, beta.ash$localfdr, xlab = "lfdr from auto method",
 abline(a = 0, b = 1)
 ```
 
-![plot of chunk unnamed-chunk-7](figure/unnamed-chunk-72.png) 
+![plot of chunk unnamed-chunk-9](figure/unnamed-chunk-92.png) 
 
 
 [And VB method produces similar results to EM method]
@@ -377,7 +466,7 @@ points(beta.ash.auto$PosteriorMean, beta.ash.vb.null$PosteriorMean, col = 2)
 abline(a = 0, b = 1)
 ```
 
-![plot of chunk unnamed-chunk-8](figure/unnamed-chunk-81.png) 
+![plot of chunk unnamed-chunk-10](figure/unnamed-chunk-101.png) 
 
 ```r
 plot(beta.ash.auto$localfdr, beta.ash.vb.uniform$localfdr, xlab = "lfdr from auto method", 
@@ -386,7 +475,7 @@ points(beta.ash.auto$localfdr, beta.ash.vb.null$localfdr, col = 2)
 abline(a = 0, b = 1)
 ```
 
-![plot of chunk unnamed-chunk-8](figure/unnamed-chunk-82.png) 
+![plot of chunk unnamed-chunk-10](figure/unnamed-chunk-102.png) 
 
 
 
@@ -402,7 +491,7 @@ abline(h = 0)
 abline(a = 0, b = 1, col = 2)
 ```
 
-![plot of chunk unnamed-chunk-9](figure/unnamed-chunk-9.png) 
+![plot of chunk unnamed-chunk-11](figure/unnamed-chunk-11.png) 
 
 
 
@@ -436,25 +525,18 @@ Let's try:
 
 ```r
 beta.ash.pm = ash(ss$betahat, ss$betasd, auto = TRUE, usePointMass = TRUE)
+```
+
+```
+## Error: missing value where TRUE/FALSE needed
+```
+
+```r
 print(beta.ash.pm)
 ```
 
 ```
-## $pi
-##  [1] 0.767403 0.006769 0.005198 0.000000 0.000000 0.000000 0.220630
-##  [8] 0.000000 0.000000 0.000000
-## 
-## $mean
-##  [1] 0 0 0 0 0 0 0 0 0 0
-## 
-## $sd
-##  [1]  0.00000  0.05804  0.11608  0.23215  0.46431  0.92861  1.85722
-##  [8]  3.71445  7.42890 14.85780
-## 
-## attr(,"row.names")
-##  [1]  1  2  3  4  5  6  7  8  9 10
-## attr(,"class")
-## [1] "normalmix"
+## Error: object 'beta.ash.pm' not found
 ```
 
 ```r
@@ -463,31 +545,48 @@ print(beta.ash.auto)
 
 ```
 ## $pi
-## [1] 0.772576 0.007762 0.000000 0.000000 0.000000 0.219662 0.000000 0.000000
+## [1] 0.632956 0.050500 0.050237 0.049262 0.046325 0.040239 0.120797 0.009683
 ## [9] 0.000000
 ## 
-## $mean
-## [1] 0 0 0 0 0 0 0 0 0
+## $a
+## [1]  -0.05804  -0.11608  -0.23215  -0.46431  -0.92861  -1.85722  -3.71445
+## [8]  -7.42890 -14.85780
 ## 
-## $sd
+## $b
 ## [1]  0.05804  0.11608  0.23215  0.46431  0.92861  1.85722  3.71445  7.42890
 ## [9] 14.85780
 ## 
 ## attr(,"row.names")
 ## [1] 1 2 3 4 5 6 7 8 9
 ## attr(,"class")
-## [1] "normalmix"
+## [1] "unimix"
 ```
 
 ```r
 plot(beta.ash.auto$localfsr, beta.ash.pm$localfsr, main = "comparison of ash localfsr, with and without point mass", 
     xlab = "no point mass", ylab = "with point mass", xlim = c(0, 1), ylim = c(0, 
         1))
+```
+
+```
+## Error: object 'beta.ash.pm' not found
+```
+
+```r
 abline(a = 0, b = 1)
+```
+
+```
+## Error: plot.new has not been called yet
+```
+
+```r
 abline(a = 0, b = 2)
 ```
 
-![plot of chunk unnamed-chunk-10](figure/unnamed-chunk-10.png) 
+```
+## Error: plot.new has not been called yet
+```
 
 
 Our conclusion: if we simulate data with a point mass,
@@ -506,7 +605,7 @@ plot(qval$q, beta.ash$qval, main = "comparison of ash and q value qvalues",
 abline(a = 0, b = 1)
 ```
 
-![plot of chunk unnamed-chunk-11](figure/unnamed-chunk-11.png) 
+![plot of chunk unnamed-chunk-13](figure/unnamed-chunk-13.png) 
 
 
 In this example we see that qval overestimates the actual FDR. (This
@@ -520,7 +619,7 @@ lines(cumsum(ss$null[o])/(1:10000), beta.ash$qval[o])
 abline(a = 0, b = 1)
 ```
 
-![plot of chunk unnamed-chunk-12](figure/unnamed-chunk-12.png) 
+![plot of chunk unnamed-chunk-14](figure/unnamed-chunk-14.png) 
 
 
 ### Miscellaneous 
@@ -548,7 +647,7 @@ abline(h = 0)
 abline(a = 0, b = 1, col = 2)
 ```
 
-![plot of chunk unnamed-chunk-13](figure/unnamed-chunk-131.png) 
+![plot of chunk unnamed-chunk-15](figure/unnamed-chunk-151.png) 
 
 ```r
 
@@ -556,7 +655,7 @@ plot(qval$q, beta.ash$qval, main = "comparison of ash and q value qvalues")
 abline(a = 0, b = 1)
 ```
 
-![plot of chunk unnamed-chunk-13](figure/unnamed-chunk-132.png) 
+![plot of chunk unnamed-chunk-15](figure/unnamed-chunk-152.png) 
 
 ```r
 
@@ -567,7 +666,7 @@ lines(cumsum(truenull[o])/(1:10000), beta.ash$qval[o])
 abline(a = 0, b = 1)
 ```
 
-![plot of chunk unnamed-chunk-13](figure/unnamed-chunk-133.png) 
+![plot of chunk unnamed-chunk-15](figure/unnamed-chunk-153.png) 
 
 
 It seems that in this case the ash q values underestimate the
@@ -587,7 +686,7 @@ plot(cumsum(truenull[o])/(1:10000), qv[o], type = "l")
 abline(a = 0, b = 1)
 ```
 
-![plot of chunk unnamed-chunk-14](figure/unnamed-chunk-14.png) 
+![plot of chunk unnamed-chunk-16](figure/unnamed-chunk-16.png) 
 
 No, that's not it.
 
@@ -611,7 +710,7 @@ plot(qval$q, beta.ash$qval, main = "comparison of ash and q value qvalues")
 abline(a = 0, b = 1)
 ```
 
-![plot of chunk unnamed-chunk-15](figure/unnamed-chunk-151.png) 
+![plot of chunk unnamed-chunk-17](figure/unnamed-chunk-171.png) 
 
 ```r
 
@@ -622,7 +721,7 @@ lines(cumsum(truenull[o])/(1:10000), beta.ash$qval[o])
 abline(a = 0, b = 1)
 ```
 
-![plot of chunk unnamed-chunk-15](figure/unnamed-chunk-152.png) 
+![plot of chunk unnamed-chunk-17](figure/unnamed-chunk-172.png) 
 
 ```r
 

@@ -11,6 +11,14 @@ compdens.default = function(x,y,log=FALSE){
   stop("No such class")
 }
 
+#standard deviations
+comp_sd = function(m){
+  UseMethod("comp_sd")
+}
+comp_sd.default = function(m){
+  stop("method comp_sd not written for this class")
+}
+
 #number of components
 ncomp = function(m){
   UseMethod("ncomp")
@@ -167,6 +175,9 @@ normalmix = function(pi,mean,sd){
   structure(data.frame(pi,mean,sd),class="normalmix")
 }
 
+comp_sd.normalmix = function(m){
+  m$sd
+}
 
 compdens.normalmix = function(x,y,log=FALSE){
   k=ncomp(x)
@@ -223,6 +234,11 @@ unimix = function(pi,a,b){
   structure(data.frame(pi,a,b),class="unimix")
 }
 
+
+comp_sd.unimix = function(m){
+  (m$b-m$a)/sqrt(12)
+}
+
 compdens.unimix = function(x,y,log=FALSE){
   k=ncomp(x)
   n=length(y)
@@ -252,7 +268,7 @@ compcdf_post.unimix=function(m,c,betahat,sebetahat){
   subset = m$a<c & m$b>c # subset of components (1..k) with nontrivial cdf
   if(sum(subset)>0){
     pna = pnorm(outer(betahat,m$a[subset],FUN="-")/sebetahat)
-    pnc = pnorm(outer(betahat,c,FUN="-")/sebetahat)
+    pnc = pnorm(outer(betahat,rep(c,sum(subset)),FUN="-")/sebetahat)
     pnb = pnorm(outer(betahat,m$b[subset],FUN="-")/sebetahat)
     tmp[subset,] = t((pnc-pna)/(pnb-pna))
   }
