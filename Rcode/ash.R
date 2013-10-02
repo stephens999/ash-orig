@@ -189,13 +189,11 @@ EM = function(matrix_lik, prior, pi.init = NULL,tol=0.0001, maxiter=5000,sigma.e
 
 EMest = function(betahat,sebetahat,g,sigma.est=FALSE,nullcheck=TRUE,prior=NULL,nc=NULL,VB=FALSE,ltol=0.0001, maxiter=5000){ 
  
-  sigmaavec=g$sd
   pi.init = g$pi
-  
-  k=length(sigmaavec)
+  k=ncomp(g)
   n = length(betahat)
 
-  null.comp = which.min(sigmaavec) #which component is the "null"
+  null.comp = 1; #which.min(sigmaavec) #which component is the "null"
   if(is.null(prior)){ # set up prior to be 1,1/(k-1),...,1/(k-1) to favour "null"
     prior = rep(1/(k-1),k)
     prior[null.comp] = 1
@@ -203,8 +201,8 @@ EMest = function(betahat,sebetahat,g,sigma.est=FALSE,nullcheck=TRUE,prior=NULL,n
     prior = rep(1,k)
   }
   
-  matrix_lik = matrix_dens(betahat,sebetahat,sigmaavec)
-
+  matrix_lik = t(compdens_conv(g,betahat,sebetahat))
+    
   if(VB==TRUE){
     EMfit=VBEM(matrix_lik,prior,ltol, maxiter)}
   else{
@@ -229,8 +227,9 @@ EMest = function(betahat,sebetahat,g,sigma.est=FALSE,nullcheck=TRUE,prior=NULL,n
     }
   }
   
-  g=normalmix(pi,rep(0,k),sigmaavec)
-  return(list(pi=pi,sigmaavec=sigmaavec,loglik=loglik[1:niter],null.loglik=null.loglik,
+  g$pi=pi
+  
+  return(list(loglik=loglik[1:niter],null.loglik=null.loglik,
             matrix_lik=matrix_lik,converged = converged,g=g))
 }
 
@@ -429,10 +428,12 @@ ash = function(betahat,sebetahat,nullcheck=TRUE,df=NULL,randomstart=FALSE, usePo
   if(randomstart){pi=rgamma(k,1,1)}
   
   g=normalmix(pi,rep(0,k),sigmaavec)
+  #g=unimix(pi,-sigmaavec,sigmaavec)
+  
   pi.fit=EMest(betahat[completeobs],sebetahat[completeobs],g,sigma.est=sigma.est,prior=prior,nullcheck=nullcheck,nc=nc,VB=VB)  
 
   if(sigma.est==TRUE){
-    sigmaavec=pi.fit$sigmaavec
+    sigmaavec=comp_sd(pi.fit$g)
   }
   
   if(onlylogLR){
@@ -440,10 +441,11 @@ ash = function(betahat,sebetahat,nullcheck=TRUE,df=NULL,randomstart=FALSE, usePo
 	return(list(pi=pi.fit$pi, logLR = logLR))
   }else{
 #   	post = posterior_dist(pi.fit$g,betahat,sebetahat)
-
-   	NegativeProb = cdf_post(pi.fit$g, 0, betahat,sebetahat)    
-   	ZeroProb = colSums(comppostprob(pi.fit$g,betahat,sebetahat)[sigmaavec==0,,drop=FALSE])     
-   	PositiveProb =  1- NegativeProb-ZeroProb    
+    
+   	
+   	ZeroProb = colSums(comppostprob(pi.fit$g,betahat,sebetahat)[comp_sd(pi.fit$g)==0,,drop=FALSE])     
+   	NegativeProb = cdf_post(pi.fit$g, 0, betahat,sebetahat) - ZeroProb
+    PositiveProb =  1- NegativeProb-ZeroProb    
      
     PosteriorMean = postmean(pi.fit$g,betahat,sebetahat)
      

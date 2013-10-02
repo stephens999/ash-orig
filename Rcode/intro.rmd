@@ -201,6 +201,8 @@ beta.ash.auto = ash(ss$betahat, ss$betasd,auto=TRUE)
 beta.ash.vb.uniform = ash(ss$betahat, ss$betasd,auto=TRUE, VB=TRUE, prior="uniform")
 beta.ash.vb.null = ash(ss$betahat, ss$betasd,auto=TRUE, VB=TRUE, prior=NULL)
 
+beta.ash.pm = ash(ss$betahat,ss$betasd,usePointMass=TRUE)
+
 #compute the usual zscore and corresponding p value
 zscore = ss$betahat/ss$betasd
 
@@ -215,6 +217,7 @@ print(beta.ash)
 print(beta.ash.auto)
 print(beta.ash.vb.uniform)
 print(beta.ash.vb.null)
+print(beta.ash.pm)
 ```
 
 Plot the fitted underlying distribution on top of true values for beta
@@ -228,6 +231,18 @@ lines(x,cdf.ash(beta.ash,x),col=2,lwd=2)
 lines(x,cdf.ash(beta.ash.auto,x),col=3,lwd=2)
 lines(x,cdf.ash(beta.ash.vb.uniform,x),col=4,lwd=2)
 lines(x,cdf.ash(beta.ash.vb.null,x),col=5,lwd=2)
+lines(x,cdf.ash(beta.ash.pm,x),col=6,lwd=2)
+```
+
+[for testing: compare results with point mass and without]
+```{r}
+  plot(beta.ash$PositiveProb)
+  points(beta.ash.pm$PositiveProb,col=2)
+```
+
+```{r}
+  plot(beta.ash$ZeroProb)
+  points(beta.ash.pm$ZeroProb,col=2)
 ```
 
 [for testing: compare with the results from the automatic way for selecting sigma]
