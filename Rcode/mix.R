@@ -32,8 +32,17 @@ mixcdf = function(x,y,lower.tail=TRUE){
   UseMethod("mixcdf")
 }
 mixcdf.default = function(x,y,lower.tail=TRUE){
-  stop("No such class")
+  x$pi %*% comp_cdf(x,y,lower.tail)
 }
+
+#find cdf for each component, a generic function
+comp_cdf = function(x,y,lower.tail=TRUE){
+  UseMethod("comp_cdf")
+}
+comp_cdf.default = function(x,y,lower.tail=TRUE){
+  stop("comp_cdf not implemented for this class")
+}
+
 
 #find density at y, a generic function
 dens = function(x,y){
@@ -197,8 +206,8 @@ compdens_conv.normalmix = function(m, x, s){
 }
 
 
-mixcdf.normalmix = function(x,y,lower.tail=TRUE){
-  x$pi %*%  vapply(y,pnorm,x$mean,x$mean,x$sd,lower.tail)
+comp_cdf.normalmix = function(x,y,lower.tail=TRUE){
+  vapply(y,pnorm,x$mean,x$mean,x$sd,lower.tail)
 }
 
 #c is a scalar
@@ -234,6 +243,9 @@ unimix = function(pi,a,b){
   structure(data.frame(pi,a,b),class="unimix")
 }
 
+comp_cdf.unimix = function(m,y,lower.tail=TRUE){
+  vapply(y,punif,m$a,min=m$a,max=m$b,lower.tail)
+}
 
 comp_sd.unimix = function(m){
   (m$b-m$a)/sqrt(12)
