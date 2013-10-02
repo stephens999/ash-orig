@@ -148,6 +148,8 @@ EM = function(matrix_lik, prior, pi.init = NULL,tol=0.0001, maxiter=5000,sigma.e
     
     #estimate sigma
     if(sigma.est==TRUE){
+      sigmamin=min(sigmaavec)
+      sigmamax=max(sigmaavec)
       for(j in 1:k){
         pj=classprob[,j]
         f=function(x) sum((betahat^2/(sebetahat^2+x)^2-1/(sebetahat^2+x))*pj)
@@ -185,14 +187,14 @@ EM = function(matrix_lik, prior, pi.init = NULL,tol=0.0001, maxiter=5000,sigma.e
 #of mixture proportions of sigmaa by variational Bayes method
 #(use Dirichlet prior and approximate Dirichlet posterior)
 
-EMest = function(betahat,sebetahat,sigmaavec,pi.init,sigma.est=FALSE,nullcheck=TRUE,prior=NULL,nc=NULL,VB=FALSE,ltol=0.0001, maxiter=5000){ 
-  if(!is.null(nc)&sigma.est==TRUE){
-    sigmaavec=2^(seq(-15,3,length.out=nc))
-  }
+EMest = function(betahat,sebetahat,g,sigma.est=FALSE,nullcheck=TRUE,prior=NULL,nc=NULL,VB=FALSE,ltol=0.0001, maxiter=5000){ 
+ 
+  sigmaavec=g$sd
+  pi.init = g$pi
+  
   k=length(sigmaavec)
   n = length(betahat)
-  sigmamin=min(sigmaavec)
-  sigmamax=max(sigmaavec)
+
   null.comp = which.min(sigmaavec) #which component is the "null"
   if(is.null(prior)){ # set up prior to be 1,1/(k-1),...,1/(k-1) to favour "null"
     prior = rep(1/(k-1),k)
@@ -200,7 +202,7 @@ EMest = function(betahat,sebetahat,sigmaavec,pi.init,sigma.est=FALSE,nullcheck=T
   }else if(prior=="uniform"){
     prior = rep(1,k)
   }
-
+  
   matrix_lik = matrix_dens(betahat,sebetahat,sigmaavec)
 
   if(VB==TRUE){
@@ -231,6 +233,8 @@ EMest = function(betahat,sebetahat,sigmaavec,pi.init,sigma.est=FALSE,nullcheck=T
   return(list(pi=pi,sigmaavec=sigmaavec,loglik=loglik[1:niter],null.loglik=null.loglik,
             matrix_lik=matrix_lik,converged = converged,g=g))
 }
+
+
 
 normalize = function(x){return(x/sum(x))}
 
@@ -406,6 +410,9 @@ ash = function(betahat,sebetahat,nullcheck=TRUE,df=NULL,randomstart=FALSE, usePo
   if(is.null(sigmaavec)){
     sigmaavec = c(0.00025,0.0005,0.001,0.002,0.004,0.008,0.016,0.032,0.064,0.128,0.256,0.512,1.024,2.048,4.096,8.192) 
   }
+  if(sigma.est==TRUE&!is.null(nc)){
+    sigmaavec=2^(seq(-15,3,length.out=nc))
+  }
   
   completeobs = !is.na(betahat) & !is.na(sebetahat)
   if(auto==TRUE){
@@ -414,17 +421,15 @@ ash = function(betahat,sebetahat,nullcheck=TRUE,df=NULL,randomstart=FALSE, usePo
   if(usePointMass){
         sigmaavec = c(0,sigmaavec)
   }
-  if(sigma.est==TRUE&!is.null(nc)){
-    k=nc
-  }else{
-    k=length(sigmaavec)
-  }
+  
+  k=length(sigmaavec)  
   pi = rep(1, k)
   pi[1]=k
   pi=normalize(pi)
   if(randomstart){pi=rgamma(k,1,1)}
   
-  pi.fit=EMest(betahat[completeobs],sebetahat[completeobs],sigmaavec=sigmaavec,pi=pi,sigma.est=sigma.est,prior=prior,nullcheck=nullcheck,nc=nc,VB=VB)  
+  g=normalmix(pi,rep(0,k),sigmaavec)
+  pi.fit=EMest(betahat[completeobs],sebetahat[completeobs],g,sigma.est=sigma.est,prior=prior,nullcheck=nullcheck,nc=nc,VB=VB)  
 
   if(sigma.est==TRUE){
     sigmaavec=pi.fit$sigmaavec
