@@ -19,12 +19,36 @@ comp_sd.default = function(m){
   stop("method comp_sd not written for this class")
 }
 
+#return the overall mean of the mixture
+mixmean = function(m){
+  UseMethod("mixmean")
+}
+mixmean.default = function(m){
+  sum(m$pi * comp_mean(m))
+}
+
+#standard deviations
+comp_mean = function(m){
+  UseMethod("comp_mean")
+}
+comp_mean.default = function(m){
+  stop("method comp_mean not written for this class")
+}
+
 #number of components
 ncomp = function(m){
   UseMethod("ncomp")
 }
 ncomp.default = function(m){
   return(length(m$pi))
+}
+
+#return mixture proportions, a generic function
+mixprop = function(m){
+  UseMethod("mixprop")
+}
+mixprop.default = function(m){
+  m$pi
 }
 
 #find cdf at y, a generic function
@@ -94,7 +118,10 @@ comppostprob=function(m,x,s){
  UseMethod("comppostprob") 
 }
 comppostprob.default = function(m,x,s){
-  t(t(m$pi * compdens_conv(m,x,s))/dens_conv(m,x,s))
+  tmp= (t(m$pi * compdens_conv(m,x,s))/dens_conv(m,x,s))
+  ismissing = (is.na(x) | is.na(s))
+  tmp[ismissing,]=m$pi
+  t(tmp)
 }
 # evaluate cdf of posterior distribution of beta at c
 # m is the prior on beta, a mixture
@@ -125,7 +152,7 @@ postmean = function(m, betahat,sebetahat){
   UseMethod("postmean")
 }
 postmean.default = function(m,betahat,sebetahat){
-   colSums(comppostprob(m,betahat,sebetahat) * comp_postmean(m,betahat,sebetahat))
+  colSums(comppostprob(m,betahat,sebetahat) * comp_postmean(m,betahat,sebetahat))
 }
 
 
@@ -188,6 +215,10 @@ comp_sd.normalmix = function(m){
   m$sd
 }
 
+comp_mean.normalmix = function(m){
+  m$mean
+}
+
 compdens.normalmix = function(x,y,log=FALSE){
   k=ncomp(x)
   n=length(y)
@@ -220,6 +251,9 @@ compcdf_post.normalmix=function(m,c,betahat,sebetahat){
   n=length(betahat)
   #compute posterior standard deviation (s1) and posterior mean (m1)
   s1 = sqrt(outer(sebetahat^2,m$sd^2,FUN="*")/outer(sebetahat^2,m$sd^2,FUN="+"))
+  ismissing = (is.na(betahat) | is.na(sebetahat))
+  s1[ismissing,]=m$sd
+  
   m1 = t(comp_postmean(m,betahat,sebetahat))
   t(pnorm(c,mean=m1,sd=s1))
 }
@@ -229,7 +263,10 @@ compcdf_post.normalmix=function(m,c,betahat,sebetahat){
 #betahat, sebetahat are n vectors
 #output is a k by n matrix
 comp_postmean.normalmix = function(m,betahat,sebetahat){
-  t((outer(sebetahat^2,m$mean, FUN="*") + outer(betahat,m$sd^2, FUN="*"))/outer(sebetahat^2,m$sd^2,FUN="+"))
+  tmp=(outer(sebetahat^2,m$mean, FUN="*") + outer(betahat,m$sd^2, FUN="*"))/outer(sebetahat^2,m$sd^2,FUN="+")
+  ismissing = (is.na(betahat) | is.na(sebetahat))
+  tmp[ismissing,]=m$mean #return prior mean when missing data
+  t(tmp)
 }
 
 
@@ -249,6 +286,10 @@ comp_cdf.unimix = function(m,y,lower.tail=TRUE){
 
 comp_sd.unimix = function(m){
   (m$b-m$a)/sqrt(12)
+}
+
+comp_mean.unimix = function(m){
+  (m$a+m$b)/2
 }
 
 compdens.unimix = function(x,y,log=FALSE){
@@ -293,6 +334,7 @@ my_etruncnorm= function(a,b,mean=0,sd=1){
  #Flip the onese where both are positive, as the computations are more stable
   #when both negative
   flip = (alpha>0 & beta>0)
+  flip[is.na(flip)]=FALSE #deal with NAs
   alpha[flip]= -alpha[flip]
   beta[flip]=-beta[flip]
   
@@ -301,6 +343,7 @@ my_etruncnorm= function(a,b,mean=0,sd=1){
   max_alphabeta = ifelse(alpha<beta, beta,alpha)
   max_ab = ifelse(alpha<beta,b,a)
   toobig = max_alphabeta<(-30)
+  toobig[is.na(toobig)]=FALSE 
   tmp[toobig] = max_ab[toobig]
   tmp
 }
@@ -323,7 +366,10 @@ comp_postmean.unimix = function(m,betahat,sebetahat){
   
   alpha = outer(-betahat, m$a,FUN="+")/sebetahat
   beta = outer(-betahat, m$b, FUN="+")/sebetahat
-  t(betahat + sebetahat*my_etruncnorm(alpha,beta,0,1))
+  tmp = betahat + sebetahat*my_etruncnorm(alpha,beta,0,1)
+  ismissing = is.na(betahat) | is.na(sebetahat)
+  tmp[ismissing,]= (m$a+m$b)/2
+  t(tmp)
 #   t(
 #     betahat + sebetahat* 
 #       exp(dnorm(alpha,log=TRUE)- pnorm(alpha,log=TRUE))

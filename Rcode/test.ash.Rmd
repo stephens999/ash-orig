@@ -44,6 +44,32 @@ all.equal(PP2,PositiveProb)
 
 
 ```{r}
+beta.ash=ash(ss$betahat,ss$betasd,auto=TRUE)
+beta.ash.u=ash(ss$betahat,ss$betasd,mixcompdist="uniform",auto=TRUE)
+beta.ash.halfu=ash(ss$betahat,ss$betasd,mixcompdist="halfuniform",auto=TRUE)
+zscore = ss$betahat/ss$betasd
+
+pval = pchisq(zscore^2,df=1,lower.tail=F)
+qval = qvalue(pval)
+hist(zscore)
+x=seq(min(ss$beta),max(ss$beta),length=1000)
+hist(ss$beta,prob=TRUE)
+lines(x,density(beta.ash,x),col=2)
+lines(x,density(beta.ash.u,x),col=3)
+lines(x,density(beta.ash.halfu,x),col=4)
+```
+
+```{r}
+#Test missing data
+ss = simdata(10000,8000,0,2,1)
+
+beta.ash=ash(c(ss$betahat,rep(NA,100)),1)
+beta.ash.u=ash(c(ss$betahat,rep(NA,100)),1,mixcompdist="uniform")
+beta.ash.halfu=ash(c(ss$betahat,rep(NA,100)),1,mixcompdist="halfuniform")
+
+```
+
+```{r}
 system.time((beta.ash=ash(ss$betahat,ss$betasd)))
 system.time((beta.ash.auto = ash(ss$betahat, ss$betasd,auto=TRUE)))
 system.time((beta.ash.vb.uniform = ash(ss$betahat, ss$betasd,auto=TRUE, VB=TRUE, prior="uniform")))

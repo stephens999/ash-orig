@@ -381,6 +381,7 @@ autoselect.sigmaavec = function(betahat,sebetahat){
 #fits a mixture of normals to it
 # and returns posteriors
 #INPUT: betahat (p vector); sebetahat (p vector of standard errors)
+#mixcompdist: distribution of components in mixture ("normal", "uniform" or "halfuniform")
 #df: degrees of freedome used to compute sebetahat
 #randomstart: bool, indicating whether to initialize EM randomly
 #usePointMass: bool, indicating whether to use a point mass at zero as one of components for a mixture distribution
@@ -395,16 +396,19 @@ autoselect.sigmaavec = function(betahat,sebetahat){
 #Things to do:
 # check sampling routine
 # check number of iterations
-ash = function(betahat,sebetahat,nullcheck=TRUE,df=NULL,randomstart=FALSE, usePointMass = FALSE, onlylogLR = FALSE, localfdr = TRUE, localfsr = TRUE, prior=NULL, sigmaavec=NULL, auto=FALSE, sigma.est=FALSE, nc=NULL, VB=FALSE){
+ash = function(betahat,sebetahat,mixcompdist = "normal",nullcheck=TRUE,df=NULL,randomstart=FALSE, usePointMass = FALSE, onlylogLR = FALSE, localfdr = TRUE, localfsr = TRUE, prior=NULL, sigmaavec=NULL, auto=FALSE, sigma.est=FALSE, nc=NULL, VB=FALSE){
 
   #if df specified, convert betahat so that bethata/sebetahat gives the same p value
   #from a z test as the original effects would give under a t test with df=df
   if(!is.null(df)){
     betahat = effective.effect(betahat,sebetahat,df)
   }	
-  
+    
   if(length(sebetahat)==1){
     sebetahat = rep(sebetahat,length(betahat))
+  }
+  if(length(sebetahat) != length(betahat)){
+    stop("Error: sebetahat must have length 1, or same length as betahat")
   }
   if(is.null(sigmaavec)){
     sigmaavec = c(0.00025,0.0005,0.001,0.002,0.004,0.008,0.016,0.032,0.064,0.128,0.256,0.512,1.024,2.048,4.096,8.192) 
@@ -413,7 +417,7 @@ ash = function(betahat,sebetahat,nullcheck=TRUE,df=NULL,randomstart=FALSE, usePo
     sigmaavec=2^(seq(-15,3,length.out=nc))
   }
   
-  completeobs = !is.na(betahat) & !is.na(sebetahat)
+  completeobs = (!is.na(betahat) & !is.na(sebetahat))
   if(auto==TRUE){
     sigmaavec= autoselect.sigmaavec(betahat[completeobs],sebetahat[completeobs])
   }
@@ -427,8 +431,10 @@ ash = function(betahat,sebetahat,nullcheck=TRUE,df=NULL,randomstart=FALSE, usePo
   pi=normalize(pi)
   if(randomstart){pi=rgamma(k,1,1)}
   
-  g=normalmix(pi,rep(0,k),sigmaavec)
-  #g=unimix(pi,-sigmaavec,sigmaavec)
+  if(!is.element(mixcompdist,c("normal","uniform","halfuniform"))) stop("Error: invalid type of mixcompdist")
+  if(mixcompdist=="normal") g=normalmix(pi,rep(0,k),sigmaavec)
+  if(mixcompdist=="uniform") g=unimix(pi,-sigmaavec,sigmaavec)
+  if(mixcompdist=="halfuniform") g=unimix(c(pi,pi),c(-sigmaavec,rep(0,k)),c(rep(0,k),sigmaavec))
   
   pi.fit=EMest(betahat[completeobs],sebetahat[completeobs],g,sigma.est=sigma.est,prior=prior,nullcheck=nullcheck,nc=nc,VB=VB)  
 
@@ -441,13 +447,23 @@ ash = function(betahat,sebetahat,nullcheck=TRUE,df=NULL,randomstart=FALSE, usePo
 	return(list(pi=pi.fit$pi, logLR = logLR))
   }else{
 #   	post = posterior_dist(pi.fit$g,betahat,sebetahat)
+    n=length(betahat)
+   	ZeroProb = rep(0,length=n)
+    NegativeProb = rep(0,length=n)
+    PosteriorMean = rep(0,length=n)
     
-   	
-   	ZeroProb = colSums(comppostprob(pi.fit$g,betahat,sebetahat)[comp_sd(pi.fit$g)==0,,drop=FALSE])     
-   	NegativeProb = cdf_post(pi.fit$g, 0, betahat,sebetahat) - ZeroProb
+   	ZeroProb[completeobs] = colSums(comppostprob(pi.fit$g,betahat[completeobs],sebetahat[completeobs])[comp_sd(pi.fit$g)==0,,drop=FALSE])     
+   	NegativeProb[completeobs] = cdf_post(pi.fit$g, 0, betahat[completeobs],sebetahat[completeobs]) - ZeroProb[completeobs]
+    PosteriorMean[completeobs] = postmean(pi.fit$g,betahat[completeobs],sebetahat[completeobs])
+    
+    #FOR MISSING OBSERVATIONS, USE THE PRIOR INSTEAD OF THE POSTERIOR
+    ZeroProb[!completeobs] = sum(mixprop(pi.fit$g)[comp_sd(pi.fit$g)==0])
+    NegativeProb[!completeobs] = mixcdf(pi.fit$g,0) 
+    PosteriorMean[!completeobs] = mixmean(pi.fit$g)
+      
     PositiveProb =  1- NegativeProb-ZeroProb    
      
-    PosteriorMean = postmean(pi.fit$g,betahat,sebetahat)
+    
      
   	if(localfsr & localfdr){
    		localfsr = ifelse(PositiveProb<NegativeProb,PositiveProb+ZeroProb,NegativeProb+ZeroProb)
