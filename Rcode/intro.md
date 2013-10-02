@@ -211,13 +211,6 @@ beta.ash.vb.uniform = ash(ss$betahat, ss$betasd, auto = TRUE, VB = TRUE, prior =
 beta.ash.vb.null = ash(ss$betahat, ss$betasd, auto = TRUE, VB = TRUE, prior = NULL)
 
 beta.ash.pm = ash(ss$betahat, ss$betasd, usePointMass = TRUE)
-```
-
-```
-## Error: missing value where TRUE/FALSE needed
-```
-
-```r
 
 # compute the usual zscore and corresponding p value
 zscore = ss$betahat/ss$betasd
@@ -238,22 +231,21 @@ print(beta.ash)
 
 ```
 ## $pi
-##  [1] 0.66698 0.01103 0.01103 0.01103 0.01103 0.01103 0.01103 0.01104
-##  [9] 0.01108 0.01121 0.01176 0.01409 0.02518 0.07443 0.10412 0.00393
+##  [1] 0.680981 0.009060 0.009060 0.009060 0.009060 0.009060 0.009062
+##  [8] 0.009069 0.009096 0.009213 0.009758 0.012940 0.033330 0.181252
+## [15] 0.000000 0.000000
 ## 
-## $a
-##  [1] -0.00025 -0.00050 -0.00100 -0.00200 -0.00400 -0.00800 -0.01600
-##  [8] -0.03200 -0.06400 -0.12800 -0.25600 -0.51200 -1.02400 -2.04800
-## [15] -4.09600 -8.19200
+## $mean
+##  [1] 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
 ## 
-## $b
+## $sd
 ##  [1] 0.00025 0.00050 0.00100 0.00200 0.00400 0.00800 0.01600 0.03200
 ##  [9] 0.06400 0.12800 0.25600 0.51200 1.02400 2.04800 4.09600 8.19200
 ## 
 ## attr(,"row.names")
 ##  [1]  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16
 ## attr(,"class")
-## [1] "unimix"
+## [1] "normalmix"
 ```
 
 ```r
@@ -262,21 +254,20 @@ print(beta.ash.auto)
 
 ```
 ## $pi
-## [1] 0.632956 0.050500 0.050237 0.049262 0.046325 0.040239 0.120797 0.009683
+## [1] 0.772576 0.007762 0.000000 0.000000 0.000000 0.219662 0.000000 0.000000
 ## [9] 0.000000
 ## 
-## $a
-## [1]  -0.05804  -0.11608  -0.23215  -0.46431  -0.92861  -1.85722  -3.71445
-## [8]  -7.42890 -14.85780
+## $mean
+## [1] 0 0 0 0 0 0 0 0 0
 ## 
-## $b
+## $sd
 ## [1]  0.05804  0.11608  0.23215  0.46431  0.92861  1.85722  3.71445  7.42890
 ## [9] 14.85780
 ## 
 ## attr(,"row.names")
 ## [1] 1 2 3 4 5 6 7 8 9
 ## attr(,"class")
-## [1] "unimix"
+## [1] "normalmix"
 ```
 
 ```r
@@ -285,21 +276,20 @@ print(beta.ash.vb.uniform)
 
 ```
 ## $pi
-## [1] 0.2162485 0.2115077 0.1942139 0.1449539 0.0738032 0.0297778 0.1189938
-## [8] 0.0103439 0.0001573
+## [1] 0.3601452 0.2721677 0.1156223 0.0332935 0.0122755 0.2018693 0.0042466
+## [8] 0.0002416 0.0001384
 ## 
-## $a
-## [1]  -0.05804  -0.11608  -0.23215  -0.46431  -0.92861  -1.85722  -3.71445
-## [8]  -7.42890 -14.85780
+## $mean
+## [1] 0 0 0 0 0 0 0 0 0
 ## 
-## $b
+## $sd
 ## [1]  0.05804  0.11608  0.23215  0.46431  0.92861  1.85722  3.71445  7.42890
 ## [9] 14.85780
 ## 
 ## attr(,"row.names")
 ## [1] 1 2 3 4 5 6 7 8 9
 ## attr(,"class")
-## [1] "unimix"
+## [1] "normalmix"
 ```
 
 ```r
@@ -308,21 +298,20 @@ print(beta.ash.vb.null)
 
 ```
 ## $pi
-## [1] 8.535e-01 1.252e-05 1.252e-05 1.252e-05 1.252e-05 1.252e-05 1.376e-01
-## [8] 8.826e-03 1.251e-05
+## [1] 7.802e-01 1.252e-05 1.252e-05 1.252e-05 1.252e-05 2.197e-01 1.252e-05
+## [8] 1.252e-05 1.251e-05
 ## 
-## $a
-## [1]  -0.05804  -0.11608  -0.23215  -0.46431  -0.92861  -1.85722  -3.71445
-## [8]  -7.42890 -14.85780
+## $mean
+## [1] 0 0 0 0 0 0 0 0 0
 ## 
-## $b
+## $sd
 ## [1]  0.05804  0.11608  0.23215  0.46431  0.92861  1.85722  3.71445  7.42890
 ## [9] 14.85780
 ## 
 ## attr(,"row.names")
 ## [1] 1 2 3 4 5 6 7 8 9
 ## attr(,"class")
-## [1] "unimix"
+## [1] "normalmix"
 ```
 
 ```r
@@ -330,7 +319,23 @@ print(beta.ash.pm)
 ```
 
 ```
-## Error: object 'beta.ash.pm' not found
+## $pi
+##  [1] 0.688795 0.007537 0.007537 0.007537 0.007537 0.007537 0.007538
+##  [8] 0.007540 0.007549 0.007585 0.007733 0.008400 0.011995 0.033913
+## [15] 0.181266 0.000000 0.000000
+## 
+## $mean
+##  [1] 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+## 
+## $sd
+##  [1] 0.00000 0.00025 0.00050 0.00100 0.00200 0.00400 0.00800 0.01600
+##  [9] 0.03200 0.06400 0.12800 0.25600 0.51200 1.02400 2.04800 4.09600
+## [17] 8.19200
+## 
+## attr(,"row.names")
+##  [1]  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17
+## attr(,"class")
+## [1] "normalmix"
 ```
 
 
@@ -348,82 +353,33 @@ lines(x, density(beta.ash, x), col = 2)
 
 plot(sort(ss$beta), (1:length(ss$beta))/length(ss$beta), main = "cdf of ss$beta, with fitted f overlaid", 
     xlab = "beta", ylab = "cdf")
-```
-
-![plot of chunk unnamed-chunk-5](figure/unnamed-chunk-52.png) 
-
-```r
 lines(x, cdf.ash(beta.ash, x), col = 2, lwd = 2)
-```
-
-```
-## Error: No such class
-```
-
-```r
 lines(x, cdf.ash(beta.ash.auto, x), col = 3, lwd = 2)
-```
-
-```
-## Error: No such class
-```
-
-```r
 lines(x, cdf.ash(beta.ash.vb.uniform, x), col = 4, lwd = 2)
-```
-
-```
-## Error: No such class
-```
-
-```r
 lines(x, cdf.ash(beta.ash.vb.null, x), col = 5, lwd = 2)
-```
-
-```
-## Error: No such class
-```
-
-```r
 lines(x, cdf.ash(beta.ash.pm, x), col = 6, lwd = 2)
 ```
 
-```
-## Error: object 'beta.ash.pm' not found
-```
+![plot of chunk unnamed-chunk-5](figure/unnamed-chunk-52.png) 
 
 
 [for testing: compare results with point mass and without]
 
 ```r
 plot(beta.ash$PositiveProb)
-```
-
-![plot of chunk unnamed-chunk-6](figure/unnamed-chunk-6.png) 
-
-```r
 points(beta.ash.pm$PositiveProb, col = 2)
 ```
 
-```
-## Error: object 'beta.ash.pm' not found
-```
+![plot of chunk unnamed-chunk-6](figure/unnamed-chunk-6.png) 
 
 
 
 ```r
 plot(beta.ash$ZeroProb)
-```
-
-![plot of chunk unnamed-chunk-7](figure/unnamed-chunk-7.png) 
-
-```r
 points(beta.ash.pm$ZeroProb, col = 2)
 ```
 
-```
-## Error: object 'beta.ash.pm' not found
-```
+![plot of chunk unnamed-chunk-7](figure/unnamed-chunk-7.png) 
 
 
 [for testing: compare with the results from the automatic way for selecting sigma]
@@ -525,18 +481,25 @@ Let's try:
 
 ```r
 beta.ash.pm = ash(ss$betahat, ss$betasd, auto = TRUE, usePointMass = TRUE)
-```
-
-```
-## Error: missing value where TRUE/FALSE needed
-```
-
-```r
 print(beta.ash.pm)
 ```
 
 ```
-## Error: object 'beta.ash.pm' not found
+## $pi
+##  [1] 0.767403 0.006769 0.005198 0.000000 0.000000 0.000000 0.220630
+##  [8] 0.000000 0.000000 0.000000
+## 
+## $mean
+##  [1] 0 0 0 0 0 0 0 0 0 0
+## 
+## $sd
+##  [1]  0.00000  0.05804  0.11608  0.23215  0.46431  0.92861  1.85722
+##  [8]  3.71445  7.42890 14.85780
+## 
+## attr(,"row.names")
+##  [1]  1  2  3  4  5  6  7  8  9 10
+## attr(,"class")
+## [1] "normalmix"
 ```
 
 ```r
@@ -545,48 +508,31 @@ print(beta.ash.auto)
 
 ```
 ## $pi
-## [1] 0.632956 0.050500 0.050237 0.049262 0.046325 0.040239 0.120797 0.009683
+## [1] 0.772576 0.007762 0.000000 0.000000 0.000000 0.219662 0.000000 0.000000
 ## [9] 0.000000
 ## 
-## $a
-## [1]  -0.05804  -0.11608  -0.23215  -0.46431  -0.92861  -1.85722  -3.71445
-## [8]  -7.42890 -14.85780
+## $mean
+## [1] 0 0 0 0 0 0 0 0 0
 ## 
-## $b
+## $sd
 ## [1]  0.05804  0.11608  0.23215  0.46431  0.92861  1.85722  3.71445  7.42890
 ## [9] 14.85780
 ## 
 ## attr(,"row.names")
 ## [1] 1 2 3 4 5 6 7 8 9
 ## attr(,"class")
-## [1] "unimix"
+## [1] "normalmix"
 ```
 
 ```r
 plot(beta.ash.auto$localfsr, beta.ash.pm$localfsr, main = "comparison of ash localfsr, with and without point mass", 
     xlab = "no point mass", ylab = "with point mass", xlim = c(0, 1), ylim = c(0, 
         1))
-```
-
-```
-## Error: object 'beta.ash.pm' not found
-```
-
-```r
 abline(a = 0, b = 1)
-```
-
-```
-## Error: plot.new has not been called yet
-```
-
-```r
 abline(a = 0, b = 2)
 ```
 
-```
-## Error: plot.new has not been called yet
-```
+![plot of chunk unnamed-chunk-12](figure/unnamed-chunk-12.png) 
 
 
 Our conclusion: if we simulate data with a point mass,
