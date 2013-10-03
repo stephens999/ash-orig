@@ -1,0 +1,61 @@
+* using log directory ‘/Users/stephens/Documents/git/ash/package/ashr.Rcheck’
+* using R version 2.15.1 (2012-06-22)
+* using platform: x86_64-apple-darwin9.8.0 (64-bit)
+* using session charset: UTF-8
+* checking for file ‘ashr/DESCRIPTION’ ... OK
+* this is package ‘ashr’ version ‘0.1’
+* checking package namespace information ... OK
+* checking package dependencies ... OK
+* checking if this is a source package ... OK
+* checking if there is a namespace ... OK
+* checking for executable files ... OK
+* checking whether package ‘ashr’ can be installed ... OK
+* checking installed package size ... OK
+* checking package directory ... OK
+* checking for portable file names ... OK
+* checking for sufficient/correct file permissions ... OK
+* checking DESCRIPTION meta-information ... OK
+* checking top-level files ... OK
+* checking index information ... OK
+* checking package subdirectories ... OK
+* checking R files for non-ASCII characters ... OK
+* checking R files for syntax errors ... OK
+* checking whether the package can be loaded ... OK
+* checking whether the package can be loaded with stated dependencies ... OK
+* checking whether the package can be unloaded cleanly ... OK
+* checking whether the namespace can be loaded with stated dependencies ... OK
+* checking whether the namespace can be unloaded cleanly ... OK
+* checking for unstated dependencies in R code ... OK
+* checking S3 generic/method consistency ... OK
+* checking replacement functions ... OK
+* checking foreign function calls ... OK
+* checking R code for possible problems ... NOTE
+EM : f: no visible binding for global variable ‘betahat’
+EM : f: no visible binding for global variable ‘sebetahat’
+EM: no visible global function definition for ‘matrix_dens’
+EM: no visible binding for global variable ‘betahat’
+EM: no visible binding for global variable ‘sebetahat’
+VB.update: no visible binding for global variable ‘n’
+VB.update: no visible binding for global variable ‘k’
+VB.update: no visible binding for global variable ‘prior’
+posterior_dist: no visible global function definition for ‘matrix_dens’
+* checking Rd files ... OK
+* checking Rd metadata ... OK
+* checking Rd cross-references ... OK
+* checking for missing documentation entries ... WARNING
+Undocumented code objects:
+  ‘ash’
+All user-level objects in a package should have documentation entries.
+See the chapter ‘Writing R documentation files’ in the ‘Writing R
+Extensions’ manual.
+* checking for code/documentation mismatches ... OK
+* checking Rd \usage sections ... OK
+* checking Rd contents ... OK
+* checking for unstated dependencies in examples ... OK
+* checking examples ... NONE
+* checking PDF version of manual ... OK
+WARNING: There was 1 warning.
+NOTE: There was 1 note.
+See
+  ‘/Users/stephens/Documents/git/ash/package/ashr.Rcheck/00check.log’
+for details.
