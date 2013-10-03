@@ -181,7 +181,11 @@ library("qvalue")
 ```
 
 ```
-## Warning: couldn't connect to display ":0"
+## Loading Tcl/Tk interface ...
+```
+
+```
+## done
 ```
 
 
