@@ -289,7 +289,15 @@ ash = function(betahat,sebetahat,mixcompdist = "normal",nullcheck=TRUE,df=NULL,r
   }
   
   completeobs = (!is.na(betahat) & !is.na(sebetahat))
-  if(auto==TRUE){
+ if(sum(completeobs==0)){
+    if(onlylogLR){
+      return(list(pi=NULL, logLR = 0))
+    }
+    else{
+      stop("Error: all input values are missing")
+    }
+  }  
+if(auto==TRUE){
     sigmaavec= autoselect.sigmaavec(betahat[completeobs],sebetahat[completeobs])
   }
   if(usePointMass){
