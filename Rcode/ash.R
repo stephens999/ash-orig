@@ -345,7 +345,7 @@ if(auto==TRUE){
     ZeroProb[!completeobs] = sum(mixprop(pi.fit$g)[comp_sd(pi.fit$g)==0])
     NegativeProb[!completeobs] = mixcdf(pi.fit$g,0) 
     PosteriorMean[!completeobs] = mixmean(pi.fit$g)
-      
+    #TO implement PosteriorSD[!completeobs] =mixsd()  
     PositiveProb =  1- NegativeProb-ZeroProb    
      
     

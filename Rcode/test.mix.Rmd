@@ -14,7 +14,13 @@ matdnorm = function (x, mu, sigma, log=FALSE)
 ################################# TESTING #####################################
 ```{r}
 source("mix.R")
+library("testthat")
 temp = normalmix(c(0.5,0.5),c(-3,2),c(1,1))
+
+expect_that(comp_mean(temp),equals(c(-3,2)))
+expect_that(mixmean(temp),equals(-0.5))
+expect_that(mixsd(temp),equals(2.692582))
+
 x = seq(-5,5,length=100)
 plot(x,dens(temp,x),type="l")
 all.equal(compdens(temp,x),matdnorm(x, temp$mean,temp$sd))
