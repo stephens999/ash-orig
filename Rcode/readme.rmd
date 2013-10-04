@@ -75,6 +75,7 @@ if we ``observed" data $\hat\beta_p \sim N(\beta_p, s_p)$.)
 #install q value package, and load in ash code
 source("../Rcode/ash.R")
 source("../Rcode/ash.oldfuncs.R")
+source("../Rcode/mix.R")
 beta.ash.all = ash(betahat,s)
 beta.ash.good = ash(betahat[p$type=="GOOD"],s[p$type=="GOOD"])
 plot(beta.ash.good$PosteriorMean,beta.ash.all$PosteriorMean[p$type=="GOOD"])

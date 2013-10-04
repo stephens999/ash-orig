@@ -1,9 +1,9 @@
 #TODO: Add nullcheck for VB?
 #Separate out the optimization over sigma from the EM algorithm
 
-ash.repodir = scan(".ash.repodir.txt",what=character()) 
-source(file.path(ash.repodir, "/Rcode/mix.R"))
-
+#ash.repodir = scan(".ash.repodir.txt",what=character()) 
+#source(file.path(ash.repodir, "/Rcode/mix.R"))
+#source("mix.R")
 
 #return the KL-divergence between 2 dirichlet distributions
 #p,q are the vectors of dirichlet parameters of same lengths
@@ -246,13 +246,11 @@ autoselect.sigmaavec = function(betahat,sebetahat){
   return(2^((-npoint):0) * sigmaamax)
 }
 
-
-
 #' @title Main Adaptive SHrinkage function
 #'
 #' @description takes a vector of betahats and ses; fits a mixture of normals to it and returns posteriors
 #'
-#' @details 
+#' @details See readme for more details
 #' 
 #' @param betahat (p vector); 
 #' @param sebetahat (p vector of standard errors)
@@ -337,16 +335,18 @@ if(auto==TRUE){
    	ZeroProb = rep(0,length=n)
     NegativeProb = rep(0,length=n)
     PosteriorMean = rep(0,length=n)
+    PosteriorSD=rep(0,length=n)
     
    	ZeroProb[completeobs] = colSums(comppostprob(pi.fit$g,betahat[completeobs],sebetahat[completeobs])[comp_sd(pi.fit$g)==0,,drop=FALSE])     
    	NegativeProb[completeobs] = cdf_post(pi.fit$g, 0, betahat[completeobs],sebetahat[completeobs]) - ZeroProb[completeobs]
     PosteriorMean[completeobs] = postmean(pi.fit$g,betahat[completeobs],sebetahat[completeobs])
+    PosteriorSD[completeobs] =postsd(pi.fit$g,betahat[completeobs],sebetahat[completeobs]) 
     
     #FOR MISSING OBSERVATIONS, USE THE PRIOR INSTEAD OF THE POSTERIOR
     ZeroProb[!completeobs] = sum(mixprop(pi.fit$g)[comp_sd(pi.fit$g)==0])
     NegativeProb[!completeobs] = mixcdf(pi.fit$g,0) 
     PosteriorMean[!completeobs] = mixmean(pi.fit$g)
-    #TO implement PosteriorSD[!completeobs] =mixsd()  
+    PosteriorSD[!completeobs] =mixsd(pi.fit$g)  
     PositiveProb =  1- NegativeProb-ZeroProb    
      
     
@@ -360,7 +360,7 @@ if(auto==TRUE){
    		qvalue=NULL
   	}
    
-    result = list(fitted.g=pi.fit$g,PosteriorMean = PosteriorMean,PositiveProb =PositiveProb,NegativeProb=NegativeProb, ZeroProb=ZeroProb,localfsr = localfsr, localfdr=localfdr,qvalue=qvalue,fit=pi.fit)
+    result = list(fitted.g=pi.fit$g,PosteriorMean = PosteriorMean,PosteriorSD=PosteriorSD,PositiveProb =PositiveProb,NegativeProb=NegativeProb, ZeroProb=ZeroProb,localfsr = localfsr, localfdr=localfdr,qvalue=qvalue,fit=pi.fit)
 	  class(result)= "ash"
     return(result)
 

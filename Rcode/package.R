@@ -1,23 +1,48 @@
-#These commands were used to set up the ashr package
+#This file documents some of the learning steps I took as I set up the ashr package
 
-setwd("~/Documents/git/ash/package")
-library(devtools)
+
+require(devtools)
+require(roxygen2)
+
+#This used to create package skeleton
 create("~/Documents/git/ash/package/ashr")
 
-Then I had to add 
-export(ash,EMest)
-to NAMESPACE file
+#THEN: I had to add export(ash) to NAMESPACE file
+#and  mv ash.R 
+# mv mix.R 
+#into the R directory
 
-#Then I put ash.R and mix.R in the R directory
-#NOte: I had to remove the source("") and library("") commands from these files
-#to get them to work
+#NOte: I had to remove the source("") and library("") commands from the
+#ash.R and mix.R files to get them to work
 
-setwd("~/Documents/git/ash/package/ashr")
-# not run build(binary=TRUE)
-install("../ashr")
+# process instructions; this als sets up NAMESPACE file
+roxygenize("~/Documents/git/ash/package/ashr")
+
+#install from source: this uses R CMD INSTALL to install
+# the ashr library in the usual directory (.Library)
+#and loads it
+install("~/Documents/git/ash/package/ashr")
+#I found I need to restart R after install to avoid errors in the help commands
+library(ashr)
 ash
-EMest
-works!
+?ash
+#works!
+
+#making a tar.gz version of ashr package
+require(devtools)
+build("~/Documents/git/ash/package/ashr",binary=FALSE)
+
+#this installs the tar.gz package and puts it in the library
+install.packages("ashr_0.1.tar.gz",repos=NULL,type="source")
+
+library(ashr)
+ash
+?ash
+#works!
+
+#Try installing from github
+require(devtools) 
+install_github('ash',user='stephens999',subdir='package/ashr')
 
 
 # had problems with these,
