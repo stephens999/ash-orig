@@ -3,7 +3,6 @@
 
 source("mix.R")
 
-
 #return the KL-divergence between 2 dirichlet distributions
 #p,q are the vectors of dirichlet parameters of same lengths
 diriKL = function(p,q){
@@ -247,23 +246,29 @@ autoselect.sigmaavec = function(betahat,sebetahat){
 
 
 
-#main adaptive shrinkage function
-#takes a vector of betahats and ses;
-#fits a mixture of normals to it
-# and returns posteriors
-#INPUT: betahat (p vector); sebetahat (p vector of standard errors)
-#mixcompdist: distribution of components in mixture ("normal", "uniform" or "halfuniform")
-#df: degrees of freedome used to compute sebetahat
-#randomstart: bool, indicating whether to initialize EM randomly
-#usePointMass: bool, indicating whether to use a point mass at zero as one of components for a mixture distribution
-#onlylogLR (= FALSE) : bool, indicating whether to use this function to get logLR. Skip posterior prob, posterior mean, localfdr...
-#localfdr (=TRUE) : bool,  indicating whether to compute localfdr and q-value
-#auto (=FALSE): bool, whether to try to select the sigmaavec vector automatically (beta functionality)
-#sigma.est: bool, whether to estimate sigma rather than fixing (Beta version)
-#nc: number of components to use (only relevant when sigma.est=TRUE)
-#
-#OUTPUT: 
-#logLR : logP(D|mle(pi)) - logP(D|null)
+#' @title Main Adaptive SHrinkage function
+#'
+#' @description takes a vector of betahats and ses; fits a mixture of normals to it and returns posteriors
+#'
+#' @details 
+#' 
+#' @param betahat (p vector); 
+#' @param sebetahat (p vector of standard errors)
+#' @param mixcompdist: distribution of components in mixture ("normal", "uniform" or "halfuniform")
+#' @param df: degrees of freedome used to compute sebetahat
+#' @param randomstart: bool, indicating whether to initialize EM randomly
+#' @param usePointMass: bool, indicating whether to use a point mass at zero as one of components for a mixture distribution
+#' @param onlylogLR (= FALSE) : bool, indicating whether to use this function to get logLR. Skip posterior prob, posterior mean, localfdr...
+#' @param localfdr (=TRUE) : bool,  indicating whether to compute localfdr and q-value
+#' @param auto (=FALSE): bool, whether to try to select the sigmaavec vector automatically (beta functionality)
+#' @param sigma.est: bool, whether to estimate sigma rather than fixing (Beta version)
+#' @param nc: number of components to use (only relevant when sigma.est=TRUE)
+#' 
+#' @return a list with elements fitted.g is fitted mixture
+#' logLR : logP(D|mle(pi)) - logP(D|null)
+#' 
+#' @export
+#' 
 #Things to do:
 # check sampling routine
 # check number of iterations

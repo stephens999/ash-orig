@@ -1,4 +1,4 @@
-library(truncnorm)
+require(truncnorm)
 
 ################################## GENERIC FUNCTIONS ############################
 # find matrix of densities at y, for each component of the mixture
