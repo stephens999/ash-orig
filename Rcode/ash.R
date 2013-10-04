@@ -1,7 +1,8 @@
 #TODO: Add nullcheck for VB?
 #Separate out the optimization over sigma from the EM algorithm
 
-source("mix.R")
+source(file.path(ash.repodir, "/Rcode/mix.R"))
+
 
 
 #return the KL-divergence between 2 dirichlet distributions
