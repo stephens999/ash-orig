@@ -1,6 +1,7 @@
 #TODO: Add nullcheck for VB?
 #Separate out the optimization over sigma from the EM algorithm
 
+ash.repodir = scan(".ash.repodir.txt",what=character()) 
 source(file.path(ash.repodir, "/Rcode/mix.R"))
 
 
