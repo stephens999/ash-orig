@@ -176,6 +176,7 @@ setwd("~/Documents/git/ash/Rcode/")
 set.seed(32327)
 ## load Poisson_binomial and ash functions 
 source("../Rcode/ash.R") 
+source("../Rcode/mix.R") 
 library("qvalue")
 ```
 

@@ -13,13 +13,30 @@ matdnorm = function (x, mu, sigma, log=FALSE)
 
 ################################# TESTING #####################################
 ```{r}
-source("mix.R")
+setwd("~/Documents/git/ash/")
+source("Rcode/mix.R")
+source("Rcode/ash.R")
+source("Rcode/ash.oldfuncs.R")
 library("testthat")
-temp = normalmix(c(0.5,0.5),c(-3,2),c(1,1))
+temp = normalmix(c(0.5,0.5),c(0,0),c(1,2))
 
-expect_that(comp_mean(temp),equals(c(-3,2)))
-expect_that(mixmean(temp),equals(-0.5))
-expect_that(mixsd(temp),equals(2.692582))
+expect_that(comp_mean(temp),equals(c(0,0)))
+expect_that(mixmean(temp),equals(0))
+expect_that(mixsd(temp),equals(sqrt(2.5)))
+
+comp_postmean(temp,0,1)
+comp_postsd(temp,0,1)
+postsd(temp,0,1)
+
+set.seed(100)
+beta = rnorm(100)
+betahatse = abs(rnorm(100))
+betahat = rnorm(100, beta,betahatse)
+
+pd= posterior_dist(temp,betahat,betahatse)
+mv=normmix.mv(pd)
+expect_that(mv$mean,equals(postmean(temp,betahat,betahatse)))
+expect_that(sqrt(mv$var),equals(postsd(temp,betahat,betahatse)))
 
 x = seq(-5,5,length=100)
 plot(x,dens(temp,x),type="l")

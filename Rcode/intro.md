@@ -177,15 +177,19 @@ setwd("~/Documents/git/ash/Rcode/")
 set.seed(32327)
 ## load Poisson_binomial and ash functions
 source("../Rcode/ash.R")
+source("../Rcode/mix.R")
+```
+
+```
+## Loading required package: truncnorm
+```
+
+```r
 library("qvalue")
 ```
 
 ```
-## Loading Tcl/Tk interface ...
-```
-
-```
-## done
+## Warning: couldn't connect to display ":0"
 ```
 
 
@@ -659,6 +663,13 @@ betahat = rnorm(10000, beta, s)
 
 beta.ash = ash(betahat, s)
 beta.ash.halfu = ash(betahat, s, "halfuniform")
+```
+
+```
+## [1] "Warning: Posterior SDs not yet implemented for uniform components"
+```
+
+```r
 
 hist(beta, prob = TRUE)
 x = seq(-8, 4, length = 1000)

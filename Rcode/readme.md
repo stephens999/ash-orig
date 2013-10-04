@@ -108,19 +108,48 @@ if we ``observed" data $\hat\beta_p \sim N(\beta_p, s_p)$.)
 ```r
 # install q value package, and load in ash code
 source("../Rcode/ash.R")
+```
+
+```
+## Warning: cannot open file '.ash.repodir.txt': No such file or directory
+```
+
+```
+## Error: cannot open the connection
+```
+
+```r
 source("../Rcode/ash.oldfuncs.R")
 beta.ash.all = ash(betahat, s)
+```
+
+```
+## Error: could not find function "ash"
+```
+
+```r
 beta.ash.good = ash(betahat[p$type == "GOOD"], s[p$type == "GOOD"])
+```
+
+```
+## Error: could not find function "ash"
+```
+
+```r
 plot(beta.ash.good$PosteriorMean, beta.ash.all$PosteriorMean[p$type == "GOOD"])
 ```
 
-![plot of chunk unnamed-chunk-4](figure/unnamed-chunk-41.png) 
+```
+## Error: object 'beta.ash.good' not found
+```
 
 ```r
 plot(beta.ash.good$PositiveProb, beta.ash.all$PositiveProb[p$type == "GOOD"])
 ```
 
-![plot of chunk unnamed-chunk-4](figure/unnamed-chunk-42.png) 
+```
+## Error: object 'beta.ash.good' not found
+```
 
 So here it makes no difference whether you use all the observations or the just the good ones -
 the noise is ignored (as it should be!)
@@ -177,11 +206,18 @@ Now compare this with ASH
 
 ```r
 hh.ash = ash(hh.betahat, hh.sebetahat, df = n1 + n2 - 2)
+```
+
+```
+## Error: could not find function "ash"
+```
+
+```r
 sum(hh.ash$qvalue < 0.05)
 ```
 
 ```
-## [1] 245
+## Error: object 'hh.ash' not found
 ```
 
 ```r
@@ -190,7 +226,9 @@ plot(hh.ash$localfdr, log(hh.pval), main = "Illustration of how ASH reorders sig
     ylab = "Original p value")
 ```
 
-![plot of chunk unnamed-chunk-6](figure/unnamed-chunk-6.png) 
+```
+## Error: object 'hh.ash' not found
+```
 
 
 Now see how it compares with ignoring the variability in
@@ -198,19 +236,35 @@ measurement error, by applying ASH to the z scores.
 
 ```r
 hh.ash2 = ash(hh.zscore, rep(1, length(hh.zscore)), df = 20)
+```
+
+```
+## Error: could not find function "ash"
+```
+
+```r
 plot(hh.ash$localfdr, hh.ash2$localfdr, cex = 0.2, ylab = "ignoring sd", xlab = "accounting for sd", 
     main = "Effect of accounting for measurement precision on local fdr")
+```
+
+```
+## Error: object 'hh.ash' not found
+```
+
+```r
 abline(a = 0, b = 1, col = 2)
 ```
 
-![plot of chunk unnamed-chunk-7](figure/unnamed-chunk-71.png) 
+```
+## Error: plot.new has not been called yet
+```
 
 ```r
 cat(sum(hh.ash$qvalue < 0.05), sum(hh.ash2$qvalue < 0.05))
 ```
 
 ```
-## 245 376
+## Error: object 'hh.ash' not found
 ```
 
 ```r
@@ -218,7 +272,7 @@ cat(sum(hh.ash$localfdr < 0.05), sum(hh.ash2$localfdr < 0.05))
 ```
 
 ```
-## 125 186
+## Error: object 'hh.ash' not found
 ```
 
 ```r
@@ -227,7 +281,9 @@ plot(hh.ash2$localfdr, log(hh.pval), main = "Illustration of how ASH without pre
     ylab = "Original p value")
 ```
 
-![plot of chunk unnamed-chunk-7](figure/unnamed-chunk-72.png) 
+```
+## Error: object 'hh.ash2' not found
+```
 
 Hmm - this was unexpected. Why are more being called
 in the second analysis? Could it be that the effect sizes
@@ -250,7 +306,7 @@ cat(LogLik_conv(hh.ash$fitted.g, hh.betahat, hh.sebetahat), mixseLoglik(hh.betah
 ```
 
 ```
-## -1912 -1912 -1800
+## Error: could not find function "LogLik_conv"
 ```
 
 Looks like the second model fits better.
@@ -273,14 +329,16 @@ plot(as.numeric(hh.q$qvalue), hh.ash2$qval, cex = 0.2, ylab = "ASH q value",
     xlab = "standard q value", main = "ASH vs standard q value")
 ```
 
-![plot of chunk unnamed-chunk-10](figure/unnamed-chunk-10.png) 
+```
+## Error: object 'hh.ash2' not found
+```
 
 ```r
 cat(hh.ash2$fitted.g$pi[1], hh.q$pi0)
 ```
 
 ```
-## 4.084e-05 0.6651
+## Error: object 'hh.ash2' not found
 ```
 
 At first I was really worried about this - the pi0 estimate
@@ -333,6 +391,13 @@ musim2 = c(rnorm(1000, -3, 1), rnorm(1000, -1.5, 1), rnorm(1000, 0, 1), rep(0,
     7000))
 zsim2 = musim2 + rnorm(10000)
 zsim2.ash = ash(zsim2, rep(1, 10000))
+```
+
+```
+## Error: could not find function "ash"
+```
+
+```r
 hist(musim2[1:3000])
 ```
 
@@ -340,11 +405,18 @@ hist(musim2[1:3000])
 
 ```r
 errorinsign = ifelse(musim2 == 0, 0.5, (zsim2.ash$PosteriorMean/musim2) < 0)
+```
+
+```
+## Error: object 'zsim2.ash' not found
+```
+
+```r
 sum(errorinsign[zsim2.ash$qvalue < 0.05])/sum(zsim2.ash$qvalue < 0.05)
 ```
 
 ```
-## [1] 0.03077
+## Error: object 'errorinsign' not found
 ```
 
 
@@ -358,6 +430,10 @@ Simulate data as in Efron, 2008, Section 7.
 musim = c(rnorm(1000, -3, 1), rep(0, 9000))
 zsim = musim + rnorm(10000)
 zsim.ash = ash(zsim, rep(1, 10000))
+```
+
+```
+## Error: could not find function "ash"
 ```
 
 Need to implement a method to find CIs to look at this.
@@ -452,23 +528,51 @@ hist(p2.test)
 ```r
 
 test1.ash1 = ash(bhat.test, hh.sebetahat)
+```
+
+```
+## Error: could not find function "ash"
+```
+
+```r
 test1.ash2 = ash(z.test, rep(1, n))
+```
+
+```
+## Error: could not find function "ash"
+```
+
+```r
 cat(sum(test1.ash1$qval < 0.05), sum(test1.ash2$qval < 0.05))
 ```
 
 ```
-## 663 443
+## Error: object 'test1.ash1' not found
 ```
 
 ```r
 
 test2.ash1 = ash(bhat2.test, hh.sebetahat)
+```
+
+```
+## Error: could not find function "ash"
+```
+
+```r
 test2.ash2 = ash(z2.test, rep(1, n))
+```
+
+```
+## Error: could not find function "ash"
+```
+
+```r
 cat(sum(test2.ash1$qval < 0.05), sum(test2.ash2$qval < 0.05))
 ```
 
 ```
-## 87 270
+## Error: object 'test2.ash1' not found
 ```
 
 ```r
@@ -480,7 +584,7 @@ mixseLoglik(bhat.test, test1.ash1$fitted.g$pi, test1.ash1$fitted.g$mean, test1.a
 ```
 
 ```
-## [1] -1497
+## Error: object 'test1.ash1' not found
 ```
 
 ```r
@@ -489,7 +593,7 @@ mixseLoglik(bhat.test, test1.ash2$fitted.g$pi, test1.ash2$fitted.g$mean, sqrt(te
 ```
 
 ```
-## [1] -1831
+## Error: object 'test1.ash2' not found
 ```
 
 ```r
@@ -499,7 +603,7 @@ mixseLoglik(bhat2.test, test2.ash1$fitted.g$pi, test2.ash1$fitted.g$mean, test2.
 ```
 
 ```
-## [1] -1452
+## Error: object 'test2.ash1' not found
 ```
 
 ```r
@@ -508,7 +612,7 @@ mixseLoglik(bhat2.test, test2.ash2$fitted.g$pi, test2.ash2$fitted.g$mean, sqrt(t
 ```
 
 ```
-## [1] -1288
+## Error: object 'test2.ash2' not found
 ```
 
 
@@ -603,6 +707,13 @@ pval = pchisq(zscore^2, df = 1, lower.tail = F)
 # apply the ash method to do adaptive shrinkage of betahat and the qvalue
 # method to get
 beta.ash = ash(betahat, sebetahat)
+```
+
+```
+## Error: could not find function "ash"
+```
+
+```r
 qq = qvalue(pval)
 ```
 
@@ -612,12 +723,26 @@ Now we want to see how the results compare
 ```r
 
 attach(beta.ash)
+```
+
+```
+## Error: object 'beta.ash' not found
+```
+
+```r
 conf = ifelse(PositiveProb > 0.5, PositiveProb, 1 - PositiveProb)
+```
+
+```
+## Error: object 'PositiveProb' not found
+```
+
+```r
 sum(conf > 0.95)
 ```
 
 ```
-## [1] 1147
+## Error: object 'conf' not found
 ```
 
 ```r
@@ -638,9 +763,7 @@ table(err[conf > 0.95])
 ```
 
 ```
-## 
-## FALSE  TRUE 
-##  1145     2
+## Error: object 'conf' not found
 ```
 
 ```r
@@ -661,10 +784,17 @@ table(err[qq$qvalues < 0.05])
 
 
 plot(cumsum(err[order(qq$qvalues)]), type = "l")
-lines(cumsum(err[order(conf, decreasing = TRUE)]), col = 2)
 ```
 
 ![plot of chunk unnamed-chunk-19](figure/unnamed-chunk-19.png) 
+
+```r
+lines(cumsum(err[order(conf, decreasing = TRUE)]), col = 2)
+```
+
+```
+## Error: object 'conf' not found
+```
 
 
 
