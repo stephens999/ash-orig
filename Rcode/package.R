@@ -40,9 +40,12 @@ ash
 ?ash
 #works!
 
-#Try installing from github
+#Try installing from github; worked except for documentation - not sure why
 require(devtools) 
 install_github('ash',user='stephens999',subdir='package/ashr')
+library(ashr)
+ash
+?ash
 
 
 # had problems with these,
