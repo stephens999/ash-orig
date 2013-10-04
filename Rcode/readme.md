@@ -24,15 +24,18 @@ library("qvalue")
 ```
 
 ```
-## Loading Tcl/Tk interface ...
-```
-
-```
-## done
+## Warning: couldn't connect to display ":0"
 ```
 
 ```r
 library("lattice")  #library for some of the plots
+```
+
+```
+## Warning: package 'lattice' was built under R version 3.0.1
+```
+
+```r
 
 # set up some data with mixture of values of s
 set.seed(100)
@@ -105,6 +108,7 @@ if we ``observed" data $\hat\beta_p \sim N(\beta_p, s_p)$.)
 ```r
 # install q value package, and load in ash code
 source("../Rcode/ash.R")
+source("../Rcode/ash.oldfuncs.R")
 beta.ash.all = ash(betahat, s)
 beta.ash.good = ash(betahat[p$type == "GOOD"], s[p$type == "GOOD"])
 plot(beta.ash.good$PosteriorMean, beta.ash.all$PosteriorMean[p$type == "GOOD"])
@@ -239,13 +243,14 @@ The following computes the log likelihood for the two fitted ash models,
 first with $\beta \sim \sum_k \pi_k N(0,\sigma_k^2)$, and then $\beta_s \sim \sum_k \pi_k N(0, \sigma^2_k se^2_s)$:
 
 ```r
-cat(mixseLoglik(hh.betahat, hh.ash$fitted.f$pi, hh.ash$fitted.f$mu, hh.ash$fitted.f$sigma, 
-    hh.sebetahat), mixseLoglik(hh.betahat, hh.ash2$fitted.f$pi, hh.ash2$fitted.f$mu, 
-    sqrt(hh.ash2$fitted.f$sigma^2 + 1), hh.sebetahat, FUN = "*"))
+cat(LogLik_conv(hh.ash$fitted.g, hh.betahat, hh.sebetahat), mixseLoglik(hh.betahat, 
+    hh.ash$fitted.g$pi, hh.ash$fitted.g$mean, hh.ash$fitted.g$sd, hh.sebetahat), 
+    mixseLoglik(hh.betahat, hh.ash2$fitted.g$pi, hh.ash2$fitted.g$mean, sqrt(hh.ash2$fitted.g$sd^2 + 
+        1), hh.sebetahat, FUN = "*"))
 ```
 
 ```
-## -1912 -1800
+## -1912 -1912 -1800
 ```
 
 Looks like the second model fits better.
@@ -271,7 +276,7 @@ plot(as.numeric(hh.q$qvalue), hh.ash2$qval, cex = 0.2, ylab = "ASH q value",
 ![plot of chunk unnamed-chunk-10](figure/unnamed-chunk-10.png) 
 
 ```r
-cat(hh.ash2$fitted.f$pi[1], hh.q$pi0)
+cat(hh.ash2$fitted.g$pi[1], hh.q$pi0)
 ```
 
 ```
@@ -470,7 +475,7 @@ cat(sum(test2.ash1$qval < 0.05), sum(test2.ash2$qval < 0.05))
 
 
 
-mixseLoglik(bhat.test, test1.ash1$fitted.f$pi, test1.ash1$fitted.f$mu, test1.ash1$fitted.f$sigma, 
+mixseLoglik(bhat.test, test1.ash1$fitted.g$pi, test1.ash1$fitted.g$mean, test1.ash1$fitted.g$sd, 
     hh.sebetahat)
 ```
 
@@ -479,7 +484,7 @@ mixseLoglik(bhat.test, test1.ash1$fitted.f$pi, test1.ash1$fitted.f$mu, test1.ash
 ```
 
 ```r
-mixseLoglik(bhat.test, test1.ash2$fitted.f$pi, test1.ash2$fitted.f$mu, sqrt(test1.ash2$fitted.f$sigma^2 + 
+mixseLoglik(bhat.test, test1.ash2$fitted.g$pi, test1.ash2$fitted.g$mean, sqrt(test1.ash2$fitted.g$sd^2 + 
     1), hh.sebetahat, FUN = "*")
 ```
 
@@ -489,7 +494,7 @@ mixseLoglik(bhat.test, test1.ash2$fitted.f$pi, test1.ash2$fitted.f$mu, sqrt(test
 
 ```r
 
-mixseLoglik(bhat2.test, test2.ash1$fitted.f$pi, test2.ash1$fitted.f$mu, test2.ash1$fitted.f$sigma, 
+mixseLoglik(bhat2.test, test2.ash1$fitted.g$pi, test2.ash1$fitted.g$mean, test2.ash1$fitted.g$sd, 
     hh.sebetahat)
 ```
 
@@ -498,7 +503,7 @@ mixseLoglik(bhat2.test, test2.ash1$fitted.f$pi, test2.ash1$fitted.f$mu, test2.as
 ```
 
 ```r
-mixseLoglik(bhat2.test, test2.ash2$fitted.f$pi, test2.ash2$fitted.f$mu, sqrt(test2.ash2$fitted.f$sigma^2 + 
+mixseLoglik(bhat2.test, test2.ash2$fitted.g$pi, test2.ash2$fitted.g$mean, sqrt(test2.ash2$fitted.g$sd^2 + 
     1), hh.sebetahat, FUN = "*")
 ```
 
@@ -651,9 +656,8 @@ table(err[qq$qvalues < 0.05])
 ```r
 
 
-# check whether ordering by q values does better or worse job than
-# ordering by confidence, in terms of identifying betas with the right
-# sign
+# check whether ordering by q values does better or worse job than ordering
+# by confidence, in terms of identifying betas with the right sign
 
 
 plot(cumsum(err[order(qq$qvalues)]), type = "l")

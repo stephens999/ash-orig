@@ -74,6 +74,7 @@ if we ``observed" data $\hat\beta_p \sim N(\beta_p, s_p)$.)
 ```{r}
 #install q value package, and load in ash code
 source("../Rcode/ash.R")
+source("../Rcode/ash.oldfuncs.R")
 beta.ash.all = ash(betahat,s)
 beta.ash.good = ash(betahat[p$type=="GOOD"],s[p$type=="GOOD"])
 plot(beta.ash.good$PosteriorMean,beta.ash.all$PosteriorMean[p$type=="GOOD"])
@@ -139,7 +140,7 @@ need to code it. This section is work in progress.
 The following computes the log likelihood for the two fitted ash models,
 first with $\beta \sim \sum_k \pi_k N(0,\sigma_k^2)$, and then $\beta_s \sim \sum_k \pi_k N(0, \sigma^2_k se^2_s)$:
 ```{r}
-cat(mixseLoglik(hh.betahat,hh.ash$fitted.f$pi, hh.ash$fitted.f$mu, hh.ash$fitted.f$sigma, hh.sebetahat),mixseLoglik(hh.betahat,hh.ash2$fitted.f$pi, hh.ash2$fitted.f$mu, sqrt(hh.ash2$fitted.f$sigma^2+1), hh.sebetahat,FUN="*"))
+cat(LogLik_conv(hh.ash$fitted.g, hh.betahat, hh.sebetahat),mixseLoglik(hh.betahat,hh.ash$fitted.g$pi, hh.ash$fitted.g$mean, hh.ash$fitted.g$sd, hh.sebetahat),mixseLoglik(hh.betahat,hh.ash2$fitted.g$pi, hh.ash2$fitted.g$mean, sqrt(hh.ash2$fitted.g$sd^2+1), hh.sebetahat,FUN="*"))
 ```
 Looks like the second model fits better.
 
@@ -153,7 +154,7 @@ on z scores is rather different from the standard q value analysis, even though 
 Look:
 ```{r}
 plot(as.numeric(hh.q$qvalue),hh.ash2$qval,cex=0.2,ylab="ASH q value",xlab="standard q value",main="ASH vs standard q value")
-cat(hh.ash2$fitted.f$pi[1],hh.q$pi0)
+cat(hh.ash2$fitted.g$pi[1],hh.q$pi0)
 ```
 At first I was really worried about this - the pi0 estimate
 is much bigger using the p values. However, this is all to
@@ -255,11 +256,11 @@ cat(sum(test2.ash1$qval<0.05),sum(test2.ash2$qval<0.05))
 
 
 
-mixseLoglik(bhat.test,test1.ash1$fitted.f$pi,test1.ash1$fitted.f$mu,test1.ash1$fitted.f$sigma,hh.sebetahat)
-mixseLoglik(bhat.test,test1.ash2$fitted.f$pi,test1.ash2$fitted.f$mu,sqrt(test1.ash2$fitted.f$sigma^2+1),hh.sebetahat,FUN="*")
+mixseLoglik(bhat.test,test1.ash1$fitted.g$pi,test1.ash1$fitted.g$mean,test1.ash1$fitted.g$sd,hh.sebetahat)
+mixseLoglik(bhat.test,test1.ash2$fitted.g$pi,test1.ash2$fitted.g$mean,sqrt(test1.ash2$fitted.g$sd^2+1),hh.sebetahat,FUN="*")
 
-mixseLoglik(bhat2.test,test2.ash1$fitted.f$pi,test2.ash1$fitted.f$mu,test2.ash1$fitted.f$sigma,hh.sebetahat)
-mixseLoglik(bhat2.test,test2.ash2$fitted.f$pi,test2.ash2$fitted.f$mu,sqrt(test2.ash2$fitted.f$sigma^2+1),hh.sebetahat,FUN="*")
+mixseLoglik(bhat2.test,test2.ash1$fitted.g$pi,test2.ash1$fitted.g$mean,test2.ash1$fitted.g$sd,hh.sebetahat)
+mixseLoglik(bhat2.test,test2.ash2$fitted.g$pi,test2.ash2$fitted.g$mean,sqrt(test2.ash2$fitted.g$sd^2+1),hh.sebetahat,FUN="*")
 ```
 
 
