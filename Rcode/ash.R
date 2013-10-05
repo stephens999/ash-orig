@@ -294,7 +294,7 @@ ash = function(betahat,sebetahat,mixcompdist = "normal",nullcheck=TRUE,df=NULL,r
   }
   
   completeobs = (!is.na(betahat) & !is.na(sebetahat))
- if(sum(completeobs==0)){
+ if(sum(completeobs)==0){
     if(onlylogLR){
       return(list(pi=NULL, logLR = 0))
     }
