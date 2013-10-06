@@ -1,10 +1,7 @@
 #This file documents some of the learning steps I took as I set up the ashr package
 
-
-require(devtools)
-require(roxygen2)
-
 #This used to create package skeleton
+require(devtools)
 create("~/Documents/git/ash/package/ashr")
 
 #THEN: I had to add export(ash) to NAMESPACE file
@@ -16,11 +13,14 @@ create("~/Documents/git/ash/package/ashr")
 #ash.R and mix.R files to get them to work
 
 # process instructions; this als sets up NAMESPACE file
+require(roxygen2)
 roxygenize("~/Documents/git/ash/package/ashr")
 
 #install from source: this uses R CMD INSTALL to install
 # the ashr library in the usual directory (.Library)
 #and loads it
+require(devtools)
+document("~/Documents/git/ash/package/ashr")
 install("~/Documents/git/ash/package/ashr")
 #I found I need to restart R after install to avoid errors in the help commands
 library(ashr)

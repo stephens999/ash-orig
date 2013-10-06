@@ -1,3 +1,6 @@
+
+
+
 ### Project Goals
 
 The initial goal of the ASH (Adaptive SHrinkage) project is to provide simple, generic, and flexible methods to derive ``shrinkage-based" estimates and credible intervals for unknown quantities $\beta=(\beta_1,\dots,\beta_J)$, given only estimates of those quantities ($\hat\beta=(\hat\beta_1,\dots, \hat\beta_J)$) and their corresponding estimated standard errors ($s=(s_1,\dots,s_J)$). 
@@ -9,7 +12,7 @@ the traditional focus of shrinkage-based methods, \emph{and} improved assessment
 By ``adaptive" shrinkage we 
 have two key properties in mind. First, the appropriate amount of shrinkage is determined from the data, rather than being pre-specified. Second, the amount of shrinkage undergone by each $\hat\beta_j$ will depend on the standard error $s_j$: measurements with high standard error will undergo more shrinkage than measurements with low standard error.
 
-As an important special case, these methods address the "multiple comparisons" setting, where interest focuses on which $\beta_j$ can be confidently inferred to be non-zero. Such problems are usually tackled by computing a $p$ value for each $j$, often by applying a $t$ test to $\hat\beta_j/s_j$,
+As an important special case, these methods address the "multiple comparisons" setting, where interest usually focuses on which $\beta_j$ can be confidently inferred to be non-zero. Such problems are usually tackled by computing a $p$ value for each $j$, often by applying a $t$ test to $\hat\beta_j/s_j$,
 and then applying a generic procedure, such as that of Benjamini 
 and Hochberg (1995?) or Storey (2001?), designed to control or
 estimate the false discovery rate (FDR) or the positive FDR (Storey, 2001?). In essence we aim to provide analagous
@@ -168,24 +171,29 @@ for estimating $\pi$ in Step 1, and simple analytic forms for the conditional
 distributions in Step 2.
 
 
-### A simple example
+### Example 1: A simple simulated example to get started
 
 Load in some functions.
 
 ```r
-setwd("~/Documents/git/ash/Rcode/")
+# setwd('~/Documents/git/ash/Rcode/')
 set.seed(32327)
-## load Poisson_binomial and ash functions
-source("../Rcode/ash.R")
-source("../Rcode/mix.R")
+
+## load ashr library
+require("ashr")
 ```
 
 ```
+## Loading required package: ashr
 ## Loading required package: truncnorm
 ```
 
 ```r
-library("qvalue")
+require("qvalue")
+```
+
+```
+## Loading required package: qvalue
 ```
 
 ```
@@ -206,13 +214,38 @@ simdata = function(n, nnull, altmean, altsd, betasd) {
 ```
 
 
-Simulate 10000 tests, with 2000 alternatives, $\beta \sim N(0,sd=2)$, 
-and 8000 null values ($\beta=0$).
+Simulate 10000 $\beta_j$ values, 8000 from a mixture of a point mass at 0 and
+2000 from $\beta \sim N(0,sd=2)$.
+
+
 
 ```r
 ss = simdata(10000, 8000, 0, 2, 1)
 
 beta.ash = ash(ss$betahat, ss$betasd)
+xmin = min(ss$beta)
+xmax = max(ss$beta)
+x = seq(xmin, xmax, length = 1000)
+plot(sort(ss$beta), (1:length(ss$beta))/length(ss$beta), main = "cdf of ss$beta, with fitted f overlaid", 
+    xlab = "beta", ylab = "cdf")
+lines(x, cdf.ash(beta.ash, x), col = 2, lwd = 2)
+```
+
+![plot of chunk unnamed-chunk-4](figure/unnamed-chunk-4.png) 
+
+
+
+
+
+
+
+
+
+
+```r
+ss = simdata(10000, 8000, 0, 2, 1)
+
+beta.ash = ash(ss$betahat, ss$betasd, auto = FALSE)
 beta.ash.auto = ash(ss$betahat, ss$betasd, auto = TRUE)
 # these to test the VB version
 beta.ash.vb.uniform = ash(ss$betahat, ss$betasd, auto = TRUE, VB = TRUE, prior = "uniform")
@@ -228,20 +261,20 @@ qval = qvalue(pval)
 hist(zscore)
 ```
 
-![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-3.png) 
+![plot of chunk unnamed-chunk-5](figure/unnamed-chunk-5.png) 
 
 
 Now, we find the fitted values for $\pi$ are mostly near 0, or at 2 (the alternative value).
 
 ```r
-print(beta.ash)
+summary(beta.ash)
 ```
 
 ```
 ## $pi
-##  [1] 0.680981 0.009060 0.009060 0.009060 0.009060 0.009060 0.009062
-##  [8] 0.009069 0.009096 0.009213 0.009758 0.012940 0.033330 0.181252
-## [15] 0.000000 0.000000
+##  [1] 0.524482 0.023742 0.023742 0.023742 0.023742 0.023742 0.023741
+##  [8] 0.023737 0.023720 0.023656 0.023468 0.023686 0.036145 0.177230
+## [15] 0.001425 0.000000
 ## 
 ## $mean
 ##  [1] 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
@@ -254,96 +287,103 @@ print(beta.ash)
 ##  [1]  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16
 ## attr(,"class")
 ## [1] "normalmix"
+## [1] -16717.61215
+## [1] TRUE
 ```
 
 ```r
-print(beta.ash.auto)
+summary(beta.ash.auto)
 ```
 
 ```
 ## $pi
-## [1] 0.772576 0.007762 0.000000 0.000000 0.000000 0.219662 0.000000 0.000000
-## [9] 0.000000
+## [1] 0.79057 0.00000 0.00000 0.00000 0.07626 0.13317 0.00000 0.00000 0.00000
 ## 
 ## $mean
 ## [1] 0 0 0 0 0 0 0 0 0
 ## 
 ## $sd
-## [1]  0.05804  0.11608  0.23215  0.46431  0.92861  1.85722  3.71445  7.42890
-## [9] 14.85780
+## [1]  0.07398  0.14797  0.29594  0.59187  1.18374  2.36749  4.73497  9.46995
+## [9] 18.93990
 ## 
 ## attr(,"row.names")
 ## [1] 1 2 3 4 5 6 7 8 9
 ## attr(,"class")
 ## [1] "normalmix"
+## [1] -16718.55401
+## [1] TRUE
 ```
 
 ```r
-print(beta.ash.vb.uniform)
+summary(beta.ash.vb.uniform)
 ```
 
 ```
 ## $pi
-## [1] 0.3601452 0.2721677 0.1156223 0.0332935 0.0122755 0.2018693 0.0042466
-## [8] 0.0002416 0.0001384
+## [1] 0.4299708 0.2642824 0.0786925 0.0265601 0.0693908 0.1300973 0.0006732
+## [8] 0.0002008 0.0001321
 ## 
 ## $mean
 ## [1] 0 0 0 0 0 0 0 0 0
 ## 
 ## $sd
-## [1]  0.05804  0.11608  0.23215  0.46431  0.92861  1.85722  3.71445  7.42890
-## [9] 14.85780
+## [1]  0.07398  0.14797  0.29594  0.59187  1.18374  2.36749  4.73497  9.46995
+## [9] 18.93990
 ## 
 ## attr(,"row.names")
 ## [1] 1 2 3 4 5 6 7 8 9
 ## attr(,"class")
 ## [1] "normalmix"
+## [1] -30470.28872
+## [1] FALSE
 ```
 
 ```r
-print(beta.ash.vb.null)
+summary(beta.ash.vb.null)
 ```
 
 ```
 ## $pi
-## [1] 7.802e-01 1.252e-05 1.252e-05 1.252e-05 1.252e-05 2.197e-01 1.252e-05
-## [8] 1.252e-05 1.251e-05
+## [1] 8.410e-01 1.252e-05 1.252e-05 1.252e-05 1.252e-05 1.589e-01 1.252e-05
+## [8] 1.251e-05 1.251e-05
 ## 
 ## $mean
 ## [1] 0 0 0 0 0 0 0 0 0
 ## 
 ## $sd
-## [1]  0.05804  0.11608  0.23215  0.46431  0.92861  1.85722  3.71445  7.42890
-## [9] 14.85780
+## [1]  0.07398  0.14797  0.29594  0.59187  1.18374  2.36749  4.73497  9.46995
+## [9] 18.93990
 ## 
 ## attr(,"row.names")
 ## [1] 1 2 3 4 5 6 7 8 9
 ## attr(,"class")
 ## [1] "normalmix"
+## [1] -20093.57154
+## [1] TRUE
 ```
 
 ```r
-print(beta.ash.pm)
+summary(beta.ash.pm)
 ```
 
 ```
 ## $pi
-##  [1] 0.688795 0.007537 0.007537 0.007537 0.007537 0.007537 0.007538
-##  [8] 0.007540 0.007549 0.007585 0.007733 0.008400 0.011995 0.033913
-## [15] 0.181266 0.000000 0.000000
+##  [1] 0.783344 0.002202 0.000000 0.000000 0.000000 0.082277 0.132177
+##  [8] 0.000000 0.000000 0.000000
 ## 
 ## $mean
-##  [1] 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+##  [1] 0 0 0 0 0 0 0 0 0 0
 ## 
 ## $sd
-##  [1] 0.00000 0.00025 0.00050 0.00100 0.00200 0.00400 0.00800 0.01600
-##  [9] 0.03200 0.06400 0.12800 0.25600 0.51200 1.02400 2.04800 4.09600
-## [17] 8.19200
+##  [1]  0.00000  0.07398  0.14797  0.29594  0.59187  1.18374  2.36749
+##  [8]  4.73497  9.46995 18.93990
 ## 
 ## attr(,"row.names")
-##  [1]  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17
+##  [1]  1  2  3  4  5  6  7  8  9 10
 ## attr(,"class")
 ## [1] "normalmix"
+## [1] -16718.28273
+## [1] TRUE
 ```
 
 
@@ -351,11 +391,20 @@ Plot the fitted underlying distribution on top of true values for beta
 
 ```r
 hist(ss$beta, prob = TRUE, breaks = seq(-7, 7, length = 20))
+```
+
+```
+## Error: some 'x' not counted; maybe 'breaks' do not span range of 'x'
+```
+
+```r
 x = seq(-7, 7, length = 1000)
 lines(x, density(beta.ash, x), col = 2)
 ```
 
-![plot of chunk unnamed-chunk-5](figure/unnamed-chunk-51.png) 
+```
+## Error: plot.new has not been called yet
+```
 
 ```r
 
@@ -368,8 +417,6 @@ lines(x, cdf.ash(beta.ash.vb.null, x), col = 5, lwd = 2)
 lines(x, cdf.ash(beta.ash.pm, x), col = 6, lwd = 2)
 ```
 
-![plot of chunk unnamed-chunk-5](figure/unnamed-chunk-52.png) 
-
 
 [for testing: compare results with point mass and without]
 
@@ -378,7 +425,7 @@ plot(beta.ash$PositiveProb)
 points(beta.ash.pm$PositiveProb, col = 2)
 ```
 
-![plot of chunk unnamed-chunk-6](figure/unnamed-chunk-6.png) 
+![plot of chunk unnamed-chunk-8](figure/unnamed-chunk-8.png) 
 
 
 
@@ -387,18 +434,27 @@ plot(beta.ash$ZeroProb)
 points(beta.ash.pm$ZeroProb, col = 2)
 ```
 
-![plot of chunk unnamed-chunk-7](figure/unnamed-chunk-7.png) 
+![plot of chunk unnamed-chunk-9](figure/unnamed-chunk-9.png) 
 
 
 [for testing: compare with the results from the automatic way for selecting sigma]
 
 ```r
 hist(ss$beta, prob = TRUE, breaks = seq(-7, 7, length = 20))
+```
+
+```
+## Error: some 'x' not counted; maybe 'breaks' do not span range of 'x'
+```
+
+```r
 x = seq(-4, 4, length = 1000)
 lines(x, density(beta.ash.auto, x), col = 2)
 ```
 
-![plot of chunk unnamed-chunk-8](figure/unnamed-chunk-8.png) 
+```
+## Error: plot.new has not been called yet
+```
 
 
 [for testing: note that the PosteriorMean and PositiveProb don't depend much on sigmaa vec used ]
@@ -410,7 +466,7 @@ plot(beta.ash.auto$PosteriorMean, beta.ash$PosteriorMean, xlab = "Shrunk estimat
 abline(a = 0, b = 1)
 ```
 
-![plot of chunk unnamed-chunk-9](figure/unnamed-chunk-91.png) 
+![plot of chunk unnamed-chunk-11](figure/unnamed-chunk-111.png) 
 
 ```r
 plot(beta.ash.auto$localfdr, beta.ash$localfdr, xlab = "lfdr from auto method", 
@@ -418,7 +474,7 @@ plot(beta.ash.auto$localfdr, beta.ash$localfdr, xlab = "lfdr from auto method",
 abline(a = 0, b = 1)
 ```
 
-![plot of chunk unnamed-chunk-9](figure/unnamed-chunk-92.png) 
+![plot of chunk unnamed-chunk-11](figure/unnamed-chunk-112.png) 
 
 
 [And VB method produces similar results to EM method]
@@ -430,7 +486,7 @@ points(beta.ash.auto$PosteriorMean, beta.ash.vb.null$PosteriorMean, col = 2)
 abline(a = 0, b = 1)
 ```
 
-![plot of chunk unnamed-chunk-10](figure/unnamed-chunk-101.png) 
+![plot of chunk unnamed-chunk-12](figure/unnamed-chunk-121.png) 
 
 ```r
 plot(beta.ash.auto$localfdr, beta.ash.vb.uniform$localfdr, xlab = "lfdr from auto method", 
@@ -439,7 +495,7 @@ points(beta.ash.auto$localfdr, beta.ash.vb.null$localfdr, col = 2)
 abline(a = 0, b = 1)
 ```
 
-![plot of chunk unnamed-chunk-10](figure/unnamed-chunk-102.png) 
+![plot of chunk unnamed-chunk-12](figure/unnamed-chunk-122.png) 
 
 
 
@@ -455,7 +511,7 @@ abline(h = 0)
 abline(a = 0, b = 1, col = 2)
 ```
 
-![plot of chunk unnamed-chunk-11](figure/unnamed-chunk-11.png) 
+![plot of chunk unnamed-chunk-13](figure/unnamed-chunk-13.png) 
 
 
 
@@ -494,15 +550,15 @@ print(beta.ash.pm)
 
 ```
 ## $pi
-##  [1] 0.767403 0.006769 0.005198 0.000000 0.000000 0.000000 0.220630
+##  [1] 0.783344 0.002202 0.000000 0.000000 0.000000 0.082277 0.132177
 ##  [8] 0.000000 0.000000 0.000000
 ## 
 ## $mean
 ##  [1] 0 0 0 0 0 0 0 0 0 0
 ## 
 ## $sd
-##  [1]  0.00000  0.05804  0.11608  0.23215  0.46431  0.92861  1.85722
-##  [8]  3.71445  7.42890 14.85780
+##  [1]  0.00000  0.07398  0.14797  0.29594  0.59187  1.18374  2.36749
+##  [8]  4.73497  9.46995 18.93990
 ## 
 ## attr(,"row.names")
 ##  [1]  1  2  3  4  5  6  7  8  9 10
@@ -516,15 +572,14 @@ print(beta.ash.auto)
 
 ```
 ## $pi
-## [1] 0.772576 0.007762 0.000000 0.000000 0.000000 0.219662 0.000000 0.000000
-## [9] 0.000000
+## [1] 0.79057 0.00000 0.00000 0.00000 0.07626 0.13317 0.00000 0.00000 0.00000
 ## 
 ## $mean
 ## [1] 0 0 0 0 0 0 0 0 0
 ## 
 ## $sd
-## [1]  0.05804  0.11608  0.23215  0.46431  0.92861  1.85722  3.71445  7.42890
-## [9] 14.85780
+## [1]  0.07398  0.14797  0.29594  0.59187  1.18374  2.36749  4.73497  9.46995
+## [9] 18.93990
 ## 
 ## attr(,"row.names")
 ## [1] 1 2 3 4 5 6 7 8 9
@@ -540,7 +595,7 @@ abline(a = 0, b = 1)
 abline(a = 0, b = 2)
 ```
 
-![plot of chunk unnamed-chunk-12](figure/unnamed-chunk-12.png) 
+![plot of chunk unnamed-chunk-14](figure/unnamed-chunk-14.png) 
 
 
 Our conclusion: if we simulate data with a point mass,
@@ -559,7 +614,7 @@ plot(qval$q, beta.ash$qval, main = "comparison of ash and q value qvalues",
 abline(a = 0, b = 1)
 ```
 
-![plot of chunk unnamed-chunk-13](figure/unnamed-chunk-13.png) 
+![plot of chunk unnamed-chunk-15](figure/unnamed-chunk-15.png) 
 
 
 In this example we see that qval overestimates the actual FDR. (This
@@ -573,7 +628,7 @@ lines(cumsum(ss$null[o])/(1:10000), beta.ash$qval[o])
 abline(a = 0, b = 1)
 ```
 
-![plot of chunk unnamed-chunk-14](figure/unnamed-chunk-14.png) 
+![plot of chunk unnamed-chunk-16](figure/unnamed-chunk-16.png) 
 
 
 ### Miscellaneous 
@@ -601,7 +656,7 @@ abline(h = 0)
 abline(a = 0, b = 1, col = 2)
 ```
 
-![plot of chunk unnamed-chunk-15](figure/unnamed-chunk-151.png) 
+![plot of chunk unnamed-chunk-17](figure/unnamed-chunk-171.png) 
 
 ```r
 
@@ -609,7 +664,7 @@ plot(qval$q, beta.ash$qval, main = "comparison of ash and q value qvalues")
 abline(a = 0, b = 1)
 ```
 
-![plot of chunk unnamed-chunk-15](figure/unnamed-chunk-152.png) 
+![plot of chunk unnamed-chunk-17](figure/unnamed-chunk-172.png) 
 
 ```r
 
@@ -620,7 +675,7 @@ lines(cumsum(truenull[o])/(1:10000), beta.ash$qval[o])
 abline(a = 0, b = 1)
 ```
 
-![plot of chunk unnamed-chunk-15](figure/unnamed-chunk-153.png) 
+![plot of chunk unnamed-chunk-17](figure/unnamed-chunk-173.png) 
 
 
 It seems that in this case the ash q values underestimate the
@@ -635,12 +690,35 @@ lfdr = rep(0, length(betahat))
 lfdr[pos] = betapos.ash$localfdr
 lfdr[!pos] = betaneg.ash$localfdr
 qv = qval.from.localfdr(lfdr)
+```
+
+```
+## Error: could not find function "qval.from.localfdr"
+```
+
+```r
 o = order(qv)
+```
+
+```
+## Error: object 'qv' not found
+```
+
+```r
 plot(cumsum(truenull[o])/(1:10000), qv[o], type = "l")
+```
+
+```
+## Error: object 'qv' not found
+```
+
+```r
 abline(a = 0, b = 1)
 ```
 
-![plot of chunk unnamed-chunk-16](figure/unnamed-chunk-16.png) 
+```
+## Error: plot.new has not been called yet
+```
 
 No, that's not it.
 
@@ -677,7 +755,7 @@ lines(x, density(beta.ash, x), col = 2)
 lines(x, density(beta.ash.halfu, x), col = 3)
 ```
 
-![plot of chunk unnamed-chunk-17](figure/unnamed-chunk-17.png) 
+![plot of chunk unnamed-chunk-19](figure/unnamed-chunk-19.png) 
 
 
 See how the use of the asymmtric uniform component does a better job capturing
@@ -690,7 +768,7 @@ lines(x, cdf.ash(beta.ash, x), col = 2, lwd = 2)
 lines(x, cdf.ash(beta.ash.halfu, x), col = 3, lwd = 2)
 ```
 
-![plot of chunk unnamed-chunk-18](figure/unnamed-chunk-181.png) 
+![plot of chunk unnamed-chunk-20](figure/unnamed-chunk-201.png) 
 
 ```r
 
@@ -703,7 +781,7 @@ plot(qval$q, beta.ash$qval, main = "comparison of ash and q value qvalues")
 abline(a = 0, b = 1)
 ```
 
-![plot of chunk unnamed-chunk-18](figure/unnamed-chunk-182.png) 
+![plot of chunk unnamed-chunk-20](figure/unnamed-chunk-202.png) 
 
 ```r
 
@@ -717,7 +795,7 @@ lines(cumsum(truenull[o2])/(1:10000), beta.ash.halfu$qval[o2], col = 3)
 abline(a = 0, b = 1)
 ```
 
-![plot of chunk unnamed-chunk-18](figure/unnamed-chunk-183.png) 
+![plot of chunk unnamed-chunk-20](figure/unnamed-chunk-203.png) 
 
 ```r
 

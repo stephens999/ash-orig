@@ -1,3 +1,11 @@
+```{r, echo=FALSE}
+#Note, this needs the ashr library installed.
+#To build the library run the following (from the Rcode subdirectory):
+#require(devtools)
+#install("../package/ashr")
+#Then RESTART R before knitting the following code
+```
+
 ### Project Goals
 
 The initial goal of the ASH (Adaptive SHrinkage) project is to provide simple, generic, and flexible methods to derive ``shrinkage-based" estimates and credible intervals for unknown quantities $\beta=(\beta_1,\dots,\beta_J)$, given only estimates of those quantities ($\hat\beta=(\hat\beta_1,\dots, \hat\beta_J)$) and their corresponding estimated standard errors ($s=(s_1,\dots,s_J)$). 
@@ -9,7 +17,7 @@ the traditional focus of shrinkage-based methods, \emph{and} improved assessment
 By ``adaptive" shrinkage we 
 have two key properties in mind. First, the appropriate amount of shrinkage is determined from the data, rather than being pre-specified. Second, the amount of shrinkage undergone by each $\hat\beta_j$ will depend on the standard error $s_j$: measurements with high standard error will undergo more shrinkage than measurements with low standard error.
 
-As an important special case, these methods address the "multiple comparisons" setting, where interest focuses on which $\beta_j$ can be confidently inferred to be non-zero. Such problems are usually tackled by computing a $p$ value for each $j$, often by applying a $t$ test to $\hat\beta_j/s_j$,
+As an important special case, these methods address the "multiple comparisons" setting, where interest usually focuses on which $\beta_j$ can be confidently inferred to be non-zero. Such problems are usually tackled by computing a $p$ value for each $j$, often by applying a $t$ test to $\hat\beta_j/s_j$,
 and then applying a generic procedure, such as that of Benjamini 
 and Hochberg (1995?) or Storey (2001?), designed to control or
 estimate the false discovery rate (FDR) or the positive FDR (Storey, 2001?). In essence we aim to provide analagous
@@ -71,7 +79,7 @@ That is,
 $$L(\beta_j; \hat\beta_j, s_j) \propto \exp[-0.5(\beta_j-\hat\beta_j)^2/s_j^2]. \quad (**)$$
 
 2. The distribution $g(\cdot; \pi)$ is a mixture of zero-centered normal distributions, 
-$$g(\cdot; \pi) = \sum_{k=1}^K pi_k N(\cdot; 0, \sigma^2_k).$$
+$$g(\cdot; \pi) = \sum_{k=1}^K \pi_k N(\cdot; 0, \sigma^2_k).$$
 In practice, we currently fix the number of components $K$ to be large, and take the variances $\sigma_1<\sigma_2<\dots<\sigma_K$ to be fixed, and vary from very small (possibly 0), to very large --  sufficiently large that typically $\hat\pi_K=0$.
 
 The choice of normal likelihood seems natural, and indeed it can be motivated in multiple ways. For example, we can write $p(\hat\beta_j, s_j | \beta_j) = p(\hat\beta_j | s_j, \beta_j)p(s_j | \beta_j)$. Now, if we are willing to assume that
@@ -168,16 +176,16 @@ for estimating $\pi$ in Step 1, and simple analytic forms for the conditional
 distributions in Step 2.
 
 
-### A simple example
+### Example 1: A simple simulated example to get started
 
 Load in some functions.
 ```{r}
-setwd("~/Documents/git/ash/Rcode/")
+#setwd("~/Documents/git/ash/Rcode/")
 set.seed(32327)
-## load Poisson_binomial and ash functions 
-source("../Rcode/ash.R") 
-source("../Rcode/mix.R") 
-library("qvalue")
+
+## load ashr library 
+require("ashr")
+require("qvalue")
 ```
 
 ```{r}
@@ -191,12 +199,33 @@ simdata=function(n, nnull, altmean, altsd, betasd){
 }
 ```
 
-Simulate 10000 tests, with 2000 alternatives, $\beta \sim N(0,sd=2)$, 
-and 8000 null values ($\beta=0$).
+Simulate 10000 $\beta_j$ values, 8000 from a mixture of a point mass at 0 and
+2000 from $\beta \sim N(0,sd=2)$.
+
+
 ```{r}
 ss = simdata(10000,8000,0,2,1)
 
 beta.ash=ash(ss$betahat,ss$betasd)
+xmin = min(ss$beta)
+xmax = max(ss$beta)
+x=seq(xmin,xmax,length=1000)
+plot(sort(ss$beta),(1:length(ss$beta))/length(ss$beta),main="cdf of ss$beta, with fitted f overlaid",xlab="beta",ylab="cdf")
+lines(x,cdf.ash(beta.ash,x),col=2,lwd=2)
+
+```
+
+
+
+
+
+
+
+
+```{r}
+ss = simdata(10000,8000,0,2,1)
+
+beta.ash=ash(ss$betahat,ss$betasd,auto=FALSE)
 beta.ash.auto = ash(ss$betahat, ss$betasd,auto=TRUE)
 #these to test the VB version 
 beta.ash.vb.uniform = ash(ss$betahat, ss$betasd,auto=TRUE, VB=TRUE, prior="uniform")
@@ -214,11 +243,11 @@ hist(zscore)
 
 Now, we find the fitted values for $\pi$ are mostly near 0, or at 2 (the alternative value).
 ```{r}
-print(beta.ash)
-print(beta.ash.auto)
-print(beta.ash.vb.uniform)
-print(beta.ash.vb.null)
-print(beta.ash.pm)
+summary(beta.ash)
+summary(beta.ash.auto)
+summary(beta.ash.vb.uniform)
+summary(beta.ash.vb.null)
+summary(beta.ash.pm)
 ```
 
 Plot the fitted underlying distribution on top of true values for beta
