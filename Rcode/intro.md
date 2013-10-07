@@ -74,7 +74,7 @@ That is,
 $$L(\beta_j; \hat\beta_j, s_j) \propto \exp[-0.5(\beta_j-\hat\beta_j)^2/s_j^2]. \quad (**)$$
 
 2. The distribution $g(\cdot; \pi)$ is a mixture of zero-centered normal distributions, 
-$$g(\cdot; \pi) = \sum_{k=1}^K pi_k N(\cdot; 0, \sigma^2_k).$$
+$$g(\cdot; \pi) = \sum_{k=1}^K \pi_k N(\cdot; 0, \sigma^2_k).$$
 In practice, we currently fix the number of components $K$ to be large, and take the variances $\sigma_1<\sigma_2<\dots<\sigma_K$ to be fixed, and vary from very small (possibly 0), to very large --  sufficiently large that typically $\hat\pi_K=0$.
 
 The choice of normal likelihood seems natural, and indeed it can be motivated in multiple ways. For example, we can write $p(\hat\beta_j, s_j | \beta_j) = p(\hat\beta_j | s_j, \beta_j)p(s_j | \beta_j)$. Now, if we are willing to assume that
@@ -320,8 +320,8 @@ summary(beta.ash.vb.uniform)
 
 ```
 ## $pi
-## [1] 0.4299708 0.2642824 0.0786925 0.0265601 0.0693908 0.1300973 0.0006732
-## [8] 0.0002008 0.0001321
+## [1] 0.175423 0.174959 0.173133 0.166324 0.145091 0.100078 0.046164 0.014782
+## [9] 0.004047
 ## 
 ## $mean
 ## [1] 0 0 0 0 0 0 0 0 0
@@ -334,8 +334,8 @@ summary(beta.ash.vb.uniform)
 ## [1] 1 2 3 4 5 6 7 8 9
 ## attr(,"class")
 ## [1] "normalmix"
-## [1] -30470.28872
-## [1] FALSE
+## [1] -34923.94835
+## [1] TRUE
 ```
 
 ```r
@@ -344,8 +344,8 @@ summary(beta.ash.vb.null)
 
 ```
 ## $pi
-## [1] 8.410e-01 1.252e-05 1.252e-05 1.252e-05 1.252e-05 1.589e-01 1.252e-05
-## [8] 1.251e-05 1.251e-05
+## [1] 0.175639 0.174988 0.173160 0.166346 0.145096 0.100048 0.046088 0.014685
+## [9] 0.003949
 ## 
 ## $mean
 ## [1] 0 0 0 0 0 0 0 0 0
@@ -358,7 +358,7 @@ summary(beta.ash.vb.null)
 ## [1] 1 2 3 4 5 6 7 8 9
 ## attr(,"class")
 ## [1] "normalmix"
-## [1] -20093.57154
+## [1] -34926.2373
 ## [1] TRUE
 ```
 
@@ -690,35 +690,12 @@ lfdr = rep(0, length(betahat))
 lfdr[pos] = betapos.ash$localfdr
 lfdr[!pos] = betaneg.ash$localfdr
 qv = qval.from.localfdr(lfdr)
-```
-
-```
-## Error: could not find function "qval.from.localfdr"
-```
-
-```r
 o = order(qv)
-```
-
-```
-## Error: object 'qv' not found
-```
-
-```r
 plot(cumsum(truenull[o])/(1:10000), qv[o], type = "l")
-```
-
-```
-## Error: object 'qv' not found
-```
-
-```r
 abline(a = 0, b = 1)
 ```
 
-```
-## Error: plot.new has not been called yet
-```
+![plot of chunk unnamed-chunk-18](figure/unnamed-chunk-18.png) 
 
 No, that's not it.
 
