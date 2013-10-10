@@ -17,6 +17,12 @@ the traditional focus of shrinkage-based methods, \emph{and} improved assessment
 By ``adaptive" shrinkage we 
 have two key properties in mind. First, the appropriate amount of shrinkage is determined from the data, rather than being pre-specified. Second, the amount of shrinkage undergone by each $\hat\beta_j$ will depend on the standard error $s_j$: measurements with high standard error will undergo more shrinkage than measurements with low standard error.
 
+Given that shrinkage estimation is widely recognized as a powerful tool, there are suprisingly few software packages for performing the simplest type of shrinkage estimation considered here. (There are more packages for the more complex setting of covariance estimation, where shrinkage is perhaps still more important.)
+The only package we have found that provides anything similar
+to the functionality provided here is mixfdr (Muralidharan). Compared with mixfdr, the key features of ashr are that it
+i) focuses on allowing for variation in the standard deviation of each observation; ii) constrains the underlying density to be unimodal (and possibly symettric).
+NOTE: should emphasise these differences in the examples.
+
 As an important special case, these methods address the "multiple comparisons" setting, where interest usually focuses on which $\beta_j$ can be confidently inferred to be non-zero. Such problems are usually tackled by computing a $p$ value for each $j$, often by applying a $t$ test to $\hat\beta_j/s_j$,
 and then applying a generic procedure, such as that of Benjamini 
 and Hochberg (1995?) or Storey (2001?), designed to control or
@@ -215,9 +221,83 @@ lines(x,cdf.ash(beta.ash,x),col=2,lwd=2)
 
 ```
 
+Compare with mixfdr. Note that I tried to do small than 1000, but mixfdr returned
+errors.
+```{r}
+ss = simdata(1000,800,0,2,1)
+
+beta.ash=ash(ss$betahat,ss$betasd)
+beta.ash.u = ash(ss$betahat,ss$betasd, mixcompdist="uniform")
+beta.ash.hu = ash(ss$betahat,ss$betasd, mixcompdist="halfuniform")
+
+require(mixfdr)
+beta.mfdr.J3 = mixFdr(ss$betahat,J=3,noiseSD=1,theonull=TRUE)
+beta.mfdr.J5 = mixFdr(ss$betahat,J=5,noiseSD=1,theonull=TRUE)
+beta.mfdr.J7 = mixFdr(ss$betahat,J=7,noiseSD=1,theonull=TRUE)
+beta.mfdr.J9 = mixFdr(ss$betahat,J=9,noiseSD=1,theonull=TRUE)
+beta.mfdr.J15 = mixFdr(ss$betahat,J=15,noiseSD=1,theonull=TRUE)
+mean((beta.mfdr.J3$effectSize-ss$beta)^2)
+mean((beta.mfdr.J5$effectSize-ss$beta)^2)
+mean((beta.mfdr.J7$effectSize-ss$beta)^2)
+mean((beta.mfdr.J9$effectSize-ss$beta)^2)
+mean((beta.mfdr.J15$effectSize-ss$beta)^2)
+
+mean((beta.ash$PosteriorMean-ss$beta)^2)
+
+#This code mostly borrowed from the examples in mixFdr in R help
+m=beta.mfdr.J15
+mTrue = list(pi=c(0.8,0.2),mu=c(0,0),sig=c(1,2))
+par(mfcol=c(1,1))
+s = seq(-5,5,by=0.01)
+trueFdr = fdrMixModel(s,mTrue,c(TRUE,FALSE))
+fdrCurve = fdrMixModel(s,m,abs(m$mu - m$mu[1])<=0.002) # this tells it which indices to consider null
+ plot(s, trueFdr, t = 'l', main = "fdr - Black is true", xlab = "z", ylab = "fdr", ylim = c(0,1))
+ lines(s, fdrCurve, col = 2)
+points(ss$betahat,beta.ash$localfdr,col=3)
+points(ss$betahat,beta.ash.u$localfdr,col=4)
+points(ss$betahat,beta.ash.hu$localfdr,col=5)
+
+```
+
+Of course, if we do something where alternatives are not centered on 0 then
+ash does worse!
+```{r}
+#This is the example from the mixfdr demo
+z = c(rnorm(1000), rnorm(100,3,1))
+ m = mixFdr(z, J = 3, noiseSD = 1)
+ s = seq(-5,5,by=0.01)
+ effCurve = effectSize(s,m)[,1]
+ fdrCurve = fdrMixModel(s,m,abs(m$mu - m$mu[1])<=0.2) # this tells it which indices to consider null
+
+# compare to the Bayes estimator for this problem
+ mTrue = list(pi = c(10,1)/11, mu = c(0,3), sig = c(1,1))
+# note that the model parameters are in terms of the MARGINAL not of the prior
+ trueEff = effectSize(s,mTrue)[,1]
+ trueFdr = fdrMixModel(s,mTrue,c(TRUE,FALSE))
+ par(mfrow = c(2,1))
+ plot(s, trueEff, t = 'l', main = "Effect Size - Black is true", xlab = "z", ylab = "E(delta|z)", ylim = c(-3,3))
+ lines(s, effCurve, col = 2)
+ plot(s, trueFdr, t = 'l', main = "fdr - Black is true", xlab = "z", ylab = "fdr", ylim = c(0,1))
+ lines(s, fdrCurve, col = 2)
+
+ 
+z.ash = ash(z,1,mixcompdist="halfuniform")
+points(z,z.ash$localfdr,col=3)
+```
 
 
+Things to emphasise for paper:
+- the number of components is not critical; the unimodal constraint is enough. You can increase the number of components arbitrarily and the likelihood remains bounded.
+- the ability to incorporate item-specific measurement error
+- the ability to compare a model in which effects are proportional to error
+with model in which effects 
 
+Some advantages of the unimodal constraint:
+-more statsitically efficient (if true); show with small sample sizes.
+- less sensitive to number of components? Can allow number to tend to infinity?
+- may be less sensitive to local optima?
+- it allows us to easily just vary sigma on a grid, and fit pi, which
+makes allowing different noise levels really easy!
 
 
 
