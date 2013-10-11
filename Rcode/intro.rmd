@@ -221,10 +221,10 @@ lines(x,cdf.ash(beta.ash,x),col=2,lwd=2)
 
 ```
 
-Compare with mixfdr. Note that I tried to do small than 1000, but mixfdr returned
-errors.
+Compare with mixfdr. Note that I tried to do smaller than 1000, but mixfdr returned
+errors. (Maybe this example is not so useful for comparing fdrs (as opposed to shrinkage), since the methods tend to agree where the fdr is small, which is what matters?)
 ```{r}
-ss = simdata(1000,800,0,2,1)
+ss = simdata(1000,500,0,2,1)
 
 beta.ash=ash(ss$betahat,ss$betasd)
 beta.ash.u = ash(ss$betahat,ss$betasd, mixcompdist="uniform")
@@ -243,6 +243,8 @@ mean((beta.mfdr.J9$effectSize-ss$beta)^2)
 mean((beta.mfdr.J15$effectSize-ss$beta)^2)
 
 mean((beta.ash$PosteriorMean-ss$beta)^2)
+mean((beta.ash.u$PosteriorMean-ss$beta)^2)
+mean((beta.ash.hu$PosteriorMean-ss$beta)^2)
 
 #This code mostly borrowed from the examples in mixFdr in R help
 m=beta.mfdr.J15
@@ -262,7 +264,7 @@ points(ss$betahat,beta.ash.hu$localfdr,col=5)
 Of course, if we do something where alternatives are not centered on 0 then
 ash does worse!
 ```{r}
-#This is the example from the mixfdr demo
+#This is the example from the mixfdr help example
 z = c(rnorm(1000), rnorm(100,3,1))
  m = mixFdr(z, J = 3, noiseSD = 1)
  s = seq(-5,5,by=0.01)
@@ -286,20 +288,98 @@ points(z,z.ash$localfdr,col=3)
 ```
 
 
+Checking coverage
+```{r}
+
+```
+
+
+
 Things to emphasise for paper:
 - the number of components is not critical; the unimodal constraint is enough. You can increase the number of components arbitrarily and the likelihood remains bounded.
 - the ability to incorporate item-specific measurement error
 - the ability to compare a model in which effects are proportional to error
 with model in which effects 
 
+- unimodal distributions could be argued to be a primary motivation for shrinkage
+
+- bayesian coverage intervals (attempt to) give much stronger guarantess than standard confidence intervals. Eg among the 0.95 intervals excluding 0,
+less than 5% should actually be 0?
+
 Some advantages of the unimodal constraint:
 -more statsitically efficient (if true); show with small sample sizes.
 - less sensitive to number of components? Can allow number to tend to infinity?
 - may be less sensitive to local optima?
+could demonstrate this by looking at convergence more carefully, and comparing
+results with random starting points.
+
 - it allows us to easily just vary sigma on a grid, and fit pi, which
 makes allowing different noise levels really easy!
 
 
+
+
+## The number of components is not critical
+
+OR - this section could be more generally about selecting between
+models (normal, uniforms etc) using log-likelihood.
+
+Don't need to worry about overfitting - only need to worry
+about whether model is "complex enough".
+
+
+Because of the uni-modal constraint, the number of mixture components
+is generally not critical, at least provided it is ``sufficiently large". 
+Indeed, as the number of components tends to infinity, the likelihood
+is bounded above, and the procedure will converge to a sensible limit.
+The following example illustrates this.
+We take 100 observations from 0.5N(-1,1)+0.5N(1,1)
+and add N(0,1) noise.
+```{r}
+sampsize=500
+beta = c(rnorm(sampsize,-1,1),rnorm(sampsize,1,1))
+betahat = beta+rnorm(2*sampsize)
+
+beta.ash = ash(betahat,1)
+beta.ash.u=list()
+for(i in 1:10){
+  beta.ash.u[[i]] = ash(betahat,1,mixcompdist="uniform",prior="uniform",sigmaavec = seq(0.1,5,length=10*i))
+}
+
+
+plot(beta.ash,-4,4,col=2)
+x=seq(-4,4,length=1000)
+lines(x,0.5*dnorm(x,-1,1)+0.5*dnorm(x,1,1),col=1)
+for(i in 1:4){
+lines(x,density(beta.ash.u[[i]],x),col=2+i)
+}
+
+plot(unlist(lapply(beta.ash.u,ashr:::get_loglik)))
+
+```
+
+```{r}
+sampsize=5000
+beta = c(rnorm(sampsize,-1,1),rnorm(sampsize,1,1))
+betahat = beta+rnorm(2*sampsize)
+
+beta.ash = ash(betahat,1)
+beta.ash.u=list()
+for(i in 1:10){
+  beta.ash.u[[i]] = ash(betahat,1,mixcompdist="uniform",prior="uniform",sigmaavec = seq(0.1,5,length=10*i))
+}
+
+
+plot(beta.ash,-4,4,col=2)
+x=seq(-4,4,length=1000)
+lines(x,0.5*dnorm(x,-1,1)+0.5*dnorm(x,1,1),col=1)
+for(i in 1:4){
+lines(x,density(beta.ash.u[[i]],x),col=2+i)
+}
+
+plot(unlist(lapply(beta.ash.u,ashr:::get_loglik)))
+
+```
 
 
 ```{r}
@@ -308,8 +388,8 @@ ss = simdata(10000,8000,0,2,1)
 beta.ash=ash(ss$betahat,ss$betasd,auto=FALSE)
 beta.ash.auto = ash(ss$betahat, ss$betasd,auto=TRUE)
 #these to test the VB version 
-beta.ash.vb.uniform = ash(ss$betahat, ss$betasd,auto=TRUE, VB=TRUE, prior="uniform")
-beta.ash.vb.null = ash(ss$betahat, ss$betasd,auto=TRUE, VB=TRUE, prior=NULL)
+beta.ash.vb.uniform = ash(ss$betahat, ss$betasd,VB=TRUE, prior="uniform")
+beta.ash.vb.null = ash(ss$betahat, ss$betasd,VB=TRUE, prior=NULL)
 
 beta.ash.pm = ash(ss$betahat,ss$betasd,usePointMass=TRUE)
 
@@ -321,14 +401,6 @@ qval = qvalue(pval)
 hist(zscore)
 ```
 
-Now, we find the fitted values for $\pi$ are mostly near 0, or at 2 (the alternative value).
-```{r}
-summary(beta.ash)
-summary(beta.ash.auto)
-summary(beta.ash.vb.uniform)
-summary(beta.ash.vb.null)
-summary(beta.ash.pm)
-```
 
 Plot the fitted underlying distribution on top of true values for beta
 ```{r}
@@ -423,7 +495,7 @@ for mass near 0, then we may predict what the results would have been if we had 
 
 Let's try: 
 ```{r}
-beta.ash.pm = ash(ss$betahat, ss$betasd, auto=TRUE, usePointMass=TRUE)
+beta.ash.pm = ash(ss$betahat, ss$betasd, usePointMass=TRUE)
 print(beta.ash.pm)
 print(beta.ash.auto)
 plot(beta.ash.auto$localfsr,beta.ash.pm$localfsr,main="comparison of ash localfsr, with and without point mass",xlab="no point mass", ylab="with point mass",xlim=c(0,1),ylim=c(0,1))
