@@ -12,6 +12,12 @@ the traditional focus of shrinkage-based methods, \emph{and} improved assessment
 By ``adaptive" shrinkage we 
 have two key properties in mind. First, the appropriate amount of shrinkage is determined from the data, rather than being pre-specified. Second, the amount of shrinkage undergone by each $\hat\beta_j$ will depend on the standard error $s_j$: measurements with high standard error will undergo more shrinkage than measurements with low standard error.
 
+Given that shrinkage estimation is widely recognized as a powerful tool, there are suprisingly few software packages for performing the simplest type of shrinkage estimation considered here. (There are more packages for the more complex setting of covariance estimation, where shrinkage is perhaps still more important.)
+The only package we have found that provides anything similar
+to the functionality provided here is mixfdr (Muralidharan). Compared with mixfdr, the key features of ashr are that it
+i) focuses on allowing for variation in the standard deviation of each observation; ii) constrains the underlying density to be unimodal (and possibly symettric).
+NOTE: should emphasise these differences in the examples.
+
 As an important special case, these methods address the "multiple comparisons" setting, where interest usually focuses on which $\beta_j$ can be confidently inferred to be non-zero. Such problems are usually tackled by computing a $p$ value for each $j$, often by applying a $t$ test to $\hat\beta_j/s_j$,
 and then applying a generic procedure, such as that of Benjamini 
 and Hochberg (1995?) or Storey (2001?), designed to control or
@@ -234,10 +240,496 @@ lines(x, cdf.ash(beta.ash, x), col = 2, lwd = 2)
 ![plot of chunk unnamed-chunk-4](figure/unnamed-chunk-4.png) 
 
 
+Compare with mixfdr. Note that I tried to do small than 1000, but mixfdr returned
+errors.
+
+```r
+ss = simdata(1000, 800, 0, 2, 1)
+
+beta.ash = ash(ss$betahat, ss$betasd)
+beta.ash.u = ash(ss$betahat, ss$betasd, mixcompdist = "uniform")
+```
+
+```
+## [1] "Warning: Posterior SDs not yet implemented for uniform components"
+```
+
+```
+## Warning: number of items to replace is not a multiple of replacement
+## length
+```
+
+```r
+beta.ash.hu = ash(ss$betahat, ss$betasd, mixcompdist = "halfuniform")
+```
+
+```
+## [1] "Warning: Posterior SDs not yet implemented for uniform components"
+```
+
+```r
+
+require(mixfdr)
+```
+
+```
+## Loading required package: mixfdr
+```
+
+```r
+beta.mfdr.J3 = mixFdr(ss$betahat, J = 3, noiseSD = 1, theonull = TRUE)
+```
+
+```
+## Warning: Assuming known noise noiseSD = 1 . If needed rerun with noiseSD =
+## NA to fit noiseSD.
+```
+
+```
+## Fitting preliminary model 
+## Fitting final model
+```
+
+![plot of chunk unnamed-chunk-5](figure/unnamed-chunk-51.png) 
+
+```
+## 
+## Fitted Model: J = 3 groups
+## ----------------------------
+## null?		 TRUE	FALSE	FALSE	
+## 
+## pi =		0.9438	0.0350	0.0211	
+## 
+## mu = 		 0.000	 3.558	-3.201	
+## 
+## sigma = 	1.000	1.463	1.000	
+## 
+## noiseSD = 	1	
+```
+
+```r
+beta.mfdr.J5 = mixFdr(ss$betahat, J = 5, noiseSD = 1, theonull = TRUE)
+```
+
+```
+## Warning: Assuming known noise noiseSD = 1 . If needed rerun with noiseSD =
+## NA to fit noiseSD.
+```
+
+```
+## Fitting preliminary model 
+## Fitting final model
+```
+
+![plot of chunk unnamed-chunk-5](figure/unnamed-chunk-52.png) 
+
+```
+## 
+## Fitted Model: J = 5 groups
+## ----------------------------
+## null?		 TRUE	FALSE	FALSE	FALSE	FALSE	
+## 
+## pi =		0.9436	0.0025	0.0282	0.0223	0.0034	
+## 
+## mu = 		 0.000	 5.819	 3.561	-3.136	 3.163	
+## 
+## sigma = 	1.000	2.362	1.089	1.018	1.176	
+## 
+## noiseSD = 	1	
+```
+
+```r
+beta.mfdr.J7 = mixFdr(ss$betahat, J = 7, noiseSD = 1, theonull = TRUE)
+```
+
+```
+## Warning: Assuming known noise noiseSD = 1 . If needed rerun with noiseSD =
+## NA to fit noiseSD.
+```
+
+```
+## Fitting preliminary model 
+## Fitting final model
+```
+
+![plot of chunk unnamed-chunk-5](figure/unnamed-chunk-53.png) 
+
+```
+## 
+## Fitted Model: J = 7 groups
+## ----------------------------
+## null?		 TRUE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	
+## 
+## pi =		0.9421	0.0080	0.0148	0.0026	0.0023	0.0220	0.0083	
+## 
+## mu = 		 0.000	 3.061	-2.950	 4.810	 3.774	 3.682	-3.352	
+## 
+## sigma = 	1.000	1.000	1.000	2.584	2.666	1.066	1.095	
+## 
+## noiseSD = 	1	
+```
+
+```r
+beta.mfdr.J9 = mixFdr(ss$betahat, J = 9, noiseSD = 1, theonull = TRUE)
+```
+
+```
+## Warning: Assuming known noise noiseSD = 1 . If needed rerun with noiseSD =
+## NA to fit noiseSD.
+```
+
+```
+## Fitting preliminary model 
+## Fitting final model
+```
+
+![plot of chunk unnamed-chunk-5](figure/unnamed-chunk-54.png) 
+
+```
+## 
+## Fitted Model: J = 9 groups
+## ----------------------------
+## null?		 TRUE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	
+## 
+## pi =		0.9409	0.0057	0.0044	0.0045	0.0024	0.0034	0.0047	0.0053	0.0286	
+## 
+## mu = 		 0.000	-3.609	-2.858	-2.861	 3.929	 4.327	-2.866	-2.886	 3.529	
+## 
+## sigma = 	1.000	1.109	1.000	1.000	2.573	2.529	1.000	1.000	1.066	
+## 
+## noiseSD = 	1	
+```
+
+```r
+beta.mfdr.J15 = mixFdr(ss$betahat, J = 15, noiseSD = 1, theonull = TRUE)
+```
+
+```
+## Warning: Assuming known noise noiseSD = 1 . If needed rerun with noiseSD =
+## NA to fit noiseSD.
+```
+
+```
+## Fitting preliminary model 
+## Fitting final model
+```
+
+![plot of chunk unnamed-chunk-5](figure/unnamed-chunk-55.png) 
+
+```
+## 
+## Fitted Model: J = 15 groups
+## ----------------------------
+## null?		 TRUE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	FALSE	
+## 
+## pi =		0.9383	0.0039	0.0038	0.0038	0.0037	0.0037	0.0037	0.0033	0.0049	0.0049	0.0050	0.0053	0.0061	0.0087	0.0010	
+## 
+## mu = 		 0.000	-2.832	-2.828	-2.826	-2.825	-2.823	-2.822	-4.171	 2.950	 2.964	 2.997	 3.207	 3.891	 4.300	 8.540	
+## 
+## sigma = 	1.000	1.000	1.000	1.000	1.000	1.000	1.000	1.000	1.000	1.000	1.000	1.024	1.040	1.000	1.000	
+## 
+## noiseSD = 	1	
+```
+
+```r
+mean((beta.mfdr.J3$effectSize - ss$beta)^2)
+```
+
+```
+## [1] 0.3445
+```
+
+```r
+mean((beta.mfdr.J5$effectSize - ss$beta)^2)
+```
+
+```
+## [1] 0.3449
+```
+
+```r
+mean((beta.mfdr.J7$effectSize - ss$beta)^2)
+```
+
+```
+## [1] 0.3428
+```
+
+```r
+mean((beta.mfdr.J9$effectSize - ss$beta)^2)
+```
+
+```
+## [1] 0.3426
+```
+
+```r
+mean((beta.mfdr.J15$effectSize - ss$beta)^2)
+```
+
+```
+## [1] 0.3439
+```
+
+```r
+
+mean((beta.ash$PosteriorMean - ss$beta)^2)
+```
+
+```
+## [1] 0.3231
+```
+
+```r
+
+# This code mostly borrowed from the examples in mixFdr in R help
+m = beta.mfdr.J15
+mTrue = list(pi = c(0.8, 0.2), mu = c(0, 0), sig = c(1, 2))
+par(mfcol = c(1, 1))
+s = seq(-5, 5, by = 0.01)
+trueFdr = fdrMixModel(s, mTrue, c(TRUE, FALSE))
+fdrCurve = fdrMixModel(s, m, abs(m$mu - m$mu[1]) <= 0.002)  # this tells it which indices to consider null
+plot(s, trueFdr, t = "l", main = "fdr - Black is true", xlab = "z", ylab = "fdr", 
+    ylim = c(0, 1))
+lines(s, fdrCurve, col = 2)
+points(ss$betahat, beta.ash$localfdr, col = 3)
+points(ss$betahat, beta.ash.u$localfdr, col = 4)
+points(ss$betahat, beta.ash.hu$localfdr, col = 5)
+```
+
+![plot of chunk unnamed-chunk-5](figure/unnamed-chunk-56.png) 
+
+
+Of course, if we do something where alternatives are not centered on 0 then
+ash does worse!
+
+```r
+# This is the example from the mixfdr demo
+z = c(rnorm(1000), rnorm(100, 3, 1))
+m = mixFdr(z, J = 3, noiseSD = 1)
+```
+
+```
+## Warning: Using uncalibrated default penalization P,  which can give misleading results for empirical nulls. Consider rerunning with calibrate = TRUE and using the resulting penalization
+## 
+## Warning: Assuming known noise noiseSD =  1 . If needed rerun with noiseSD = NA to fit noiseSD.
+## Warning: Note that using known noiseSD constrains the null to have sd at least noiseSD. If underdispersion is suspected, rerun with noiseSD = NA.
+```
+
+```
+## Fitting preliminary model 
+## Fitting final model
+```
+
+![plot of chunk unnamed-chunk-6](figure/unnamed-chunk-61.png) 
+
+```
+## 
+## Fitted Model: J = 3 groups
+## ----------------------------
+## null?		 TRUE	FALSE	 TRUE	
+## 
+## pi =		0.9393	0.0587	0.0020	
+## 
+## mu = 		 0.0232	 3.2524	-0.1288	
+## 
+## sigma = 	1.03	1.00	1.01	
+## 
+## noiseSD = 	1	
+```
+
+```r
+s = seq(-5, 5, by = 0.01)
+effCurve = effectSize(s, m)[, 1]
+fdrCurve = fdrMixModel(s, m, abs(m$mu - m$mu[1]) <= 0.2)  # this tells it which indices to consider null
+
+# compare to the Bayes estimator for this problem
+mTrue = list(pi = c(10, 1)/11, mu = c(0, 3), sig = c(1, 1))
+# note that the model parameters are in terms of the MARGINAL not of the
+# prior
+trueEff = effectSize(s, mTrue)[, 1]
+trueFdr = fdrMixModel(s, mTrue, c(TRUE, FALSE))
+par(mfrow = c(2, 1))
+plot(s, trueEff, t = "l", main = "Effect Size - Black is true", xlab = "z", 
+    ylab = "E(delta|z)", ylim = c(-3, 3))
+lines(s, effCurve, col = 2)
+plot(s, trueFdr, t = "l", main = "fdr - Black is true", xlab = "z", ylab = "fdr", 
+    ylim = c(0, 1))
+lines(s, fdrCurve, col = 2)
+
+
+z.ash = ash(z, 1, mixcompdist = "halfuniform")
+```
+
+```
+## [1] "Warning: Posterior SDs not yet implemented for uniform components"
+```
+
+```r
+points(z, z.ash$localfdr, col = 3)
+```
+
+![plot of chunk unnamed-chunk-6](figure/unnamed-chunk-62.png) 
 
 
 
 
+
+
+Things to emphasise for paper:
+- the number of components is not critical; the unimodal constraint is enough. You can increase the number of components arbitrarily and the likelihood remains bounded.
+- the ability to incorporate item-specific measurement error
+- the ability to compare a model in which effects are proportional to error
+with model in which effects 
+
+Some advantages of the unimodal constraint:
+-more statsitically efficient (if true); show with small sample sizes.
+- less sensitive to number of components? Can allow number to tend to infinity?
+- may be less sensitive to local optima?
+- it allows us to easily just vary sigma on a grid, and fit pi, which
+makes allowing different noise levels really easy!
+
+
+
+
+## The number of components is not critical
+
+OR - this section could be more generally about selecting between
+models (normal, uniforms etc) using log-likelihood.
+
+Don't need to worry about overfitting - only need to worry
+about whether model is "complex enough".
+
+
+Because of the uni-modal constraint, the number of mixture components
+is generally not critical, at least provided it is ``sufficiently large". 
+Indeed, as the number of components tends to infinity, the likelihood
+is bounded above, and the procedure will converge to a sensible limit.
+The following example illustrates this.
+We take 100 observations from 0.5N(-1,1)+0.5N(1,1)
+and add N(0,1) noise.
+
+```r
+sampsize = 500
+beta = c(rnorm(sampsize, -1, 1), rnorm(sampsize, 1, 1))
+betahat = beta + rnorm(2 * sampsize)
+
+beta.ash = ash(betahat, 1)
+beta.ash.u = list()
+for (i in 1:10) {
+    beta.ash.u[[i]] = ash(betahat, 1, mixcompdist = "uniform", prior = "uniform", 
+        sigmaavec = seq(0.1, 5, length = 10 * i))
+}
+```
+
+```
+## [1] "Warning: Posterior SDs not yet implemented for uniform components"
+## [1] "Warning: Posterior SDs not yet implemented for uniform components"
+## [1] "Warning: Posterior SDs not yet implemented for uniform components"
+## [1] "Warning: Posterior SDs not yet implemented for uniform components"
+## [1] "Warning: Posterior SDs not yet implemented for uniform components"
+## [1] "Warning: Posterior SDs not yet implemented for uniform components"
+## [1] "Warning: Posterior SDs not yet implemented for uniform components"
+## [1] "Warning: Posterior SDs not yet implemented for uniform components"
+## [1] "Warning: Posterior SDs not yet implemented for uniform components"
+## [1] "Warning: Posterior SDs not yet implemented for uniform components"
+```
+
+```r
+
+
+plot(beta.ash, -4, 4, col = 2)
+```
+
+```
+## Error: unused argument (col = 2)
+```
+
+```r
+x = seq(-4, 4, length = 1000)
+lines(x, 0.5 * dnorm(x, -1, 1) + 0.5 * dnorm(x, 1, 1), col = 1)
+```
+
+```
+## Error: plot.new has not been called yet
+```
+
+```r
+for (i in 1:4) {
+    lines(x, density(beta.ash.u[[i]], x), col = 2 + i)
+}
+```
+
+```
+## Error: plot.new has not been called yet
+```
+
+```r
+
+plot(unlist(lapply(beta.ash.u, ashr:::get_loglik)))
+```
+
+
+
+```r
+sampsize = 5000
+beta = c(rnorm(sampsize, -1, 1), rnorm(sampsize, 1, 1))
+betahat = beta + rnorm(2 * sampsize)
+
+beta.ash = ash(betahat, 1)
+beta.ash.u = list()
+for (i in 1:10) {
+    beta.ash.u[[i]] = ash(betahat, 1, mixcompdist = "uniform", prior = "uniform", 
+        sigmaavec = seq(0.1, 5, length = 10 * i))
+}
+```
+
+```
+## [1] "Warning: Posterior SDs not yet implemented for uniform components"
+## [1] "Warning: Posterior SDs not yet implemented for uniform components"
+## [1] "Warning: Posterior SDs not yet implemented for uniform components"
+## [1] "Warning: Posterior SDs not yet implemented for uniform components"
+## [1] "Warning: Posterior SDs not yet implemented for uniform components"
+## [1] "Warning: Posterior SDs not yet implemented for uniform components"
+## [1] "Warning: Posterior SDs not yet implemented for uniform components"
+## [1] "Warning: Posterior SDs not yet implemented for uniform components"
+## [1] "Warning: Posterior SDs not yet implemented for uniform components"
+## [1] "Warning: Posterior SDs not yet implemented for uniform components"
+```
+
+```r
+
+
+plot(beta.ash, -4, 4, col = 2)
+```
+
+```
+## Error: unused argument (col = 2)
+```
+
+```r
+x = seq(-4, 4, length = 1000)
+lines(x, 0.5 * dnorm(x, -1, 1) + 0.5 * dnorm(x, 1, 1), col = 1)
+```
+
+```
+## Error: plot.new has not been called yet
+```
+
+```r
+for (i in 1:4) {
+    lines(x, density(beta.ash.u[[i]], x), col = 2 + i)
+}
+```
+
+```
+## Error: plot.new has not been called yet
+```
+
+```r
+
+plot(unlist(lapply(beta.ash.u, ashr:::get_loglik)))
+```
 
 
 
@@ -246,10 +738,38 @@ lines(x, cdf.ash(beta.ash, x), col = 2, lwd = 2)
 ss = simdata(10000, 8000, 0, 2, 1)
 
 beta.ash = ash(ss$betahat, ss$betasd, auto = FALSE)
+```
+
+```
+## Error: unused argument (auto = FALSE)
+```
+
+```r
 beta.ash.auto = ash(ss$betahat, ss$betasd, auto = TRUE)
+```
+
+```
+## Error: unused argument (auto = TRUE)
+```
+
+```r
 # these to test the VB version
 beta.ash.vb.uniform = ash(ss$betahat, ss$betasd, auto = TRUE, VB = TRUE, prior = "uniform")
+```
+
+```
+## Error: unused argument (auto = TRUE)
+```
+
+```r
 beta.ash.vb.null = ash(ss$betahat, ss$betasd, auto = TRUE, VB = TRUE, prior = NULL)
+```
+
+```
+## Error: unused argument (auto = TRUE)
+```
+
+```r
 
 beta.ash.pm = ash(ss$betahat, ss$betasd, usePointMass = TRUE)
 
@@ -261,130 +781,8 @@ qval = qvalue(pval)
 hist(zscore)
 ```
 
-![plot of chunk unnamed-chunk-5](figure/unnamed-chunk-5.png) 
+![plot of chunk unnamed-chunk-9](figure/unnamed-chunk-9.png) 
 
-
-Now, we find the fitted values for $\pi$ are mostly near 0, or at 2 (the alternative value).
-
-```r
-summary(beta.ash)
-```
-
-```
-## $pi
-##  [1] 0.524482 0.023742 0.023742 0.023742 0.023742 0.023742 0.023741
-##  [8] 0.023737 0.023720 0.023656 0.023468 0.023686 0.036145 0.177230
-## [15] 0.001425 0.000000
-## 
-## $mean
-##  [1] 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
-## 
-## $sd
-##  [1] 0.00025 0.00050 0.00100 0.00200 0.00400 0.00800 0.01600 0.03200
-##  [9] 0.06400 0.12800 0.25600 0.51200 1.02400 2.04800 4.09600 8.19200
-## 
-## attr(,"row.names")
-##  [1]  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16
-## attr(,"class")
-## [1] "normalmix"
-## [1] -16717.61215
-## [1] TRUE
-```
-
-```r
-summary(beta.ash.auto)
-```
-
-```
-## $pi
-## [1] 0.79057 0.00000 0.00000 0.00000 0.07626 0.13317 0.00000 0.00000 0.00000
-## 
-## $mean
-## [1] 0 0 0 0 0 0 0 0 0
-## 
-## $sd
-## [1]  0.07398  0.14797  0.29594  0.59187  1.18374  2.36749  4.73497  9.46995
-## [9] 18.93990
-## 
-## attr(,"row.names")
-## [1] 1 2 3 4 5 6 7 8 9
-## attr(,"class")
-## [1] "normalmix"
-## [1] -16718.55401
-## [1] TRUE
-```
-
-```r
-summary(beta.ash.vb.uniform)
-```
-
-```
-## $pi
-## [1] 0.175423 0.174959 0.173133 0.166324 0.145091 0.100078 0.046164 0.014782
-## [9] 0.004047
-## 
-## $mean
-## [1] 0 0 0 0 0 0 0 0 0
-## 
-## $sd
-## [1]  0.07398  0.14797  0.29594  0.59187  1.18374  2.36749  4.73497  9.46995
-## [9] 18.93990
-## 
-## attr(,"row.names")
-## [1] 1 2 3 4 5 6 7 8 9
-## attr(,"class")
-## [1] "normalmix"
-## [1] -34923.94835
-## [1] TRUE
-```
-
-```r
-summary(beta.ash.vb.null)
-```
-
-```
-## $pi
-## [1] 0.175639 0.174988 0.173160 0.166346 0.145096 0.100048 0.046088 0.014685
-## [9] 0.003949
-## 
-## $mean
-## [1] 0 0 0 0 0 0 0 0 0
-## 
-## $sd
-## [1]  0.07398  0.14797  0.29594  0.59187  1.18374  2.36749  4.73497  9.46995
-## [9] 18.93990
-## 
-## attr(,"row.names")
-## [1] 1 2 3 4 5 6 7 8 9
-## attr(,"class")
-## [1] "normalmix"
-## [1] -34926.2373
-## [1] TRUE
-```
-
-```r
-summary(beta.ash.pm)
-```
-
-```
-## $pi
-##  [1] 0.783344 0.002202 0.000000 0.000000 0.000000 0.082277 0.132177
-##  [8] 0.000000 0.000000 0.000000
-## 
-## $mean
-##  [1] 0 0 0 0 0 0 0 0 0 0
-## 
-## $sd
-##  [1]  0.00000  0.07398  0.14797  0.29594  0.59187  1.18374  2.36749
-##  [8]  4.73497  9.46995 18.93990
-## 
-## attr(,"row.names")
-##  [1]  1  2  3  4  5  6  7  8  9 10
-## attr(,"class")
-## [1] "normalmix"
-## [1] -16718.28273
-## [1] TRUE
-```
 
 
 Plot the fitted underlying distribution on top of true values for beta
@@ -412,8 +810,29 @@ plot(sort(ss$beta), (1:length(ss$beta))/length(ss$beta), main = "cdf of ss$beta,
     xlab = "beta", ylab = "cdf")
 lines(x, cdf.ash(beta.ash, x), col = 2, lwd = 2)
 lines(x, cdf.ash(beta.ash.auto, x), col = 3, lwd = 2)
+```
+
+```
+## Error: object 'beta.ash.auto' not found
+```
+
+```r
 lines(x, cdf.ash(beta.ash.vb.uniform, x), col = 4, lwd = 2)
+```
+
+```
+## Error: object 'beta.ash.vb.uniform' not found
+```
+
+```r
 lines(x, cdf.ash(beta.ash.vb.null, x), col = 5, lwd = 2)
+```
+
+```
+## Error: object 'beta.ash.vb.null' not found
+```
+
+```r
 lines(x, cdf.ash(beta.ash.pm, x), col = 6, lwd = 2)
 ```
 
@@ -425,7 +844,7 @@ plot(beta.ash$PositiveProb)
 points(beta.ash.pm$PositiveProb, col = 2)
 ```
 
-![plot of chunk unnamed-chunk-8](figure/unnamed-chunk-8.png) 
+![plot of chunk unnamed-chunk-11](figure/unnamed-chunk-11.png) 
 
 
 
@@ -434,7 +853,7 @@ plot(beta.ash$ZeroProb)
 points(beta.ash.pm$ZeroProb, col = 2)
 ```
 
-![plot of chunk unnamed-chunk-9](figure/unnamed-chunk-9.png) 
+![plot of chunk unnamed-chunk-12](figure/unnamed-chunk-12.png) 
 
 
 [for testing: compare with the results from the automatic way for selecting sigma]
@@ -453,7 +872,7 @@ lines(x, density(beta.ash.auto, x), col = 2)
 ```
 
 ```
-## Error: plot.new has not been called yet
+## Error: object 'beta.ash.auto' not found
 ```
 
 
@@ -463,18 +882,36 @@ lines(x, density(beta.ash.auto, x), col = 2)
 ```r
 plot(beta.ash.auto$PosteriorMean, beta.ash$PosteriorMean, xlab = "Shrunk estimate from auto method", 
     ylab = "Shrunk estimate from fixed method")
+```
+
+```
+## Error: object 'beta.ash.auto' not found
+```
+
+```r
 abline(a = 0, b = 1)
 ```
 
-![plot of chunk unnamed-chunk-11](figure/unnamed-chunk-111.png) 
+```
+## Error: plot.new has not been called yet
+```
 
 ```r
 plot(beta.ash.auto$localfdr, beta.ash$localfdr, xlab = "lfdr from auto method", 
     ylab = "ldfr from fixed method")
+```
+
+```
+## Error: object 'beta.ash.auto' not found
+```
+
+```r
 abline(a = 0, b = 1)
 ```
 
-![plot of chunk unnamed-chunk-11](figure/unnamed-chunk-112.png) 
+```
+## Error: plot.new has not been called yet
+```
 
 
 [And VB method produces similar results to EM method]
@@ -482,20 +919,52 @@ abline(a = 0, b = 1)
 ```r
 plot(beta.ash.auto$PosteriorMean, beta.ash.vb.uniform$PosteriorMean, xlab = "Shrunk estimate from auto method", 
     ylab = "Shrunk estimate from vb method")
+```
+
+```
+## Error: object 'beta.ash.auto' not found
+```
+
+```r
 points(beta.ash.auto$PosteriorMean, beta.ash.vb.null$PosteriorMean, col = 2)
+```
+
+```
+## Error: object 'beta.ash.auto' not found
+```
+
+```r
 abline(a = 0, b = 1)
 ```
 
-![plot of chunk unnamed-chunk-12](figure/unnamed-chunk-121.png) 
+```
+## Error: plot.new has not been called yet
+```
 
 ```r
 plot(beta.ash.auto$localfdr, beta.ash.vb.uniform$localfdr, xlab = "lfdr from auto method", 
     ylab = "ldfr from vb method")
+```
+
+```
+## Error: object 'beta.ash.auto' not found
+```
+
+```r
 points(beta.ash.auto$localfdr, beta.ash.vb.null$localfdr, col = 2)
+```
+
+```
+## Error: object 'beta.ash.auto' not found
+```
+
+```r
 abline(a = 0, b = 1)
 ```
 
-![plot of chunk unnamed-chunk-12](figure/unnamed-chunk-122.png) 
+```
+## Error: plot.new has not been called yet
+```
 
 
 
@@ -511,7 +980,7 @@ abline(h = 0)
 abline(a = 0, b = 1, col = 2)
 ```
 
-![plot of chunk unnamed-chunk-13](figure/unnamed-chunk-13.png) 
+![plot of chunk unnamed-chunk-16](figure/unnamed-chunk-16.png) 
 
 
 
@@ -545,20 +1014,27 @@ Let's try:
 
 ```r
 beta.ash.pm = ash(ss$betahat, ss$betasd, auto = TRUE, usePointMass = TRUE)
+```
+
+```
+## Error: unused argument (auto = TRUE)
+```
+
+```r
 print(beta.ash.pm)
 ```
 
 ```
 ## $pi
-##  [1] 0.783344 0.002202 0.000000 0.000000 0.000000 0.082277 0.132177
-##  [8] 0.000000 0.000000 0.000000
+##  [1] 0.66633 0.03361 0.03339 0.03220 0.02405 0.00000 0.21042 0.00000
+##  [9] 0.00000 0.00000
 ## 
 ## $mean
 ##  [1] 0 0 0 0 0 0 0 0 0 0
 ## 
 ## $sd
-##  [1]  0.00000  0.07398  0.14797  0.29594  0.59187  1.18374  2.36749
-##  [8]  4.73497  9.46995 18.93990
+##  [1]  0.00000  0.06253  0.12507  0.25014  0.50027  1.00055  2.00110
+##  [8]  4.00220  8.00439 16.00878
 ## 
 ## attr(,"row.names")
 ##  [1]  1  2  3  4  5  6  7  8  9 10
@@ -571,31 +1047,34 @@ print(beta.ash.auto)
 ```
 
 ```
-## $pi
-## [1] 0.79057 0.00000 0.00000 0.00000 0.07626 0.13317 0.00000 0.00000 0.00000
-## 
-## $mean
-## [1] 0 0 0 0 0 0 0 0 0
-## 
-## $sd
-## [1]  0.07398  0.14797  0.29594  0.59187  1.18374  2.36749  4.73497  9.46995
-## [9] 18.93990
-## 
-## attr(,"row.names")
-## [1] 1 2 3 4 5 6 7 8 9
-## attr(,"class")
-## [1] "normalmix"
+## Error: object 'beta.ash.auto' not found
 ```
 
 ```r
 plot(beta.ash.auto$localfsr, beta.ash.pm$localfsr, main = "comparison of ash localfsr, with and without point mass", 
     xlab = "no point mass", ylab = "with point mass", xlim = c(0, 1), ylim = c(0, 
         1))
+```
+
+```
+## Error: object 'beta.ash.auto' not found
+```
+
+```r
 abline(a = 0, b = 1)
+```
+
+```
+## Error: plot.new has not been called yet
+```
+
+```r
 abline(a = 0, b = 2)
 ```
 
-![plot of chunk unnamed-chunk-14](figure/unnamed-chunk-14.png) 
+```
+## Error: plot.new has not been called yet
+```
 
 
 Our conclusion: if we simulate data with a point mass,
@@ -614,7 +1093,7 @@ plot(qval$q, beta.ash$qval, main = "comparison of ash and q value qvalues",
 abline(a = 0, b = 1)
 ```
 
-![plot of chunk unnamed-chunk-15](figure/unnamed-chunk-15.png) 
+![plot of chunk unnamed-chunk-18](figure/unnamed-chunk-18.png) 
 
 
 In this example we see that qval overestimates the actual FDR. (This
@@ -628,7 +1107,7 @@ lines(cumsum(ss$null[o])/(1:10000), beta.ash$qval[o])
 abline(a = 0, b = 1)
 ```
 
-![plot of chunk unnamed-chunk-16](figure/unnamed-chunk-16.png) 
+![plot of chunk unnamed-chunk-19](figure/unnamed-chunk-19.png) 
 
 
 ### Miscellaneous 
@@ -656,7 +1135,7 @@ abline(h = 0)
 abline(a = 0, b = 1, col = 2)
 ```
 
-![plot of chunk unnamed-chunk-17](figure/unnamed-chunk-171.png) 
+![plot of chunk unnamed-chunk-20](figure/unnamed-chunk-201.png) 
 
 ```r
 
@@ -664,7 +1143,7 @@ plot(qval$q, beta.ash$qval, main = "comparison of ash and q value qvalues")
 abline(a = 0, b = 1)
 ```
 
-![plot of chunk unnamed-chunk-17](figure/unnamed-chunk-172.png) 
+![plot of chunk unnamed-chunk-20](figure/unnamed-chunk-202.png) 
 
 ```r
 
@@ -675,7 +1154,7 @@ lines(cumsum(truenull[o])/(1:10000), beta.ash$qval[o])
 abline(a = 0, b = 1)
 ```
 
-![plot of chunk unnamed-chunk-17](figure/unnamed-chunk-173.png) 
+![plot of chunk unnamed-chunk-20](figure/unnamed-chunk-203.png) 
 
 
 It seems that in this case the ash q values underestimate the
@@ -695,7 +1174,7 @@ plot(cumsum(truenull[o])/(1:10000), qv[o], type = "l")
 abline(a = 0, b = 1)
 ```
 
-![plot of chunk unnamed-chunk-18](figure/unnamed-chunk-18.png) 
+![plot of chunk unnamed-chunk-21](figure/unnamed-chunk-21.png) 
 
 No, that's not it.
 
@@ -732,7 +1211,7 @@ lines(x, density(beta.ash, x), col = 2)
 lines(x, density(beta.ash.halfu, x), col = 3)
 ```
 
-![plot of chunk unnamed-chunk-19](figure/unnamed-chunk-19.png) 
+![plot of chunk unnamed-chunk-22](figure/unnamed-chunk-22.png) 
 
 
 See how the use of the asymmtric uniform component does a better job capturing
@@ -745,7 +1224,7 @@ lines(x, cdf.ash(beta.ash, x), col = 2, lwd = 2)
 lines(x, cdf.ash(beta.ash.halfu, x), col = 3, lwd = 2)
 ```
 
-![plot of chunk unnamed-chunk-20](figure/unnamed-chunk-201.png) 
+![plot of chunk unnamed-chunk-23](figure/unnamed-chunk-231.png) 
 
 ```r
 
@@ -758,7 +1237,7 @@ plot(qval$q, beta.ash$qval, main = "comparison of ash and q value qvalues")
 abline(a = 0, b = 1)
 ```
 
-![plot of chunk unnamed-chunk-20](figure/unnamed-chunk-202.png) 
+![plot of chunk unnamed-chunk-23](figure/unnamed-chunk-232.png) 
 
 ```r
 
@@ -772,7 +1251,7 @@ lines(cumsum(truenull[o2])/(1:10000), beta.ash.halfu$qval[o2], col = 3)
 abline(a = 0, b = 1)
 ```
 
-![plot of chunk unnamed-chunk-20](figure/unnamed-chunk-203.png) 
+![plot of chunk unnamed-chunk-23](figure/unnamed-chunk-233.png) 
 
 ```r
 
