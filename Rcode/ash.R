@@ -435,6 +435,39 @@ predictive=function(a,se){
 }
 
 
+#' @title Get fitted loglikelihood for ash object
+#'
+#' @description Return the log-likelihood of the data under the fitted distribution
+#'
+#' @param a the fitted ash object
+#'
+#' @details None
+#' 
+#' @export
+#' 
+#'
+get_loglik = function(a){
+  return(tail(a$fit$loglik,1))
+}
+
+#' @title Compute loglikelihood for data from ash fit
+#'
+#' @description Return the log-likelihood of the data betahat, with standard errors betahatsd, 
+#' under the fitted distribution in the ash object
+#'
+#' @param a the fitted ash object
+#' @param betahat the data
+#' @param betahatsd the observed standard errors
+#' 
+#' @details None
+#' 
+#' @export
+#' 
+#'
+loglik.ash = function(a,betahat,betahatsd){
+  return(loglik_conv(a$fitted.g,betahat, betahatsd))
+}
+
 #' @title Plot method for ash object
 #'
 #' @description Return the density of the underlying fitted distribution
