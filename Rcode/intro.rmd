@@ -280,7 +280,6 @@ z = c(rnorm(1000), rnorm(100,3,1))
  plot(s, trueEff, t = 'l', main = "Effect Size - Black is true", xlab = "z", ylab = "E(delta|z)", ylim = c(-3,3))
  lines(s, effCurve, col = 2)
  plot(s, trueFdr, t = 'l', main = "fdr - Black is true", xlab = "z", ylab = "fdr", ylim = c(0,1))
- lines(s, fdrCurve, col = 2)
 
  
 z.ash = ash(z,1,mixcompdist="halfuniform")
@@ -324,39 +323,85 @@ makes allowing different noise levels really easy!
 OR - this section could be more generally about selecting between
 models (normal, uniforms etc) using log-likelihood.
 
-Don't need to worry about overfitting - only need to worry
-about whether model is "complex enough".
-
-
 Because of the uni-modal constraint, the number of mixture components
 is generally not critical, at least provided it is ``sufficiently large". 
 Indeed, as the number of components tends to infinity, the likelihood
-is bounded above, and the procedure will converge to a sensible limit.
+is bounded above, and even for large numbers of components and small amounts of data the inferred underlying distributions tend not to be too crazy, showing few signs of ``overfitting". 
+
+However, it is true that the normal distributions tend to yield smoother estimated underlying distributions. Similarly, using the posterior mean for $\pi$, rather
+than the maximum likelihood estimate, tends to lead to somewhat smoother fitted distributions. In addition, with small amounts of data the underlying
+distributions are inevitably not well determined by the data, and the fits may vary depending on the underlying assumptions made (e.g. number of components or distribution of the components); however, even then shrinkage-based estimates
+of the betas can be relatively robust.
+
+
 The following example illustrates this.
 We take 100 observations from 0.5N(-1,1)+0.5N(1,1)
 and add N(0,1) noise.
 ```{r}
-sampsize=500
+set.seed(200)
+sampsize=50
 beta = c(rnorm(sampsize,-1,1),rnorm(sampsize,1,1))
 betahat = beta+rnorm(2*sampsize)
 
-beta.ash = ash(betahat,1)
-beta.ash.u=list()
-for(i in 1:10){
-  beta.ash.u[[i]] = ash(betahat,1,mixcompdist="uniform",prior="uniform",sigmaavec = seq(0.1,5,length=10*i))
-}
+beta.ash.default = ash(betahat,1) #run with default parameters for comparison
+beta.ash.vb.default = ash(betahat,1,VB=TRUE) #run with default parameters for comparison
 
+beta.ash.100 = ash(betahat,1,mixsd = seq(0.1,5,length=100))
+beta.ash.100u = ash(betahat,1,mixcompdist="uniform",mixsd = seq(0.1,5,length=100))
+beta.ash.100hu = ash(betahat,1,mixcompdist="halfuniform",mixsd = seq(0.1,5,length=100))
 
-plot(beta.ash,-4,4,col=2)
+beta.ash.vb.100 = ash(betahat,1,mixsd = seq(0.1,5,length=100),VB=TRUE)
+beta.ash.vb.100u = ash(betahat,1,mixcompdist="uniform",mixsd = seq(0.1,5,length=100),VB=TRUE)
+beta.ash.vb.100hu = ash(betahat,1,mixcompdist="halfuniform",mixsd = seq(0.1,5,length=100),VB=TRUE)
+
 x=seq(-4,4,length=1000)
-lines(x,0.5*dnorm(x,-1,1)+0.5*dnorm(x,1,1),col=1)
-for(i in 1:4){
-lines(x,density(beta.ash.u[[i]],x),col=2+i)
-}
+plot(x,0.5*dnorm(x,-1,1)+0.5*dnorm(x,1,1),col=1,ylim=c(0,0.45),main="Fitted densities vs truth",type="l",ylab="density")
+lines(x,density(beta.ash.default,x),col=2)
+lines(x,density(beta.ash.100,x),col=2)
+lines(x,density(beta.ash.100u,x),col=3)
+lines(x,density(beta.ash.100hu,x),col=4)
 
-plot(unlist(lapply(beta.ash.u,ashr:::get_loglik)))
+plot(x,0.5*dnorm(x,-1,1)+0.5*dnorm(x,1,1),col=1,ylim=c(0,0.45),main="Fitted densities (VB) vs truth",type="l",ylab="density")
+lines(x,density(beta.ash.vb.default,x),col=2)
+lines(x,density(beta.ash.vb.100,x),col=2,lty=2)
+lines(x,density(beta.ash.vb.100u,x),col=3,lty=2)
+lines(x,density(beta.ash.vb.100hu,x),col=4,lty=2)
+
+plot(x,0.5*pnorm(x,-1,1)+0.5*pnorm(x,1,1),col=1,main="Fitted cdfs vs truth",type="l",ylab="density")
+lines(x,cdf.ash(beta.ash.100,x),col=2,lty=2)
+lines(x,cdf.ash(beta.ash.100u,x),col=3,lty=2)
+lines(x,cdf.ash(beta.ash.100hu,x),col=4,lty=2)
+
+plot(x,0.5*pnorm(x,-1,1)+0.5*pnorm(x,1,1),col=1,main="Fitted cdfs (VB) vs truth",type="l",ylab="density")
+lines(x,cdf.ash(beta.ash.vb.default,x),col=2,lty=2)
+lines(x,cdf.ash(beta.ash.vb.100,x),col=2,lty=2)
+lines(x,cdf.ash(beta.ash.vb.100u,x),col=3,lty=2)
+lines(x,cdf.ash(beta.ash.vb.100hu,x),col=4,lty=2)
+
+
+c(loglik.ash(beta.ash.100,betahat,1),get_loglik(beta.ash.100u),get_loglik(beta.ash.100hu))
+c(loglik.ash(beta.ash.vb.100,betahat,1),loglik.ash(beta.ash.vb.100u,betahat,1),loglik.ash(beta.ash.vb.100hu,betahat,1))
+
+rmse=function(a,b){sqrt(mean((a$PosteriorMean-b)^2))}
+c(rmse(beta.ash.default,beta),rmse(beta.ash.100,beta),rmse(beta.ash.100u,beta),rmse(beta.ash.100hu,beta),rmse(beta.ash.vb.default,beta),rmse(beta.ash.vb.100,beta),rmse(beta.ash.vb.100u,beta),rmse(beta.ash.vb.100hu,beta))
+
+plot(beta.ash.default$PosteriorMean,beta.ash.100u$PosteriorMean,col=3,cex=0.4,xlim=c(-4,4),ylim=c(-4,4))
+points(beta.ash.default$PosteriorMean,beta.ash.100hu$PosteriorMean,col=4,cex=0.4)
+abline(a=0,b=1)
+
+plot(betahat,ifelse(pnorm(betahat)<0.5,pnorm(betahat),1-pnorm(betahat)))
+points(betahat,beta.ash.default$localfsr,col=2)
+points(betahat,beta.ash.100u$localfsr,col=3)
+points(betahat,beta.ash.100hu$localfsr,col=4)
 
 ```
+
+so it seems that the localfsr is almost the same as for a "flat" prior $g$.
+That is, in this case, the underlying distribution is flat relative to the
+error terms, and so there is little shrinkage effect except at the tails
+(where the fsr is basically 0 anyway).
+
+
 
 ```{r}
 sampsize=5000
@@ -366,7 +411,7 @@ betahat = beta+rnorm(2*sampsize)
 beta.ash = ash(betahat,1)
 beta.ash.u=list()
 for(i in 1:10){
-  beta.ash.u[[i]] = ash(betahat,1,mixcompdist="uniform",prior="uniform",sigmaavec = seq(0.1,5,length=10*i))
+  beta.ash.u[[i]] = ash(betahat,1,mixcompdist="uniform",mixsd = seq(0.1,5,length=10*i))
 }
 
 
@@ -389,7 +434,7 @@ beta.ash=ash(ss$betahat,ss$betasd,auto=FALSE)
 beta.ash.auto = ash(ss$betahat, ss$betasd,auto=TRUE)
 #these to test the VB version 
 beta.ash.vb.uniform = ash(ss$betahat, ss$betasd,VB=TRUE, prior="uniform")
-beta.ash.vb.null = ash(ss$betahat, ss$betasd,VB=TRUE, prior=NULL)
+beta.ash.vb.nullbiased = ash(ss$betahat, ss$betasd,VB=TRUE, prior="nullbiased")
 
 beta.ash.pm = ash(ss$betahat,ss$betasd,usePointMass=TRUE)
 
