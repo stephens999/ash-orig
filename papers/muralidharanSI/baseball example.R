@@ -95,3 +95,32 @@ sd(predErrDiff)
 # normalized performance (and sd) vary a lot by test data, not so much by training data
 
 # difference on batters is probably stable, difference on pitchers is probably not
+
+#now add ash to comparison
+require(ashr)
+phat.tr=(1+ztr)/(2+NNtr)
+se.tr = sqrt(phat.tr*(1-phat.tr)/(NNtr+1))
+phat.ash = ash(phat.tr-median(phat.tr),se.tr)
+plot(phat.tr,phat.ash$PosteriorMean+median(phat.tr))
+abline(a=0,b=1)
+
+estAsh = function(ztr,NNtr){
+  X = asin(sqrt((ztr+.25)/(NNtr+.5)))
+  sigs = .25/NNtr
+  muHat = sum(X/sigs)/sum(1/sigs)
+  return(ash(X-muHat,sqrt(sigs))$PosteriorMean+muHat)
+}
+
+indtr=indte
+xx.ash=estAsh(ztr[indtr],NNtr[indtr])
+
+xx.JS = estJS(ztr[indtr],NNtr[indtr])
+plot(x[indtr],xx.ash)
+
+
+predictionError(xx.ash, zte[indtr],NNte[indtr],ztr[indtr],NNtr[indtr])
+predictionError(xx.JS, zte[indtr],NNte[indtr],ztr[indtr],NNtr[indtr])
+
+x.te= asin(sqrt((zte+0.25)/(NNte+0.5)))
+mean((x.te[indtr]-xx.ash)^2)
+mean((x.te[indtr]-xx.JS)^2)
