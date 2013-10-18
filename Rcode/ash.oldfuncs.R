@@ -48,30 +48,6 @@ mixseLoglik = function(x,pi,mu,sigma,se,FUN="+"){
   return(sum(log(pi %*% dd)))
 }
 
-
-
-#return matrix of log densities of observations (betahat) 
-# assuming betahat_j \sim N(0, sebetahat_j^2 + sigmaavec_k^2)
-#normalized by maximum of each column
-#INPUT
-#betahat is n vector, 
-#sebetahat is n vector, 
-#sigmaavec is k vector
-#return is n by k matrix of the normal likelihoods, 
-# with (j,k)th element the density of N(betahat_j; mean=0, var = sebetahat_j^2 + sigmaavec_k^2)
-#normalized to have maximum 1 in each column
-matrix_dens = function(betahat, sebetahat, sigmaavec){
-  k = length(sigmaavec)
-  n = length(betahat)
-  ldens = dnorm(betahat,0,sqrt(outer(sebetahat^2,sigmaavec^2,FUN="+")),log=TRUE)
-  maxldens = apply(ldens, 1, max)
-  ldens = ldens - maxldens
-  return(exp(ldens))
-}
-
-
-
-
 #find mean and variance of a mixture of normals
 #INPUT: x is a list with elements pi mu and sigma, each k by n matrices
 #OUTPUT; the n vectors of mean and variances of mixtures correspondign to columns of pi, mu and sigma

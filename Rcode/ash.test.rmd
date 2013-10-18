@@ -17,9 +17,9 @@ simdata=function(n, nnull, altmean, altsd, betasd){
 ss = simdata(10000,8000,0,2,1)
 
 set.seed(133)
-system.time((beta.ash=ash(ss$betahat,ss$betasd,randomstart=TRUE)))
+system.time((beta.ash=ash(ss$betahat,ss$betasd,prior="uniform",randomstart=TRUE)))
 set.seed(133)
-system.time((beta.ash2=oldash(ss$betahat,ss$betasd,auto=TRUE,randomstart=TRUE)))
+system.time((beta.ash2=oldash(ss$betahat,ss$betasd,auto=TRUE,prior="uniform",randomstart=TRUE)))
 
 expect_that(beta.ash$PosteriorMean, equals(beta.ash2$PosteriorMean))
 expect_that(beta.ash$qvalue, equals(beta.ash2$qvalue))
