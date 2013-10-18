@@ -33,10 +33,8 @@ require(devtools)
 build("~/Documents/git/ash/package/ashr",binary=FALSE)
 
 #this installs the tar.gz package and puts it in the library
-install.packages("ashr_0.1.tar.gz",repos=NULL,type="source")
-
+install.packages("package/ashr_0.1.tar.gz",repos=NULL,type="source")
 library(ashr)
-ash
 ?ash
 #works!
 
