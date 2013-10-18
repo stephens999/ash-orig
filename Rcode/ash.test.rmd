@@ -1,0 +1,357 @@
+```{r}
+require("ashr")
+require("qvalue")
+require("testthat")
+
+set.seed(100)
+
+#simulate n beta-hat values, nnull under the null
+#with altmean and altsd being the mean and sd of beta under the alternative
+simdata=function(n, nnull, altmean, altsd, betasd){
+  null = c(rep(1,nnull),rep(0,n-nnull))
+  beta = c(rep(0,nnull),rnorm(n-nnull,altmean,altsd))
+  betahat = rnorm(n,beta,betasd)
+  return(list(null=null,beta=beta,betahat=betahat,betasd=betasd))
+}
+
+ss = simdata(10000,8000,0,2,1)
+
+set.seed(133)
+system.time((beta.ash=ash(ss$betahat,ss$betasd,randomstart=TRUE)))
+set.seed(133)
+system.time((beta.ash2=oldash(ss$betahat,ss$betasd,auto=TRUE,randomstart=TRUE)))
+
+expect_that(beta.ash$PosteriorMean, equals(beta.ash2$PosteriorMean))
+expect_that(beta.ash$qvalue, equals(beta.ash2$qvalue))
+expect_that(beta.ash$PositiveProb, equals(beta.ash2$PositiveProb))
+
+system.time((beta.ash.vb.uniform = ash(ss$betahat, ss$betasd, VB=TRUE, prior="uniform")))
+system.time((beta.ash.vb.uniform2 = oldash(ss$betahat, ss$betasd, VB=TRUE, auto=TRUE,prior="uniform")))
+expect_that(beta.ash.vb.uniform$PosteriorMean, equals(beta.ash.vb.uniform2$PosteriorMean))
+expect_that(beta.ash.vb.uniform$qvalue, equals(beta.ash.vb.uniform2$qvalue))
+expect_that(beta.ash.vb.uniform$PositiveProb, equals(beta.ash.vb.uniform2$PositiveProb))
+
+system.time((beta.ash.vb.null = ash(ss$betahat, ss$betasd, VB=TRUE, prior=NULL)))
+system.time((beta.ash.vb.null2 = ash(ss$betahat, ss$betasd, VB=TRUE, prior=NULL)))
+expect_that(beta.ash.vb.null$PosteriorMean, equals(beta.ash.vb.null2$PosteriorMean))
+expect_that(beta.ash.vb.null$qvalue, equals(beta.ash.vb.null2$qvalue))
+expect_that(beta.ash.vb.null$PositiveProb, equals(beta.ash.vb.null2$PositiveProb))
+
+
+```
+
+```{r}
+require("ashr")
+require("qvalue")
+
+set.seed(100)
+
+#Test mixVBEM
+abf = rbind(c(1,0,0,0),c(0,1,0,0),c(0,0,1,0),c(0,0,1,0),c(0,0,1,0))
+eps = 1e-10
+abf[abf==0] = eps #replace 0 with small number
+print(all.equal(mixVBEM(abf,c(1,1,1,1))$post,c(2,2,4,1)))
+print(all.equal(mixVBEM(abf,c(1,2,1,1))$post,c(2,3,4,1)))
+
+#simulate n beta-hat values, nnull under the null
+#with altmean and altsd being the mean and sd of beta under the alternative
+simdata=function(n, nnull, altmean, altsd, betasd){
+  null = c(rep(1,nnull),rep(0,n-nnull))
+  beta = c(rep(0,nnull),rnorm(n-nnull,altmean,altsd))
+  betahat = rnorm(n,beta,betasd)
+  return(list(null=null,beta=beta,betahat=betahat,betasd=betasd))
+}
+
+ss = simdata(10000,8000,0,2,1)
+
+system.time((beta.ash=ash(ss$betahat,ss$betasd,sigmaavec=c(0,0.01,0.02,0.04,0.08,0.16,0.32,0.64,1.28,2.56,5.12,10.24))))
+system.time((beta.ash.auto = ash(ss$betahat, ss$betasd)))
+system.time((beta.ash.vb.uniform = ash(ss$betahat, ss$betasd, VB=TRUE, prior="uniform")))
+system.time((beta.ash.vb.null = ash(ss$betahat, ss$betasd, VB=TRUE, prior=NULL)))
+system.time((beta.ash.vb.null = ash(ss$betahat, ss$betasd, VB=TRUE, prior="strongnull")))
+
+
+hist(ss$beta,prob=TRUE,breaks=seq(floor(min(ss$beta)),ceiling(max(ss$beta)),length=20))
+x= seq(-4,4,length=10000)
+lines(x,density(beta.ash,x),col=2)
+lines(x,density(beta.ash.auto,x),col=3)
+lines(x,density(beta.ash.vb.uniform,x),col=4)
+lines(x,density(beta.ash.vb.null,x),col=5)
+summary(beta.ash)
+summary(beta.ash.auto)
+summary(beta.ash.vb.uniform)
+summary(beta.ash.vb.null)
+
+ss = simdata(10000,10000,0,2,1)
+system.time((beta.ash=ash(ss$betahat,ss$betasd)))
+system.time((beta.ash.auto = ash(ss$betahat, ss$betasd)))
+system.time((beta.ash.vb.uniform = ash(ss$betahat, ss$betasd, VB=TRUE, prior="uniform")))
+system.time((beta.ash.vb.null = ash(ss$betahat, ss$betasd, VB=TRUE, prior=NULL)))
+
+hist(ss$beta,prob=TRUE,breaks=seq(floor(min(ss$beta)),ceiling(max(ss$beta)),length=20))
+x= seq(-4,4,length=10000)
+lines(x,density(beta.ash,x),col=2)
+lines(x,density(beta.ash.auto,x),col=3)
+lines(x,density(beta.ash.vb.uniform,x),col=4)
+lines(x,density(beta.ash.vb.null,x),col=5)
+beta.ash$fitted.f
+beta.ash.auto$fitted.f
+beta.ash.vb.uniform$fitted.f
+beta.ash.vb.null$fitted.f
+
+beta.ash.vb.uniform$fit$loglik
+beta.ash.vb.uniform$fit$converged
+```
+
+
+```{r}
+ss = simdata(10000,8000,0,2,1)
+
+beta.ash=ash(ss$betahat,ss$betasd,sigmaavec=c(0,0.01,0.02,0.04,0.08,0.16,0.32,0.64,1.28,2.56,5.12,10.24))
+beta.ash.auto = ash(ss$betahat, ss$betasd)
+#these to test the VB version 
+beta.ash.vb.uniform = ash(ss$betahat, ss$betasd, VB=TRUE, prior="uniform")
+beta.ash.vb.null = ash(ss$betahat, ss$betasd, VB=TRUE, prior=NULL)
+
+beta.ash.pm = ash(ss$betahat,ss$betasd,usePointMass=TRUE)
+
+#compute the usual zscore and corresponding p value
+zscore = ss$betahat/ss$betasd
+
+pval = pchisq(zscore^2,df=1,lower.tail=F)
+qval = qvalue(pval)
+hist(zscore)
+```
+
+Now, we find the fitted values for $\pi$ are mostly near 0, or at 2 (the alternative value).
+```{r}
+summary(beta.ash)
+summary(beta.ash.auto)
+summary(beta.ash.vb.uniform)
+summary(beta.ash.vb.null)
+summary(beta.ash.pm)
+```
+
+Plot the fitted underlying distribution on top of true values for beta
+```{r}
+hist(ss$beta,prob=TRUE,breaks=seq(-7,7,length=20))
+x= seq(-7,7,length=1000)
+lines(x,density(beta.ash,x),col=2)
+
+plot(sort(ss$beta),(1:length(ss$beta))/length(ss$beta),main="cdf of ss$beta, with fitted f overlaid",xlab="beta",ylab="cdf")
+lines(x,cdf.ash(beta.ash,x),col=2,lwd=2)
+lines(x,cdf.ash(beta.ash.auto,x),col=3,lwd=2)
+lines(x,cdf.ash(beta.ash.vb.uniform,x),col=4,lwd=2)
+lines(x,cdf.ash(beta.ash.vb.null,x),col=5,lwd=2)
+lines(x,cdf.ash(beta.ash.pm,x),col=6,lwd=2)
+```
+
+[for testing: compare results with point mass and without]
+```{r}
+  plot(beta.ash$PositiveProb)
+  points(beta.ash.pm$PositiveProb,col=2)
+```
+
+```{r}
+  plot(beta.ash$ZeroProb)
+  points(beta.ash.pm$ZeroProb,col=2)
+```
+
+[for testing: compare with the results from the automatic way for selecting sigma]
+```{r}
+hist(ss$beta,prob=TRUE,breaks=seq(-7,7,length=20))
+x= seq(-4,4,length=1000)
+lines(x,density(beta.ash.auto,x),col=2)
+```
+
+[for testing: note that the PosteriorMean and PositiveProb don't depend much on sigmaa vec used ]
+
+```{r}
+plot(beta.ash.auto$PosteriorMean, beta.ash$PosteriorMean, xlab="Shrunk estimate from auto method", ylab="Shrunk estimate from fixed method")
+abline(a=0,b=1)
+plot(beta.ash.auto$localfdr, beta.ash$localfdr, xlab="lfdr from auto method", ylab="ldfr from fixed method")
+abline(a=0,b=1)
+
+```
+
+[And VB method produces similar results to EM method]
+```{r}
+plot(beta.ash.auto$PosteriorMean, beta.ash.vb.uniform$PosteriorMean, xlab="Shrunk estimate from auto method", ylab="Shrunk estimate from vb method")
+points(beta.ash.auto$PosteriorMean, beta.ash.vb.null$PosteriorMean, col=2)
+abline(a=0,b=1)
+plot(beta.ash.auto$localfdr, beta.ash.vb.uniform$localfdr, xlab="lfdr from auto method", ylab="ldfr from vb method")
+points(beta.ash.auto$localfdr, beta.ash.vb.null$localfdr, col=2)
+abline(a=0,b=1)
+
+```
+
+
+
+Also, we can see the effects of shrinkage: small estimates of $\hat\beta$ are
+shrunk to close to 0. Large estimates of $\hat\beta$ are shrunk less strongly because ash recognizes that these larger $\hat\beta$ are likely
+from the alternative, rather than the null.
+```{r}
+plot(ss$betahat,beta.ash$PosteriorMean,xlab="Observed betahat", ylab="Estimated beta (posterior mean)",ylim=c(-7,7),xlim=c(-7,7))
+abline(h=0)
+abline(a=0,b=1,col=2)
+```
+
+
+
+### Some additional notes
+
+
+
+#### Do we need a point mass at zero?
+
+In some settings it is the convention to focus on testing whether $\beta_j=0$. However some dislike this focus, objecting that it is unlikely to be the case that $\beta_j=0$ exactly. For example, when comparing the average expression of a gene in human samples vs chimp samples, it might be considered unlikely that the expression
+is *exactly* the same in both. Whether or not $\beta_j=0$
+is considered unlikely may depend on the context.
+However, in most contexts, finite data cannot
+distinguish between $\beta_j=0$ and $\beta_j$ being very close to zero. Thus finite data cannot usually convince a skeptic that $\beta_j$ is exactly zero, rather than just very small. In contrast it is easy to imagine data that would convince a doubter that $\beta_j$ is truly non-zero. In this sense there is an assymetry between the inferences "$\beta_j$ is zero" and "$\beta_j$ is non-zero", an assymetry that is reflected in the admonition "failure to reject the null does not imply it to be true".
+
+Thus any analysis that purports to distinguish between these cases must be making an assumption. 
+
+Consider two analyses of the same data, using two different "priors" $g$ for $\beta_j$, that effectively differ only in their assumptions about whether or not $\beta_j$ can be exactly zero. For concreteness, consider
+\[ g_1(\cdot) = \pi \delta_0(\cdot) + (1-\pi) N(\cdot; 0,\sigma^2) \]
+and
+\[g_2(\cdot) = \pi N(\cdot; 0, \epsilon^2) + (1-\pi) N(\cdot; 0, \sigma^2).\]
+If $\epsilon^2$ is sufficiently small, then these 
+priors are "approximately the same", and will lead to "approximately the same" posteriors and inferences in many senses. To discuss these, let $p_j$ denote the posterior under prior $g_j$. Then, for any given (small) $\delta$, we will have $p_1(|\beta_j|<\delta) \approx p_2(|\beta_j|< \delta)$. However, we will not have $p_1(\beta_j=0) \approx p_2(\beta_j=0)$: the latter will always be zero, while the former could be appreciable.
+
+ What if, instead, we examine $p_1(\beta_j >0)$ and $p_2(\beta_j >0)$? Again, these will differ. If this probability is big in the first analysis, say $1-\alpha$ with $\alpha$ small, then it could be as big as $1-\alpha/2$ in the second analysis. This is because if $p_1(\beta_j>0)=1-\alpha$, then $p_1(\beta_j=0)$ will often be close to $\alpha$, so for small $\epsilon$ $p_2(\beta_j)$ will have mass $\alpha$ near 0, of which half will be positive and half will be negative. 
+Thus if we do an analysis without a point mass, but allow
+for mass near 0, then we may predict what the results would have been if we had used a point mass.
+
+Let's try: 
+```{r}
+beta.ash.pm = ash(ss$betahat, ss$betasd, usePointMass=TRUE)
+print(beta.ash.pm)
+print(beta.ash.auto)
+plot(beta.ash.auto$localfsr,beta.ash.pm$localfsr,main="comparison of ash localfsr, with and without point mass",xlab="no point mass", ylab="with point mass",xlim=c(0,1),ylim=c(0,1))
+abline(a=0,b=1)
+abline(a=0,b=2)
+```
+
+Our conclusion: if we simulate data with a point mass,
+and we analyze it without a point mass, we may underestimate
+the lfsr by a factor of 2. Therefore, to be conservative, we might prefer to analyze the data allowing for the point mass, or, if analyzed without a point mass, multiply estimated false sign rates by 2. In fact the latter might be preferable: even if we analyze the data with a point mass, there is going to be some unidentifiability
+that means estimating the pi value on the point mass will be somewhat unreliable, and we still might underestimate the false sign rate if we rely on that estimate.  
+TO THINK ABOUT: does multiplying the smaller of Pr(<0) and Pr(>0) by 2, and adding to Pr(=0) solve the problem in either case?
+
+#### Comparison with qvalue
+
+Here we compare ash $q$ values with those from the qvalue package. 
+```{r}
+plot(qval$q,beta.ash$qval,main="comparison of ash and q value qvalues",xlab="qvalue", ylab="ash q values")
+abline(a=0,b=1)
+```
+
+In this example we see that qval overestimates the actual FDR. (This
+is because it assumes all the $p$ values near 1 are null, when they are not.)
+```{r}
+o = order(beta.ash$qval)
+plot(cumsum(ss$null[o])/(1:10000),qval$qval[o],col=2,type="l", xlab="actual FDR", ylab="q value", main="Comparison of actual FDR with q value")
+lines(cumsum(ss$null[o])/(1:10000),beta.ash$qval[o])
+abline(a=0,b=1)
+```
+
+### Miscellaneous 
+
+code and text below here is work in progress and untidied.
+
+
+Here we simulate data, effectively as in Efron, 2008, Section 7.
+```{r}
+truenull = c(rep(0,1000),rep(1,9000))
+beta = c(rnorm(1000,-3,1),rep(0,9000))
+s= rep(1,10000)
+betahat = rnorm(10000,beta,s)
+
+beta.ash=ash(betahat,s)
+#compute the usual zscore and corresponding p value
+zscore = betahat/s
+pval = pchisq(zscore^2,df=1,lower.tail=F)
+qval = qvalue(pval)
+
+plot(betahat,beta.ash$PosteriorMean,xlab="Observed betahat", ylab="Estimated beta (posterior mean)",ylim=c(-7,7),xlim=c(-7,7))
+abline(h=0)
+abline(a=0,b=1,col=2)
+
+plot(qval$q,beta.ash$qval,main="comparison of ash and q value qvalues")
+abline(a=0,b=1)
+
+o = order(beta.ash$qval)
+
+plot(cumsum(truenull[o])/(1:10000),qval$qval[o],col=2,type="l")
+lines(cumsum(truenull[o])/(1:10000),beta.ash$qval[o])
+abline(a=0,b=1)
+```
+
+It seems that in this case the ash q values underestimate the
+FDR slightly. Possibly this is the assymetry.
+Try shrinking positive and negatives separately:
+```{r}
+pos= betahat>0
+betapos.ash=ash(betahat[pos],s[pos])
+betaneg.ash = ash(betahat[!pos],s[!pos])
+lfdr = rep(0,length(betahat))
+lfdr[pos] = betapos.ash$localfdr
+lfdr[!pos] = betaneg.ash$localfdr
+qv = qval.from.localfdr(lfdr)
+o = order(qv)
+plot(cumsum(truenull[o])/(1:10000),qv[o],type="l")
+abline(a=0,b=1)
+```
+
+### Illustration of halfuniform method
+
+I will also use this to illustrate the halfuniform method, which
+allows for asymmetry.
+
+
+```{r}
+truenull = c(rep(0,2000),rep(1,8000))
+beta = c(rnorm(1000,-3,1),rnorm(1000,-1.5,1),rep(0,8000))
+s= rep(1,10000)
+betahat = rnorm(10000,beta,s)
+
+beta.ash=ash(betahat,s)
+beta.ash.halfu = ash(betahat,s,"halfuniform")
+
+hist(beta,prob=TRUE)
+x = seq(-8,4,length=1000)
+lines(x,density(beta.ash,x),col=2)
+lines(x,density(beta.ash.halfu,x),col=3)
+
+```
+
+See how the use of the asymmtric uniform component does a better job capturing
+the underlying density. Probably clearer in the cdf plot:
+```{r}
+plot(sort(beta),(1:length(beta))/length(beta),main="cdf of beta, with fitted f overlaid",xlab="beta",ylab="cdf")
+lines(x,cdf.ash(beta.ash,x),col=2,lwd=2)
+lines(x,cdf.ash(beta.ash.halfu,x),col=3,lwd=2)
+
+
+#compute the usual zscore and corresponding p value
+zscore = betahat/s
+pval = pchisq(zscore^2,df=1,lower.tail=F)
+qval = qvalue(pval)
+plot(qval$q,beta.ash$qval,main="comparison of ash and q value qvalues")
+abline(a=0,b=1)
+
+o = order(qval$qval)
+plot(cumsum(truenull[o])/(1:10000),qval$qval[o],col=1,type="l")
+o = order(beta.ash$qval)
+lines(cumsum(truenull[o])/(1:10000),beta.ash$qval[o],col=2)
+o2 = order(beta.ash.halfu$qval)
+lines(cumsum(truenull[o2])/(1:10000),beta.ash.halfu$qval[o2],col=3)
+
+abline(a=0,b=1)
+
+
+```
+
+
+
