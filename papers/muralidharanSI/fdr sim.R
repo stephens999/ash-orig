@@ -1,3 +1,4 @@
+#setwd("~/Documents/git/ash/papers/muralidharanSI/")
 library(locfdr)
 library(fdrtool)
 set.seed(355)
