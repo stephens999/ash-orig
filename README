@@ -1,10 +1,11 @@
 This repository contains ongoing work on Bayesian FDR and Adaptive Shrinkage.
 
-To build the (in development) ashr package and install the library, from the R prompt run:
-> require(devtools)
-> install("../package/ashr")
-Then restart your R session before loading the library
-> library("ashr")
+The (in development) ashr package is in package/ashr_0.1.tar.gz
+To load this into R use:
+> install.packages("package/ashr_0.1.tar.gz",repos=NULL,type="source")
+
+The main function is ash. To get minimal help:
+> ?ash
 
 To get more information download the repository, and look at Rcode/intro.html and Rcode/readme.html
 
