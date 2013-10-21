@@ -31,8 +31,8 @@ expect_that(beta.ash.vb.uniform$PosteriorMean, equals(beta.ash.vb.uniform2$Poste
 expect_that(beta.ash.vb.uniform$qvalue, equals(beta.ash.vb.uniform2$qvalue))
 expect_that(beta.ash.vb.uniform$PositiveProb, equals(beta.ash.vb.uniform2$PositiveProb))
 
-system.time((beta.ash.vb.null = ash(ss$betahat, ss$betasd, VB=TRUE, prior=NULL)))
-system.time((beta.ash.vb.null2 = ash(ss$betahat, ss$betasd, VB=TRUE, prior=NULL)))
+system.time((beta.ash.vb.null = ash(ss$betahat, ss$betasd, VB=TRUE, prior="nullbiased")))
+system.time((beta.ash.vb.null2 = ash(ss$betahat, ss$betasd, VB=TRUE, prior="nullbiased")))
 expect_that(beta.ash.vb.null$PosteriorMean, equals(beta.ash.vb.null2$PosteriorMean))
 expect_that(beta.ash.vb.null$qvalue, equals(beta.ash.vb.null2$qvalue))
 expect_that(beta.ash.vb.null$PositiveProb, equals(beta.ash.vb.null2$PositiveProb))
