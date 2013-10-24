@@ -10,10 +10,12 @@ source('ash.R')
 
 # post_pi computes the posterior probability 
 # P(beta_j,tau_j belongs to the i'th component | Y)
-post_pi = function(N,n,M,K,L,a.vec,lambda.vec,c.vec,mu,Y.mean,Y.sst,pi){ 
+post_pi = function(N,n,M,K,L,a.vec,lambda.vec,c.vec,mu,Y.mean,Y.sst,pi){
+  post.gammab=0.5*(outer(Y.sst,rep(1,M*L*K))+outer((Y.mean-mu)^2,n/(n/c.vec+1))+outer(rep(1,N),2*a.vec/lambda.vec))
   post.pi.mat = exp(outer(rep(1,N),log(pi)+a.vec*log(a.vec/lambda.vec)-lgamma(a.vec)-0.5*log(n/c.vec+1)+lgamma(a.vec+n/2))-
-                      log(0.5*(outer(Y.sst,rep(1,M*L*K))+outer((Y.mean-mu)^2,n/(n/c.vec+1))+outer(rep(1,N),2*a.vec/lambda.vec)))*
+                      log(post.gammab)*
                       outer(rep(1,N),a.vec+n/2))
+  return(list(gammab=post.gammab,pimat=post.pi.mat))
   
 #   post.pi.mat = exp(outer(rep(1,N),log(pi)+a.vec*log(a.vec/lambda.vec)-lgamma(a.vec)+log(sqrt(1/(n/c.vec+1)))+lgamma(a.vec+n/2))-
 #     log(0.5*(outer(Y.sst,rep(1,M*L*K))+outer((Y.mean-mu)^2,n/(n/c.vec+1))+outer(rep(1,N),2*a.vec/lambda.vec)))*
@@ -30,7 +32,9 @@ post_pi = function(N,n,M,K,L,a.vec,lambda.vec,c.vec,mu,Y.mean,Y.sst,pi){
 # groupind: i indicates that the current component correspond to the i'th comp of precShape/precMulti/compprecPrior
 indep_post_pi = function(N,n,M,K,L,a.vec,lambda.vec,c.vec,mu,Y.mean,Y.sst, pi.a, pi.lambda, pi.c, prior, groupind){
   pi = rep(pi.a,L*K)*rep(rep(pi.lambda,each=M),L)*rep(pi.c,each=M*K)
-  pi.mat = post_pi(N,n,M,K,L,a.vec,lambda.vec,c.vec,mu,Y.mean,Y.sst,pi)
+  mm=post_pi(N,n,M,K,L,a.vec,lambda.vec,c.vec,mu,Y.mean,Y.sst,pi)
+  pi.mat = mm$pimat
+  postb=mm$gammab
   norm.pi.mat = normalized_pi(pi.mat)
   indep.post.pi = rep(0,max(groupind))
   temp = colSums(norm.pi.mat)+prior-5/(M*K)
@@ -39,7 +43,7 @@ indep_post_pi = function(N,n,M,K,L,a.vec,lambda.vec,c.vec,mu,Y.mean,Y.sst, pi.a,
   } 
   indep.post.pi = ifelse(indep.post.pi<0,0,indep.post.pi)
   indep.post.pi=indep.post.pi/sum(indep.post.pi)
-  return(list(indep.pi=indep.post.pi,pi.mat=pi.mat,normpi.mat=norm.pi.mat))
+  return(list(indep.pi=indep.post.pi,pi.mat=pi.mat,normpi.mat=norm.pi.mat,postb=postb))
 }
 
 # Normalize pi to make sum(pi)=1
@@ -53,7 +57,7 @@ normalized_pi = function(pi.mat){
 # pi: (M*L*K) vector
 # mu: N vector
 post_distn = function(N,n,M,K,L,a.vec,lambda.vec,c.vec,mu,Y.mean,Y.sst,pi){ 
-  post.pi = normalized_pi(post_pi(N,n,M,K,L,a.vec,lambda.vec,c.vec,mu,Y.mean,Y.sst,pi))
+  post.pi = normalized_pi(post_pi(N,n,M,K,L,a.vec,lambda.vec,c.vec,mu,Y.mean,Y.sst,pi)$pimat)
 
   post.gamma.parama = outer(rep(1,N),a.vec+n/2)
   post.gamma.paramb = 0.5*(outer(Y.sst,rep(1,M*L*K))+outer((Y.mean-mu)^2,n/(n/c.vec+1))+outer(rep(1,N),2*a.vec/lambda.vec))
@@ -73,12 +77,49 @@ post_distn = function(N,n,M,K,L,a.vec,lambda.vec,c.vec,mu,Y.mean,Y.sst,pi){
               gammadens=post.gamma.dens,normmean=post.norm.mean,normc=post.norm.c,normprec=post.norm.prec,c.vec=c.vec,a.vec=a.vec,lambda.vec=lambda.vec))
 }
 
+# Use EM algorithm to estimate a, lambda
+# lik: likelihood matrix
+# SGD: use stochastic gradient descent method
+a_lambda_est=function(classprob,postb,N,n,M,K,L,a.vec,lambda.vec,c.vec,group.a,group.lambda,SGD,learnrate){
+  b.vec=a.vec/lambda.vec
+
+  if(SGD==TRUE){    
+    dl_da=sum(classprob*(outer(rep(1,N),log(b.vec))-log(postb)+outer(rep(1,N),digamma(a.vec+n/2)-digamma(a.vec))))
+    dl_db=sum(classprob*(outer(rep(1,N),a.vec/b.vec)-outer(rep(1,N),a.vec+n/2)/postb))
+    a.vec=pmin(a.vec-learnrate*dl_da,1e-10)
+    b.vec=pmin(b.vec-learnrate*dl_db,1e-10) 
+    print(dl_da)
+    print(dl_db)
+  }else{
+    for(i in 1:max(group.a)){
+      idx=(group.a==i)
+      fa=function(a) {        
+        res=sum(classprob[idx,]*(outer(rep(1,N),log(b.vec[idx]))-log(postb[idx])+outer(rep(1,N),rep(digamma(a+n/2)-digamma(a),length(idx)))))
+        return(res)
+      }
+      a.vec[idx]=rep(uniroot(fa,c(1e-10,100000))$root,length(idx))    
+    }
+    for(i in 1:max(group.lambda)){
+      idx=(group.lambda==i)
+      fb=function(b) {
+        res=sum(classprob[idx]*(outer(rep(1,N),a.vec[idx]/b)-outer(rep(1,N),a.vec[idx]+n/2)/postb[idx]))
+        return(res)
+      }
+      b.vec[idx]=rep(uniroot(fb,c(1e-10,100000))$root,length(idx))    
+    }
+  }
+  lambda.vec=a.vec/b.vec
+  return(list(a.vec=a.vec,lambda.vec=lambda.vec))
+}
+
+
+
 # Use EM algorithm to estimate pi from data
 # ltol: likelihood convergence tolerance
 # maxiter: max number of iterations
 # indepprior: whether assume that there are independent priors for a_m, lambda_k and c_l
 # i.e. pi_{klm}=pi.lambda_k*pi.c_l*pi.a_m, where sum(pi.a_m)=sum(pi.lambda_k)=sum(pi.c_l)
-EMest_pi = function(N,n,M,K,L,a.vec,lambda.vec,c.vec,mu,Y.mean,Y.sst, pi, prior, ltol=0.0001, maxiter=1500, indepprior=TRUE){
+EMest_pi = function(N,n,M,K,L,a.vec,lambda.vec,c.vec,mu,Y.mean,Y.sst, pi, prior, a.lambda.est, SGD,indepprior=TRUE,ltol=0.0001, maxiter=2000){
   group.a = rep(1:M,L*K)
   group.lambda = rep(rep(1:K,each=M),L)
   group.c = rep(1:L,each=M*K)
@@ -97,15 +138,23 @@ EMest_pi = function(N,n,M,K,L,a.vec,lambda.vec,c.vec,mu,Y.mean,Y.sst, pi, prior,
       pi=pi/sum(pi)
     }
     loglik = rep(NA,maxiter)
-    m = post_pi(N,n,M,K,L,a.vec,lambda.vec,c.vec,mu,Y.mean,Y.sst,pi)
+    
+    mm = post_pi(N,n,M,K,L,a.vec,lambda.vec,c.vec,mu,Y.mean,Y.sst,pi)
+    m = mm$pimat
     m.rowsum = rowSums(m)
     loglik[1] = sum(log(m.rowsum))
     classprob = m/m.rowsum
     
-    for(i in 2:maxiter){  
+    for(i in 2:maxiter){
+      if(a.lambda.est==TRUE){
+        est=a_lambda_est(classprob,mm$gammab,N,n,M,K,L,a.vec,lambda.vec,c.vec,group.a,group.lambda,SGD,learnrate=1/(100*i))
+        a.vec=est$a.vec
+        lambda.vec=est$lambda.vec
+      }
       pi = colSums(classprob)+prior-5/(M*K)
       pi = ifelse(pi<0,0,pi); pi=pi/sum(pi);
-      m = post_pi(N,n,M,K,L,a.vec,lambda.vec,c.vec,mu,Y.mean,Y.sst,pi)
+      mm = post_pi(N,n,M,K,L,a.vec,lambda.vec,c.vec,mu,Y.mean,Y.sst,pi)
+      m = mm$pimat
       m.rowsum = rowSums(m)
       loglik[i] = sum(log(m.rowsum))
       classprob = m/m.rowsum
@@ -121,10 +170,16 @@ EMest_pi = function(N,n,M,K,L,a.vec,lambda.vec,c.vec,mu,Y.mean,Y.sst, pi, prior,
     pi.c = indep_post_pi(N,n,M,K,L,a.vec,lambda.vec,c.vec,mu,Y.mean,Y.sst, pi.a, pi.lambda, pi.c, prior,group.c)$indep.pi 
     pi.lambda = indep_post_pi(N,n,M,K,L,a.vec,lambda.vec,c.vec,mu,Y.mean,Y.sst, pi.a, pi.lambda, pi.c, prior,group.lambda)$indep.pi
     m = indep_post_pi(N,n,M,K,L,a.vec,lambda.vec,c.vec,mu,Y.mean,Y.sst, pi.a, pi.lambda, pi.c,prior, group.a)
+    classprob = m$normpi.mat
     pi.a = m$indep.pi
     loglik[1] = sum(log(rowSums(m$pi.mat)))
     
     for(i in 2:maxiter){
+      if(a.lambda.est==TRUE){
+        est=a_lambda_est(classprob,m$postb,N,n,M,K,L,a.vec,lambda.vec,c.vec,group.a,group.lambda,SGD,learnrate=1/(i^2))
+        a.vec=est$a.vec
+        lambda.vec=est$lambda.vec
+      }
       pi.c = indep_post_pi(N,n,M,K,L,a.vec,lambda.vec,c.vec,mu,Y.mean,Y.sst, pi.a, pi.lambda, pi.c, prior,group.c)$indep.pi
       pi.lambda = indep_post_pi(N,n,M,K,L,a.vec,lambda.vec,c.vec,mu,Y.mean,Y.sst, pi.a, pi.lambda, pi.c,prior, group.lambda)$indep.pi
       m = indep_post_pi(N,n,M,K,L,a.vec,lambda.vec,c.vec,mu,Y.mean,Y.sst, pi.a, pi.lambda, pi.c,prior, group.a)
@@ -138,7 +193,7 @@ EMest_pi = function(N,n,M,K,L,a.vec,lambda.vec,c.vec,mu,Y.mean,Y.sst, pi, prior,
 
   converged = (i< maxiter)
   niter= min(c(i,maxiter))
-  return(list(pi=pi,pi.a=pi.a,pi.lambda=pi.lambda,pi.c=pi.c,classprob=classprob,loglik.final=loglik,converged=converged,niter=niter))
+  return(list(pi=pi,pi.a=pi.a,pi.lambda=pi.lambda,pi.c=pi.c,classprob=classprob,loglik.final=loglik,converged=converged,niter=niter,a.vec=a.vec,lambda.vec=lambda.vec))
 }
 
 # Compute P(beta|Y,hat(tau)), where hat(tau) is the posterior mean estimate for tau
@@ -203,7 +258,7 @@ posterior_sample_jash = function(post,nsamp,obs){
 # precShape: vector of a_m
 # precMulti: vector of lambda_k
 # compprecPrior: vector of c_l
-jash = function(Y, auto=FALSE, precShape=NULL, precMulti=NULL, compprecPrior=NULL, mu=NULL, pi=NULL,prior=NULL, usePointMass=FALSE, localfdr=TRUE){
+jash = function(Y, auto=FALSE, precShape=NULL, precMulti=NULL, compprecPrior=NULL, mu=NULL, pi=NULL,prior=NULL, usePointMass=FALSE, localfdr=TRUE, a.lambda.est=TRUE, SGD=FALSE){
   N = dim(Y)[1]
   n = dim(Y)[2]
   
@@ -220,11 +275,15 @@ jash = function(Y, auto=FALSE, precShape=NULL, precMulti=NULL, compprecPrior=NUL
     precMulti = c(0.25,0.5,1,2,4)
   }
   if(is.null(compprecPrior) && usePointMass==FALSE){
-    compprecPrior = c(1,100)
+    compprecPrior = c(1,1000000)
   }else if(is.null(compprecPrior) && usePointMass==TRUE){
     compprecPrior=c(1,Inf)
   }else if(usePointMass==TRUE){
     compprecPrior=c(compprecPrior,Inf)
+  }
+  if(a.lambda.est==TRUE){
+    precMulti=1
+    precShape=1
   }
   
   M = length(precShape)
@@ -239,8 +298,8 @@ jash = function(Y, auto=FALSE, precShape=NULL, precMulti=NULL, compprecPrior=NUL
   Y.mean = apply(Y,1,mean)
   Y.sst = apply(Y,1,var)*(n-1)
   
-  pifit = EMest_pi(N,n,M,K,L,a.vec,lambda.vec,c.vec,mu,Y.mean,Y.sst, pi,prior)
-  post = post_distn(N,n,M,K,L,a.vec,lambda.vec,c.vec,mu,Y.mean,Y.sst,pifit$pi)
+  pifit = EMest_pi(N,n,M,K,L,a.vec,lambda.vec,c.vec,mu,Y.mean,Y.sst, pi,prior,a.lambda.est,SGD,indepprior=TRUE,ltol=0.0001, maxiter=2000)
+  post = post_distn(N,n,M,K,L,pifit$a.vec,pifit$lambda.vec,c.vec,mu,Y.mean,Y.sst,pifit$pi)
   #condpost = CondPostprob(post$pi,post$tau,post$gammaa,post$gammab,post$gammadens,post$normmean,post$normprec,post$c.vec)
   postprob = Postprob(post$pi,post$gammaa,post$gammab,post$normmean,post$normc,post$c.vec)
   if(localfdr==TRUE){
