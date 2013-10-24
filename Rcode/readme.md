@@ -21,21 +21,7 @@ and the first 500 observations have good precision, and the next 500 have poor p
 # biocLite('qvalue')
 setwd("~/Documents/git/ash/Rcode/")
 library("qvalue")
-```
-
-```
-## Warning: couldn't connect to display ":0"
-```
-
-```r
 library("lattice")  #library for some of the plots
-```
-
-```
-## Warning: package 'lattice' was built under R version 3.0.1
-```
-
-```r
 
 # set up some data with mixture of values of s
 set.seed(100)
@@ -107,49 +93,28 @@ if we ``observed" data $\hat\beta_p \sim N(\beta_p, s_p)$.)
 
 ```r
 # install q value package, and load in ash code
-source("../Rcode/ash.R")
+library("ashr")
 ```
 
 ```
-## Warning: cannot open file '.ash.repodir.txt': No such file or directory
-```
-
-```
-## Error: cannot open the connection
+## Loading required package: truncnorm
 ```
 
 ```r
-source("../Rcode/ash.oldfuncs.R")
+# source('../Rcode/ash.R') source('../Rcode/ash.oldfuncs.R')
+# source('../Rcode/mix.R')
 beta.ash.all = ash(betahat, s)
-```
-
-```
-## Error: could not find function "ash"
-```
-
-```r
 beta.ash.good = ash(betahat[p$type == "GOOD"], s[p$type == "GOOD"])
-```
-
-```
-## Error: could not find function "ash"
-```
-
-```r
 plot(beta.ash.good$PosteriorMean, beta.ash.all$PosteriorMean[p$type == "GOOD"])
 ```
 
-```
-## Error: object 'beta.ash.good' not found
-```
+![plot of chunk unnamed-chunk-4](figure/unnamed-chunk-41.png) 
 
 ```r
 plot(beta.ash.good$PositiveProb, beta.ash.all$PositiveProb[p$type == "GOOD"])
 ```
 
-```
-## Error: object 'beta.ash.good' not found
-```
+![plot of chunk unnamed-chunk-4](figure/unnamed-chunk-42.png) 
 
 So here it makes no difference whether you use all the observations or the just the good ones -
 the noise is ignored (as it should be!)
@@ -206,18 +171,11 @@ Now compare this with ASH
 
 ```r
 hh.ash = ash(hh.betahat, hh.sebetahat, df = n1 + n2 - 2)
-```
-
-```
-## Error: could not find function "ash"
-```
-
-```r
 sum(hh.ash$qvalue < 0.05)
 ```
 
 ```
-## Error: object 'hh.ash' not found
+## [1] 260
 ```
 
 ```r
@@ -226,9 +184,7 @@ plot(hh.ash$localfdr, log(hh.pval), main = "Illustration of how ASH reorders sig
     ylab = "Original p value")
 ```
 
-```
-## Error: object 'hh.ash' not found
-```
+![plot of chunk unnamed-chunk-6](figure/unnamed-chunk-6.png) 
 
 
 Now see how it compares with ignoring the variability in
@@ -236,35 +192,19 @@ measurement error, by applying ASH to the z scores.
 
 ```r
 hh.ash2 = ash(hh.zscore, rep(1, length(hh.zscore)), df = 20)
-```
-
-```
-## Error: could not find function "ash"
-```
-
-```r
 plot(hh.ash$localfdr, hh.ash2$localfdr, cex = 0.2, ylab = "ignoring sd", xlab = "accounting for sd", 
     main = "Effect of accounting for measurement precision on local fdr")
-```
-
-```
-## Error: object 'hh.ash' not found
-```
-
-```r
 abline(a = 0, b = 1, col = 2)
 ```
 
-```
-## Error: plot.new has not been called yet
-```
+![plot of chunk unnamed-chunk-7](figure/unnamed-chunk-71.png) 
 
 ```r
 cat(sum(hh.ash$qvalue < 0.05), sum(hh.ash2$qvalue < 0.05))
 ```
 
 ```
-## Error: object 'hh.ash' not found
+## 260 391
 ```
 
 ```r
@@ -272,7 +212,7 @@ cat(sum(hh.ash$localfdr < 0.05), sum(hh.ash2$localfdr < 0.05))
 ```
 
 ```
-## Error: object 'hh.ash' not found
+## 132 194
 ```
 
 ```r
@@ -281,9 +221,7 @@ plot(hh.ash2$localfdr, log(hh.pval), main = "Illustration of how ASH without pre
     ylab = "Original p value")
 ```
 
-```
-## Error: object 'hh.ash2' not found
-```
+![plot of chunk unnamed-chunk-7](figure/unnamed-chunk-72.png) 
 
 Hmm - this was unexpected. Why are more being called
 in the second analysis? Could it be that the effect sizes
@@ -329,16 +267,14 @@ plot(as.numeric(hh.q$qvalue), hh.ash2$qval, cex = 0.2, ylab = "ASH q value",
     xlab = "standard q value", main = "ASH vs standard q value")
 ```
 
-```
-## Error: object 'hh.ash2' not found
-```
+![plot of chunk unnamed-chunk-10](figure/unnamed-chunk-10.png) 
 
 ```r
 cat(hh.ash2$fitted.g$pi[1], hh.q$pi0)
 ```
 
 ```
-## Error: object 'hh.ash2' not found
+## 3.393e-05 0.6651
 ```
 
 At first I was really worried about this - the pi0 estimate
@@ -391,13 +327,6 @@ musim2 = c(rnorm(1000, -3, 1), rnorm(1000, -1.5, 1), rnorm(1000, 0, 1), rep(0,
     7000))
 zsim2 = musim2 + rnorm(10000)
 zsim2.ash = ash(zsim2, rep(1, 10000))
-```
-
-```
-## Error: could not find function "ash"
-```
-
-```r
 hist(musim2[1:3000])
 ```
 
@@ -405,18 +334,11 @@ hist(musim2[1:3000])
 
 ```r
 errorinsign = ifelse(musim2 == 0, 0.5, (zsim2.ash$PosteriorMean/musim2) < 0)
-```
-
-```
-## Error: object 'zsim2.ash' not found
-```
-
-```r
 sum(errorinsign[zsim2.ash$qvalue < 0.05])/sum(zsim2.ash$qvalue < 0.05)
 ```
 
 ```
-## Error: object 'errorinsign' not found
+## [1] 0.03859
 ```
 
 
@@ -430,10 +352,6 @@ Simulate data as in Efron, 2008, Section 7.
 musim = c(rnorm(1000, -3, 1), rep(0, 9000))
 zsim = musim + rnorm(10000)
 zsim.ash = ash(zsim, rep(1, 10000))
-```
-
-```
-## Error: could not find function "ash"
 ```
 
 Need to implement a method to find CIs to look at this.
@@ -453,7 +371,7 @@ mixseLoglik(bhat.test, c(0, 1), c(0, 0), c(se.test, se.test), hh.sebetahat)
 ```
 
 ```
-## [1] -1495
+## Error: could not find function "mixseLoglik"
 ```
 
 ```r
@@ -462,7 +380,7 @@ mixseLoglik(bhat.test, c(0, 1), c(0, 0), c(se.test, se.test), hh.sebetahat,
 ```
 
 ```
-## [1] -Inf
+## Error: could not find function "mixseLoglik"
 ```
 
 ```r
@@ -481,7 +399,7 @@ mixseLoglik(bhat2.test, c(0, 1), c(0, 0), sqrt(c(2, 2)), hh.sebetahat, FUN = "*"
 ```
 
 ```
-## [1] -1288
+## Error: could not find function "mixseLoglik"
 ```
 
 ```r
@@ -492,7 +410,7 @@ mixseLoglik(bhat.test, c(0, 1), c(0, 0), c(se.test, se.test), hh.sebetahat)
 ```
 
 ```
-## [1] -1495
+## Error: could not find function "mixseLoglik"
 ```
 
 ```r
@@ -501,7 +419,7 @@ mixseLoglik(bhat.test, c(0, 1), c(0, 0), c(se.test, se.test), hh.sebetahat,
 ```
 
 ```
-## [1] -Inf
+## Error: could not find function "mixseLoglik"
 ```
 
 ```r
@@ -528,51 +446,23 @@ hist(p2.test)
 ```r
 
 test1.ash1 = ash(bhat.test, hh.sebetahat)
-```
-
-```
-## Error: could not find function "ash"
-```
-
-```r
 test1.ash2 = ash(z.test, rep(1, n))
-```
-
-```
-## Error: could not find function "ash"
-```
-
-```r
 cat(sum(test1.ash1$qval < 0.05), sum(test1.ash2$qval < 0.05))
 ```
 
 ```
-## Error: object 'test1.ash1' not found
+## 654 474
 ```
 
 ```r
 
 test2.ash1 = ash(bhat2.test, hh.sebetahat)
-```
-
-```
-## Error: could not find function "ash"
-```
-
-```r
 test2.ash2 = ash(z2.test, rep(1, n))
-```
-
-```
-## Error: could not find function "ash"
-```
-
-```r
 cat(sum(test2.ash1$qval < 0.05), sum(test2.ash2$qval < 0.05))
 ```
 
 ```
-## Error: object 'test2.ash1' not found
+## 117 280
 ```
 
 ```r
@@ -584,7 +474,7 @@ mixseLoglik(bhat.test, test1.ash1$fitted.g$pi, test1.ash1$fitted.g$mean, test1.a
 ```
 
 ```
-## Error: object 'test1.ash1' not found
+## Error: could not find function "mixseLoglik"
 ```
 
 ```r
@@ -593,7 +483,7 @@ mixseLoglik(bhat.test, test1.ash2$fitted.g$pi, test1.ash2$fitted.g$mean, sqrt(te
 ```
 
 ```
-## Error: object 'test1.ash2' not found
+## Error: could not find function "mixseLoglik"
 ```
 
 ```r
@@ -603,7 +493,7 @@ mixseLoglik(bhat2.test, test2.ash1$fitted.g$pi, test2.ash1$fitted.g$mean, test2.
 ```
 
 ```
-## Error: object 'test2.ash1' not found
+## Error: could not find function "mixseLoglik"
 ```
 
 ```r
@@ -612,7 +502,7 @@ mixseLoglik(bhat2.test, test2.ash2$fitted.g$pi, test2.ash2$fitted.g$mean, sqrt(t
 ```
 
 ```
-## Error: object 'test2.ash2' not found
+## Error: could not find function "mixseLoglik"
 ```
 
 
@@ -710,7 +600,7 @@ beta.ash = ash(betahat, sebetahat)
 ```
 
 ```
-## Error: could not find function "ash"
+## Warning: NaNs produced
 ```
 
 ```r
@@ -723,26 +613,12 @@ Now we want to see how the results compare
 ```r
 
 attach(beta.ash)
-```
-
-```
-## Error: object 'beta.ash' not found
-```
-
-```r
 conf = ifelse(PositiveProb > 0.5, PositiveProb, 1 - PositiveProb)
-```
-
-```
-## Error: object 'PositiveProb' not found
-```
-
-```r
 sum(conf > 0.95)
 ```
 
 ```
-## Error: object 'conf' not found
+## [1] 1133
 ```
 
 ```r
@@ -763,7 +639,9 @@ table(err[conf > 0.95])
 ```
 
 ```
-## Error: object 'conf' not found
+## 
+## FALSE 
+##  1133
 ```
 
 ```r
@@ -784,17 +662,10 @@ table(err[qq$qvalues < 0.05])
 
 
 plot(cumsum(err[order(qq$qvalues)]), type = "l")
-```
-
-![plot of chunk unnamed-chunk-19](figure/unnamed-chunk-19.png) 
-
-```r
 lines(cumsum(err[order(conf, decreasing = TRUE)]), col = 2)
 ```
 
-```
-## Error: object 'conf' not found
-```
+![plot of chunk unnamed-chunk-19](figure/unnamed-chunk-19.png) 
 
 
 
