@@ -1,0 +1,60 @@
+```{r}
+  require(ashr)
+  hh = read.table("../data/nejm_brca_release_edit.csv",sep=",",skip=3)
+  subset = apply(hh, 1, max)<20
+  hh = hh[subset,]
+
+  labs = read.table("../data/nejm_brca_release_edit.csv",sep=",",skip=1,nrows=1)
+  labs = 1*(labs=="BRCA1") + 2 * (labs=="BRCA2") 
+
+  hh.betahat = apply(hh[,labs==1],1,mean) - apply(hh[,labs==2],1,mean)
+  n1 = sum(labs==1)
+  n2 = sum(labs==2)
+  hh.sebetahat = sqrt(apply(hh[,labs==1],1,var)/n1 + apply(hh[,labs==2],1,var)/n2)
+  hh.zscore = hh.betahat/hh.sebetahat
+  hh.pval = pchisq(hh.zscore^2,df=1,lower.tail=F)
+  hist(hh.pval,probability=TRUE,xlab="p value",main="Distribution of p values for Hedenfalk et al data",nclass=40,col=5)
+  hh.q = qvalue(hh.pval)
+  abline(h=hh.q$pi0,col=2,lwd=2)
+  sum(hh.q$q<0.05)
+  
+```
+
+Here lambda1>1,lambda2>0 allows for an "inflation factor": betahat is N(beta,lambda1*sebetahat+lambda2) or in other words, betahat is the sum of beta
+and a "confounding" beta, which is distributed as N(0,(lambda1-1) sebetahat +lambda2)
+
+```{r}
+  hh.ash1.0 = ash(hh.betahat,hh.sebetahat,lambda1=1)
+  hh.ash1.1 = ash(hh.betahat,hh.sebetahat,lambda1=1.1)
+  hh.ash1.2 = ash(hh.betahat,hh.sebetahat,lambda1=1.2)
+  hh.ash1.5 = ash(hh.betahat,hh.sebetahat,lambda1=1.5)
+  hh.ash2.0 = ash(hh.betahat,hh.sebetahat,lambda1=2.0)
+  cat(get_loglik(hh.ash2.0),get_loglik(hh.ash1.5),get_loglik(hh.ash1.2),get_loglik(hh.ash1.1),get_loglik(hh.ash1.0))
+  
+  plot(hh.ash1.0,-5,5)
+  plot(hh.ash1.1,-5,5)
+  plot(hh.ash1.5,-5,5)
+  plot(hh.betahat/hh.sebetahat,hh.ash2$PositiveProb)
+```
+
+Now try applying empirical null to z scores, expecting that lambda1 won't be
+identifiable. However, there will be a maximum value it can take.
+```{r}
+  hh.ashz1.0 = ash(hh.betahat/hh.sebetahat,1,lambda1=1)
+  hh.ashz1.1 = ash(hh.betahat/hh.sebetahat,1,lambda1=1.1)
+  hh.ashz1.2 = ash(hh.betahat/hh.sebetahat,1,lambda1=1.2)
+  hh.ashz1.5 = ash(hh.betahat/hh.sebetahat,1,lambda1=1.5)
+  hh.ashz1.6 = ash(hh.betahat/hh.sebetahat,1,lambda1=1.6)
+  hh.ashz1.7 = ash(hh.betahat/hh.sebetahat,1,lambda1=1.7)
+  hh.ashz1.8 = ash(hh.betahat/hh.sebetahat,1,lambda1=1.8)
+  hh.ashz1.9 = ash(hh.betahat/hh.sebetahat,1,lambda1=1.9)
+
+  hh.ashz2.0 = ash(hh.betahat/hh.sebetahat,1,lambda1=2.0)
+  cat(get_loglik(hh.ashz2.0),get_loglik(hh.ashz1.9),get_loglik(hh.ashz1.8),get_loglik(hh.ashz1.7),get_loglik(hh.ashz1.6),get_loglik(hh.ashz1.5),get_loglik(hh.ashz1.2),get_loglik(hh.ashz1.1),get_loglik(hh.ashz1.0))
+  
+  plot(hh.betahat/hh.sebetahat,hh.ashz1.6$PositiveProb)
+  points(hh.betahat/hh.sebetahat,hh.ashz1.5$PositiveProb,col=2)
+```
+
+
+

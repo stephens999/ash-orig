@@ -1,7 +1,11 @@
+ashr
 base
 Biobase
 BiocGenerics
 DSS
+fdrtool
 knitr
 locfdr
+mixfdr
 qvalue
+truncnorm

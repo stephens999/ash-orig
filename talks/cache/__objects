@@ -1,20 +1,72 @@
-unnamed-chunk-1	x	xx
-unnamed-chunk-2
-unnamed-chunk-3	cc	cc.assoc	cc.assoc.high	g	highxp	ngene	pval	pval.high	qval	qval.high	tscore	ttest.pval	zdat	zdat.ash	zdat.ash.high	zdat.high
-unnamed-chunk-4	designs	g	seqData	.Random.seed
-unnamed-chunk-5
-unnamed-chunk-6	h	qval
-unnamed-chunk-7
-unnamed-chunk-8	h	qval.low
-unnamed-chunk-9	h
-unnamed-chunk-10
-unnamed-chunk-11	t
-unnamed-chunk-12
+unnamed-chunk-1	altcol	hh	hh.betahat	hh.pval	hh.sebetahat	hh.zscore	labs	n1	n2	nc	ncz	nullcol	subset
+unnamed-chunk-2	hh.hist	nc
+unnamed-chunk-3	hh.hist	hh.q	nc
+unnamed-chunk-4	hh.hist	hh.q	nc
+unnamed-chunk-5	x	xx	alphahat	applyash.zdat	applythresh.zdat	bintest	bintest.haar	bintest.haar.byrow	bintest.haar.byrow.zscore	bintest.lm	bintest.matrix	bintest.new	bintest.single	bintest.single.vector	bintest.single.vector.zscore	bintest.single.zscore	compute.allmu	compute.alpha	compute.mu	counts.associate	effect.plots	f1	f2	fill.nas	get.coeff	glm.approx	glm.binomial.wrapper	glm.binomial.wrapper.new	haar.aggregate	safe.lm.glm	safe.quasibinomial.glm	safe.quasibinomial.glm.fit	tfmom.mn	tfmom.norm	v3	vla	vp	vpp	vppp	vs	vss
+unnamed-chunk-6
+unnamed-chunk-7	cc	cc.assoc	cc.assoc.high	g	highxp	ngene	pval	pval.high	qval	qval.high	tscore	ttest.pval	zdat	zdat.ash	zdat.ash.high	zdat.high
+unnamed-chunk-8	h
+unnamed-chunk-9
+unnamed-chunk-1	altcol	hh	hh.betahat	hh.pval	hh.sebetahat	hh.zscore	labs	n1	n2	nc	ncz	nullcol	subset
+unnamed-chunk-1	altcol	hh	hh.betahat	hh.pval	hh.sebetahat	hh.zscore	labs	n1	n2	nc	ncz	nullcol	subset
+unnamed-chunk-1	altcol	hh	hh.betahat	hh.pval	hh.sebetahat	hh.zscore	labs	n1	n2	nc	ncz	nullcol	subset
 session-info
-unnamed-chunk-13
-unnamed-chunk-14
-unnamed-chunk-15
+unnamed-chunk-1	altcol	hh	hh.betahat	hh.pval	hh.sebetahat	hh.zscore	labs	n1	n2	nc	ncz	nullcol	subset
+unnamed-chunk-1	altcol	hh	hh.betahat	hh.pval	hh.sebetahat	hh.zscore	labs	n1	n2	nc	ncz	nullcol	subset
+unnamed-chunk-1	altcol	hh	hh.betahat	hh.pval	hh.sebetahat	hh.zscore	labs	n1	n2	nc	ncz	nullcol	subset
+unnamed-chunk-1	altcol	hh	hh.betahat	hh.pval	hh.sebetahat	hh.zscore	labs	n1	n2	nc	ncz	nullcol	subset
+unnamed-chunk-1	altcol	hh	hh.betahat	hh.pval	hh.sebetahat	hh.zscore	labs	n1	n2	nc	ncz	nullcol	subset
+unnamed-chunk-1	altcol	hh	hh.betahat	hh.pval	hh.sebetahat	hh.zscore	labs	n1	n2	nc	ncz	nullcol	subset
+unnamed-chunk-1	altcol	hh	hh.betahat	hh.pval	hh.sebetahat	hh.zscore	labs	n1	n2	nc	ncz	nullcol	subset
+unnamed-chunk-1	altcol	hh	hh.betahat	hh.pval	hh.sebetahat	hh.zscore	labs	n1	n2	nc	ncz	nullcol	subset
+unnamed-chunk-1	altcol	hh	hh.betahat	hh.pval	hh.sebetahat	hh.zscore	labs	n1	n2	nc	ncz	nullcol	subset
+unnamed-chunk-1	altcol	hh	hh.betahat	hh.pval	hh.sebetahat	hh.zscore	labs	n1	n2	nc	ncz	nullcol	subset
+unnamed-chunk-1	altcol	hh	hh.betahat	hh.pval	hh.sebetahat	hh.zscore	labs	n1	n2	nc	ncz	nullcol	subset
+unnamed-chunk-1	altcol	hh	hh.betahat	hh.pval	hh.sebetahat	hh.zscore	labs	n1	n2	nc	ncz	nullcol	subset
+unnamed-chunk-1	altcol	hh	hh.betahat	hh.pval	hh.sebetahat	hh.zscore	labs	n1	n2	nc	ncz	nullcol	subset
+unnamed-chunk-1	altcol	hh	hh.betahat	hh.pval	hh.sebetahat	hh.zscore	labs	n1	n2	nc	ncz	nullcol	subset
+unnamed-chunk-1	altcol	hh	hh.betahat	hh.pval	hh.sebetahat	hh.zscore	labs	n1	n2	nc	ncz	nullcol	subset
+unnamed-chunk-1	altcol	hh	hh.betahat	hh.pval	hh.sebetahat	hh.zscore	labs	n1	n2	nc	ncz	nullcol	subset
+unnamed-chunk-1	altcol	hh	hh.betahat	hh.pval	hh.sebetahat	hh.zscore	labs	n1	n2	nc	ncz	nullcol	subset
+unnamed-chunk-1	altcol	hh	hh.betahat	hh.pval	hh.sebetahat	hh.zscore	labs	n1	n2	nc	ncz	nullcol	subset
+unnamed-chunk-1	altcol	hh	hh.betahat	hh.pval	hh.sebetahat	hh.zscore	labs	n1	n2	nc	ncz	nullcol	subset
+unnamed-chunk-1	altcol	hh	hh.betahat	hh.pval	hh.sebetahat	hh.zscore	labs	n1	n2	nc	ncz	nullcol	subset
+unnamed-chunk-1	altcol	hh	hh.betahat	hh.pval	hh.sebetahat	hh.zscore	labs	n1	n2	nc	ncz	nullcol	subset
+unnamed-chunk-1	altcol	hh	hh.betahat	hh.pval	hh.sebetahat	hh.zscore	labs	n1	n2	nc	ncz	nullcol	subset
+unnamed-chunk-1	altcol	hh	hh.betahat	hh.pval	hh.sebetahat	hh.zscore	labs	n1	n2	nc	ncz	nullcol	subset
+unnamed-chunk-1	altcol	hh	hh.betahat	hh.pval	hh.sebetahat	hh.zscore	labs	n1	n2	nc	ncz	nullcol	subset
+unnamed-chunk-1	altcol	hh	hh.betahat	hh.pval	hh.sebetahat	hh.zscore	labs	n1	n2	nc	ncz	nullcol	subset
+unnamed-chunk-1	altcol	hh	hh.betahat	hh.pval	hh.sebetahat	hh.zscore	labs	n1	n2	nc	ncz	nullcol	subset
+unnamed-chunk-1	altcol	hh	hh.betahat	hh.pval	hh.sebetahat	hh.zscore	labs	n1	n2	nc	ncz	nullcol	subset
+unnamed-chunk-2	hh.hist	nc
+unnamed-chunk-10	h	pval.low	qval.low
+unnamed-chunk-11	h
+unnamed-chunk-12
+unnamed-chunk-13	hh.fdrtool	hh.locfdr	hh.mixfdr
+unnamed-chunk-14	hh.hist	hh.q	nc
+unnamed-chunk-15	nullalthist
 unnamed-chunk-16
 unnamed-chunk-17
-unnamed-chunk-18
-unnamed-chunk-19
+unnamed-chunk-18	x
+unnamed-chunk-19	x
+unnamed-chunk-20	x
+unnamed-chunk-21	x
+unnamed-chunk-22	hh.ash	hh.ash.hu
+unnamed-chunk-23	h	x
+unnamed-chunk-24
+unnamed-chunk-25
+unnamed-chunk-26	hh.ash.fdr	hh.ash.shrink
+unnamed-chunk-27
+unnamed-chunk-28
+unnamed-chunk-29
+unnamed-chunk-30	t
+unnamed-chunk-31
+unnamed-chunk-32
+unnamed-chunk-33
+unnamed-chunk-34
+unnamed-chunk-35
+unnamed-chunk-36
+unnamed-chunk-37
+unnamed-chunk-38
+unnamed-chunk-39
+unnamed-chunk-40

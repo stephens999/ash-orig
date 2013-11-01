@@ -159,6 +159,11 @@ $p_j$, and then use now-standard methods to select a $p$ value threshold to cont
 
 There are two issues with this approach that I would like to address here. The first is that it really does not take proper account of the measurement errors. To see this, consider an example where half the measurements are quite precise, and the other half are really, really, poor. Intuitively, the poor measurements tell us nothing, and any sane analysis should effectively ignore them. However, in a standard FDR-type analysis, these poor measurements add ``noise" and affect estimated FDRs. This is because the $p$ values from the poor measurements will be effectively uniformly distributed, and some will be significant at any given threshold. 
 
+The second issue is that directly modeling the p values, say via non-parametric methods, without taking account of their precision, 
+can lead to unrealistic distributions being fitted. Put another way, because z scores are the result of adding noise to some
+distribution, the range of distributions they can take is limited Using entirely non-parametric methods loses this information.
+The solution is to model beta hat as a convolution of some distribution g and an error component.
+
 The initial goal of the ASH (Adaptive SHrinkage) project is to provide simple, generic, and flexible methods to derive ``shrinkage-based" estimates and credible intervals for unknown quantities $\beta=(\beta_1,\dots,\beta_J)$, given only estimates of those quantities ($\hat\beta=(\hat\beta_1,\dots, \hat\beta_J)$) and their corresponding estimated standard errors ($s=(s_1,\dots,s_J)$). 
 
 Although shrinkage-based estimation can be motivated in various ways, our key goal here is to combine information across the multiple measurements $j=1,\dots,J$ to improve inference for each individual $\beta_j$. By improved inference, we mean both
@@ -258,6 +263,19 @@ These conditional distributions can be conveniently summarized
 in various ways, including point estimates (e.g. the posterior means or medians),
 and credible intervals/regions.
 
+Efron (2008) states ``most of the z-values near zero come from null genes"
+His main aim in making this assumption is to estimate an empirical null though (not assume N(0,1) for the null)
+rather than to impose identifiability.
+
+
+By modeling the z scores directly under the alternative, rather than the z scores as being the truth plus noise,
+maybe that is what is most problematic? Because the resulting distribution of z scores is just not possible.
+
+Note that \cite{muralidharan:2012} models $z$ scores as something plus noise under both $H_0$ and $H_1$, which
+avoids this problem. (DOes the same maybe apply to modeling beta, rather than z scores, when the errors vary?)
+
+
+Rice and Spiegelhalter - BRCA data?
 
 The key components of this hierarchical model
 are the distribution $g$ and the likelihood $L(\beta_j; \hat\beta_j, s_j)$. We make the following choices for these.
