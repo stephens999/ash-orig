@@ -1,0 +1,406 @@
+% Adaptive Shrinkage and False Discovery Rates by Laplace Approximation
+% Matthew Stephens
+% 2013/5/13
+
+```{r setup, include=FALSE}
+# set global chunk options
+opts_chunk$set(cache=TRUE,autodep=TRUE)
+dep_auto()
+library("qvalue")
+```
+
+# Outline
+
+* Prelude
+* Allegro (ma non troppo)
+* Coda
+
+# Prelude
+
+- Consider testing the null hypothesis $H_0: \beta=0$, vs the alternative $H_1: \beta \neq 0$ in the
+logistic regression model:
+$$\log \frac{p(Y_i=1|X_i=x)}{p(Y_i=0|X_i=x)}  = \mu + x \beta$$
+
+- Specifically, consider computing the Bayes Factor
+$$BF:=\frac{p(Y | X, H_1)}{p(Y| X ,H_0)}.$$
+
+- In genome-wide association studies, we may wish to do this 
+for millions of different genetic variants ($X$).
+
+# Prelude
+
+$$BF= \frac{\int p(Y | \mu, \beta, X) p_1(\mu,\beta | X) \, d\mu d\beta}{\int p(Y | \mu, \beta=0, X) p_0(\mu | X) \, d\mu},$$
+where $p_0$ and $p_1$ denote priors under $H_0$ and $H_1$.
+
+- These integrals generally don't have closed forms, but being 
+low-dimensional they are simple to approximate.
+
+- For $p_1: \beta \sim N(0,\phi^2)$, 
+Wakefield, 2009 (see also Johnson, 2008) suggested a particularly simple \emph{Approximate Bayes Factor} (ABF)
+based on the maximum likelihood estimate, $\hat\beta$, and 
+its (estimated) standard error $s$.
+
+# Prelude
+
+$$ABF = \sqrt{1-k} \exp(0.5 k T^2)$$
+where $k:= \phi^2/(s^2 + \phi^2)$ and $T:= \hat\beta/s$.
+
+- ABF arises if we assume $\hat{\beta} | s, \beta \sim N(\beta, s^2)$ and treat $\hat{\beta}$ as the observed ``data".
+
+- Equivalently ABF can be derived as a ``Laplace approximation",
+approximating the likelihood
+$L(\beta)$ as Normal, centered on $\hat\beta$,
+with variance $s^2$: $$L(\beta) \propto \exp[- 0.5(\beta-\hat\beta)^2/s^2].$$
+
+# Comments on ABF
+
+* This is not the moxt accurate Laplace approximation one might consider.
+
+* However, it has some nice features.  
+    * The approximation is independent of prior.
+    * Applicable to any regression where $\hat\beta$ and $s$ are available.
+    * Easily computed using results of standard software or published analyses (e.g. CI).
+
+* A simple transformation of $T$ can improve accuracy for small samples (analagous to $t$ test vs $Z$ test); Wen and Stephens, Arxiv. 
+
+# Extensions of ABF
+
+- Similar ideas can be used to compute 
+ABFs in slightly more complex settings.
+
+- Eg In Wen and Stephens, we consider
+$S$ subgroups, and approximate the BF for
+$H_0: \beta_s =0$ for all $s$, vs a general alternative
+$H_0: \beta_s \neq 0$.
+
+# Allegro (ma non troppo)
+
+- The problem: you have imperfect measurements
+of many ``similar" things, and wish to estimate their values. 
+
+- Particularly common in genomics. For example,
+ a very common goal is to compare the mean
+expression (activity) level of many genes in two conditions.
+
+
+# Example: Mouse Heart Data
+
+```{r, echo=FALSE}
+setwd("~/Documents/git/ash/talks/")
+## load Poisson_binomial and ash functions 
+source("../../stat45800/code/Rcode/PoissonBinomial.funcs.R")  
+source("../Rcode/ash.R") 
+
+x = read.table(paste0("../../stat45800/data/nobrega/expression/counts.txt"), header = TRUE)
+xx = rowSums(x[,2:5])
+x = x[xx>0,]
+xx = xx[xx>0]
+```
+
+- Data on 150 mouse hearts, dissected into left and right ventricle
+(courtesy Scott Schmemo, Marcelo Nobrega)
+
+```{r echo=FALSE}
+head(x)
+```
+
+
+
+```{r, echo=FALSE}
+
+cc = x[, 2:5]
+
+g = c(-1, -1, 1, 1)
+ngene = dim(x)[1]
+
+cc.assoc = counts.associate(cc, g, 1)
+zdat.ash = cc.assoc$zdat.ash
+zdat = cc.assoc$zdat
+
+# two-sided test
+ttest.pval = function(t, df) {
+    pval = pt(t, df = df, lower.tail = T)
+    pval = 2 * ifelse(pval < 0.5, pval, 1 - pval)
+    return(pval)
+}
+
+tscore = zdat[3, ]/zdat[4, ]
+pval = ttest.pval(tscore, df = 2)
+qval = qvalue(pval)
+
+highxp = xx>1000 # select high expressed genes
+pval.high = pval[highxp]
+qval.high = qvalue(pval.high)
+cc.assoc.high = counts.associate(cc[highxp,],g,1)
+zdat.ash.high = cc.assoc.high$zdat.ash
+zdat.high = cc.assoc.high$zdat
+
+```
+
+```{r}
+library("DSS")
+names(g)=colnames(cc)
+designs=c(0,0,1,1)
+names(designs)=colnames(cc)
+seqData=newSeqCountSet(as.matrix(cc), designs)
+seqData=estNormFactors(seqData)
+seqData=estDispersion(seqData)
+result=waldTest(seqData)
+#note I edited waldTest to output std
+z.dss=result$difExpr/result$std
+z.dss[result$geneIndex]=result$difExpr/result$std
+```
+
+
+
+# False Discovery Rate analyses
+
+- Standard practice: analyses use False Discovery Rates 
+
+    - e.g. Benjamini and Hochberg, 1995; Storey and Tibshirani, 2003, which have roughly 18k and 4k citations respectively!
+
+- Typical analysis proceeds roughly as follows:
+
+    - Estimate an effect size $\beta_j$ and standard error $s_j$ for each gene. 
+
+    - Convert this to a $p$ value for each gene, e.g. by a $t$ test on $\beta_j/s_j$.
+
+    - Use the distribution of $p$ values to estimate the false discovery rate (FDR) at a given threshold.
+
+# False Discovery Rates
+
+```{r, echo=FALSE,fig.height=4,fig.cap=""}
+hist(pval,prob=TRUE,main="p value distribution, all genes",ylim=c(0,4),xlab="p value")
+abline(h=qval$pi0,col="red",lwd=2)
+
+```
+
+# False Discovery Rates
+
+```{r, echo=FALSE,fig.height=4,fig.cap="FDR=0.21"}
+h=hist(pval,prob=TRUE,main="p value distribution, all genes",ylim=c(0,4),xlab="p value")
+qval = qvalue(pval)
+abline(h=qval$pi0,col="red",lwd=2)
+rect(0,0,0.05,qval$pi0,col="red")
+rect(0,qval$pi0,0.05,h$intensities[1],col="green")
+abline(v=0.05,lwd=3)
+```
+
+# FDR problem: different genes have different precision/power
+
+```{r, echo=FALSE,fig.height=4,fig.cap=""}
+hist(log10(xx),main="Counts vary considerably across genes", xlab="log10(counts)")
+```
+
+
+# FDR problem: lower count genes, less power, add noise
+
+```{r, echo=FALSE,fig.height=4,fig.cap=""}
+h=hist(pval[xx<1000],prob=TRUE,ylim=c(0,4),main="p values, low count genes",xlab="p value",breaks=seq(0,1,length=21))
+qval.low=qvalue(pval[xx<1000])
+abline(h=qval.low$pi0,col="red",lwd=2)
+rect(0,0,0.05,qval.low$pi0,col="red")
+abline(v=0.05,lwd=3)
+```
+
+
+
+# FDR problem: higher count genes, more power
+```{r, echo=FALSE, fig.height=4,fig.cap="FDR=0.10"}
+
+h=hist(pval.high,prob=TRUE,ylim=c(0,4),main="p values, high count genes",xlab="p value")
+
+abline(h=qval.high$pi0,col="red",lwd=2)
+rect(0,0,0.05,qval.high$pi0,col="red")
+rect(0,qval.high$pi0,0.05,h$intensities[1],col="green")
+abline(v=0.05,lwd=3)
+#qval.high$q[pval.high<0.05] gives FDR for p<0.05
+```
+
+
+# Adaptive Shrinkage
+
+- Fundamental idea: use hierarchical modelling so measurements of $\beta_j$ for each gene improve inference for $\beta$ at other genes.
+
+- Despite a long-standing literature on these types of methods - e.g. Greenland and Robins 1991, Efron and Tibshirani 2002, Gelman et al 2012 -  they are much less widely used (in genomics at least).
+
+- Possibly this is due, in part, to the lack of a simple, flexible, and generic implementation?
+
+# Generic adaptive shrinkage via Laplace approximation
+
+- Summarize data on each gene by two numbers, $\hat\beta_j$ and its standard error $s_j$. (a la Wakefield; Greenland and Robins 1991)
+
+- Approximate likelihood for $\beta_j$ by 
+$$L(\beta_j) \propto \exp(-0.5 (\beta_j - \hat\beta_j)^2/s_j^2).$$
+(``Laplace Approximation")
+
+- Borrow information by assuming $\beta_j$ are iid $\sim g(\cdot; \pi)$, where $\pi$ are hyperparameters to be estimated.
+
+- Letting $g(\cdot; \pi)$ be a mixture of normal distributions provides
+both flexibility, and analytic calculations.
+    
+    - very small variances can capture effects that are ``effectively" zero.
+
+# An important special case
+
+- Focus on the special case where $g(\cdot; \pi)$ can be
+assumed unimodal and symmetric about zero.
+
+- Then the posterior mean, $E(\beta_j | \hat\beta, s, \hat\pi)$ is a ``shrinkage" estimate of $\beta_j$.
+
+- And $p(\beta_j > 0 | \hat\beta, s, \hat\pi)$ can be used
+to identify $j$ for which the sign of $\beta_j$ can be confidently determined (analogous to test of $\beta_j =0$; Gelman et al, 2012).
+
+- Because $\pi$ is estimated from the data, the amount
+of shrinkage is adaptive to the data. And because of the role of $s_j$, the amount of shrinkage adapts to the information on each gene.
+
+# Example: ASH applied to mouse data
+
+```{r fig.height=4,echo=FALSE,fig.cap=""}
+hist(zdat[3,],main="Raw effect size estimates",xlab="betahat",xlim=c(-2,2),prob=T,ylim=c(0,3))
+```
+
+# Example: ASH applied to mouse data
+
+```{r fig.height=4,echo=FALSE,fig.cap=""}
+hist(zdat[3,],main="Raw effect size estimates",xlab="betahat",xlim=c(-2,2),prob=T,ylim=c(0,3))
+t=seq(-2,2,length=201)
+lines(t,dnorm(t,0,sd=0.032), col=2, lwd=2)
+```
+
+# Example: ASH applied to mouse data
+
+```{r fig.height=4,echo=FALSE,fig.cap=""}
+hist(zdat.ash$PosteriorMean,main="Shrunken estimates",xlab="shrunk betahat",xlim=c(-0.1,0.1),prob=T)
+lines(t,dnorm(t,0,sd=0.032), col=2, lwd=2)
+```
+
+
+# Shrinkage is adaptive to information
+
+```{r, echo=FALSE,fig.height=4}
+#hist(zdat[3,])
+#plot(zdat[3,],zdat.ash$PosteriorMean,xlim=c(-0.2,0.2))
+#points(zdat[3,16677],zdat.ash$PosteriorMean[16677],col=2,pch=16)
+#points(zdat[3,16079],zdat.ash$PosteriorMean[16079],col=2,pch=16)
+#x[16677,]
+#x[16079,]
+```
+
+
+```{r, echo=FALSE}
+#temp = counts.associate(cc,c(-1,1,-1,1),1)
+#temp.tscore = temp$zdat[3,]/temp$zdat[4,]
+#temp.pval = ttest.pval(temp.tscore,df=2)
+#plot(temp$zdat.ash$localfdr,temp.pval)
+#identify(temp$zdat.ash$localfdr,temp.pval)
+```
+
+```{r, echo=FALSE,fig.height=3,fig.width=3,fig.cap=""}
+plot(zdat.ash$localfdr,pval,ylab="p value", xlab="ASH local fdr")
+```
+
+# Shrinkage is adaptive to information
+
+```{r, echo=FALSE,fig.height=3,fig.width=3,fig.cap=""}
+plot(zdat.ash$localfdr,pval,ylab="p value", xlab="ASH local fdr")
+points(zdat.ash$localfdr[15325],pval[15325],col=2,pch=16)
+points(zdat.ash$localfdr[16123],pval[16123],col=2,pch=16)
+```
+
+# Shrinkage is adaptive to information
+
+```{r, echo=FALSE}
+cbind(x[,1:5],pval,zdat.ash$localfdr)[c(15325,16123),]
+```
+
+# Summary: FDR vs ASH
+
+- Both provide a rational approach to identifying ``significant" findings.
+
+- Both are generic and modular: once you have the summary data, you can forget where they came from.  
+
+- But by using two numbers ($\hat\beta,s$) instead of one ($p$ values) precision of different measurements 
+can be better accounted for.
+
+- ASH borrows information for estimation, as well as testing.
+
+# Other Applications
+
+- Widely applicable: perhaps anywhere (?) 
+where shrinkage is appropriate, requiring only an estimated
+effect size and standard error for each object.
+
+- Could also use effect size estimate and $p$ value for each variable, by converting to effect size estimate and (pseudo-) standard error.
+
+- Currently applying it to wavelet shrinkage applications.
+
+
+# Guarantees?
+
+- ``I think you have some nice ideas. How will you convince
+people to use them?" (C Morris)
+
+# Next steps?
+
+- Extend to allow $g(\cdot;\pi)$ to depend on covariates $X$.
+
+- Extend to allow for correlations in the measured $\hat\beta_j$.
+
+# Coda: Other i-like related work
+
+- Bayesian variable selection for large-scale linear regression.
+
+- BSLMM: $$Y = X \beta + \epsilon,$$ with $\beta_j \sim 
+\pi N(0,\sigma_b^2) + (1-\pi) N(0,\sigma_a^2+\sigma_b^2)$.
+
+- Particular focus on prior specification (reparameterize in 
+terms of regression $R^2$).
+
+- BSLMM software, runs with thousands of individuals, hundreds
+of thousands of variables. (Zhou et al, PloS Genetics 2013)
+
+- Also variational approximations (Carbonetto and Stephens, Bayesian Analysis, 2012)
+
+
+# Thanks
+
+- to the several postdoctoral researchers and students
+who have worked with me on related topics.
+
+- Especially: William Wen, Timothee Flutre, Scott Powers, Heejung Shim, Zhengrong Xing, and Ester Pantaleo.
+
+- And to the NIH for funding, and i-like for inviting me.
+
+# Reproducible research
+
+- This document is produced with **knitr**, **Rstudio** and **Pandoc**.
+
+- For more details see my \tt{stephens999/ash} repository at http://www.github.com/stephens999/ash
+
+- Website: http://stephenslab.uchicago.edu
+
+# Pandoc Command used
+
+pandoc -s -S -i --template=my.beamer -t beamer -V theme:CambridgeUS -V colortheme:beaver  ilike-slides.md -o ilike-slides.pdf
+
+Here is my session info:
+
+```{r session-info}
+print(sessionInfo(), locale=FALSE)
+```
+
+
+# FDRs for higher count genes affected by lower count genes
+
+```{r,echo=FALSE,fig.height=4,fig.cap=""}
+plot(qval.high$q, qval$q[xx>1000],main="",xlab="FDR, high count genes", ylab="FDR, all genes")
+```
+
+
+# Some odd things in the data
+
+```{r, echo=FALSE,fig.height=3,fig.width=3}
+  plot(zdat[3,],zdat[4,],ylab="standard error",xlab="beta-hat")
+  x[tail(order(zdat[3,])),]
+```

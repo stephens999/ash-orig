@@ -178,6 +178,44 @@ plot(z.kerneld$x,z.kerneld$y-dnorm(z.kerneld$x)*0.6,type="l")
 abline(h=0)
 ```
 
+Try resampling the z scores from the alternative:
+```{r}
+  require(locfdr)
+  hh.locfdr = locfdr(hh.zscore,nulltype=0)
+  weights = 1-hh.locfdr$fdr
+  altz = hh.zscore[runif(length(weights))<weights]
+  hist(altz)
+```
+
+Directly modelling the z scores, without taking account of their errors,
+leads to distributions under the
+alternative that are simply implausible.
+```{r}
+  require("mixfdr")
+  source("~/Documents/git/ash/Rcode/mix.R")
+  altz.mixfdr = mixFdr(altz,noiseSD=1,J=100)
+  g= normalmix(altz.mixfdr$pi,altz.mixfdr$mu,altz.mixfdr$sigma)
+  x= seq(-8,8,length=100)
+  par(mfcol=c(1,1))
+  hist(altz,breaks = x,prob=TRUE)
+  lines(x,dens(g,x),col=2)
+```
+
+Directly modelling the p values is maybe even worse?
+Here we fit a monotonic decreasing function to the p values.
+Then we subtract the uniform distribution (the null) away from this, to
+give the alternative. 
+```{r}
+  hist(hh.pval,probability=TRUE,xlab="p value",main="Distribution of p values for Hedenfalk et al data",nclass=40,col=5)
+  require(fdrtool)
+  hh.fdrtool = fdrtool(hh.pval,statistic="pvalue")
+  weights2 = 1-hh.fdrtool$lfdr
+  altz2 = hh.zscore[runif(length(weights2))<weights2]
+  hist(altz2,nclass=100)
+  hist(altz,nclass=100)
+  plot(hh.zscore,hh.locfdr$fdr)
+  points(hh.zscore,hh.fdrtool$lfdr,col=2)
+```
 
 ### Errors in sign, and true 0s
 
