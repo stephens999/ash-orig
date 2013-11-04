@@ -1,12 +1,10 @@
 #This is a R port of the original BMSMShrink function by Kolaczyk, with some modifications and improvements
 
-course.repodir=scan(".course.repodir.txt",what=character()) 
-ash.repodir = scan(".ash.repodir.txt",what=character()) #say where on your computer you have the BayesFDR repo
-source(file.path(course.repodir,"code/Rcode/PoissonBinomial.funcs.R")) #Set the directory in the R file to correspond to personal directory as well
-source(file.path(ash.repodir,"/Rcode/ash.R"))
-source(file.path(course.repodir,"code/Rcode/log_exp_plus_one_of_mixture_of_gaussians_moments.R")) 
-source(file.path(course.repodir,"code/Rcode/deltamethod.R")) 
+
+ash.repodir = scan(".ash.repodir.txt",what=character())
 source(file.path(ash.repodir,"/Rcode/bash.R")) 
+require(Rcpp)
+require(inline)
 
 #interleave two vectors
 interleave=function(x,y){
@@ -57,6 +55,65 @@ ParentTItable=function(sig){
   }
   return(list(TItable=dmat,parent=dmat2))
 }
+
+
+
+#inc <- '#include <cmath>
+#        NumericVector rshift(NumericVector x){
+#          L=x.size; 
+#          double xx=x(L);
+#          x.erase(L);
+#          x.insert(x.begin(),xx);
+#          return(x)
+#        }
+#        NumericVector lshift(NumericVector x){
+#          double xx=x(1);
+#          x.erase(1);
+#          x.insert(x.end(),xx)
+#          return(x)
+#        }
+#        '
+
+
+#cxxParentTItable
+#cxxParentTItable implements ParentTItable in C++
+#note that input to cxxParentTItable is an nsig by n matrix sig
+#while input to ParentTItable is a 1 by n vector instead
+#src is a string containing the C++ code
+src <- '
+        NumericVector signal=sig; 
+        int n=(int) signal.size();
+        int J=(int) log2((double)n);
+
+        NumericMatrix parent(J,2*n);
+        NumericMatrix TItable(J+1,n);
+        TItable(0,_) = signal;
+        for (int D=0; D<J; D++){
+           int nD=(int) pow(2., (double) (J-D)), pD=(int) pow(2.,(double) D);
+           for (int l=0; l<pD; l++){
+              int a=l*nD+1, b=2*l*nD+1;
+              double d;
+              for (int i=0; i<nD-1; i++){
+                 d=TItable(D,a+i-1);
+                 parent(D,b+i-1)=d;
+                 parent(D,b+i+nD)=d;
+              }
+              //i=nD-1
+              d=TItable(D,a+nD-2);
+              parent(D,b+nD-2)=d;
+              parent(D,b+nD-1)=d;
+
+              for (int i=0; i<nD; i++)
+                TItable(D+1,a+i-1)=parent(D,b+2*i-1)+parent(D,b+2*i);
+          }
+        }
+        return(List::create(Named("TItable")=TItable, Named("parent")=parent));
+        '
+cxxParentTItable <- cxxfunction(signature(sig="numeric"),
+                                body=src,
+                                plugin="Rcpp",
+                                inc="#include <cmath>")
+
 
 #This function computes the posterior means
 sfunc=function(p,q,x0,x1,mode){
@@ -170,7 +227,7 @@ reverse.pp=function(dmat,pp,qq,mode){
 binshrink=function(x,q,mode,return.est=FALSE){
   n=length(x)
   J=log2(n)
-  titable=ParentTItable(x)
+  titable=cxxParentTItable(x)
   tit=titable$TItable
   ptit=titable$parent
   pp=binash(tit,ptit,q,mode)$p
