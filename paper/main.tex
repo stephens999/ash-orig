@@ -69,6 +69,8 @@
 \newtheorem{note}{Note}
 \newtheorem{definition}{Definition}
 
+\def\lfdr{\text{lfdr}}
+\def\lfsr{\text{lfsr}}
 \def\x{\mbf{x}}
 \def\y{\mbf{y}}
 \def\e{\mbf{e}}
@@ -218,9 +220,10 @@ that the measurements of $\beta_j$ for each gene can be used to improve inferenc
  The two main assumptions we will make here are that 
 * these effects are exchangeable: that is (by de Finetti's theorem) they can be
 thought of as being independent and identically distributed from some unknown distribution $g(\beta)$. 
-* these effects are symmetrically distributed about 0, with density monotonically decaying as we move away from 0.
+* these effects are symmetric and unimodal about 0.
 
-Specifically we will assume a parameteric form for $g$
+
+Specifically we will assume a parametric form for $g$
 as a mixture of 0-centered normal distributions
 
 A key issue I want to address here is that if these measurements are made with different precisions, then we want to
@@ -329,43 +332,45 @@ in $\pi$. Obtaining maximum likelihood estimates for the variances could certain
 be implemented with a little
 more work, but it is unclear whether this would result in practically-important gains in many situations of interest. 
 
-\subsection{The False Sign Rate}
+\subsection{The local False Sign Rate}
 
-The usual definition of the local False Discovery Rate (lfdr) for observation $j$ is
-$\text{lfdr}_j = p(\beta_j = 0 | \hat\beta, s)$.
-The lfdr terminology comes from using "discovery" to refer to rejecting the null ($H_j:\beta_j=0$), so lfdr 
-gives the probability that we make a mistake if we reject
-$H_j$, that is the probability that, if we reject $H_j$,
+The local False Discovery Rate (lfdr) for observation $j$ is
+\begin{equation}
+\lfdr_j = p(\beta_j = 0 | \hat\beta, s).
+\end{equation}
+The lfdr terminology comes from using "discovery" to refer to rejecting the null ($H_j:\beta_j=0$).
+Specifically $\lfdr_j$ is the probability that, if we reject $H_j$,
 it is a  "false discovery".  
 
 As pointed out by \cite{gelman.etal}, there are settings where
 $\beta_j=0$ is implausible, in which case the lfdr is not
 a useful concept: if every $\beta_j$ is non-zero then there
-is no such thing as a false discovery and the lfdr will be 0. Gelman et al suggest that in such settings we
+is no such thing as a false discovery and the lfdr will be identically 0 for all methods. 
+Gelman et al suggest that in such settings we
 might replace the concept of a false discovery with the
 concept of an "error in sign". The idea is that, in settings where $\beta_j=0$ is implausible, the most fundamental
 inference objective is to ask which $\beta_j$ are positive and which are negative. Indeed, even in settings where some
 $\beta_j$ are exactly zero, it could be argued that identifying which are positive and which negative is
-fundamentally more interesting and useful than identifying which are non-zero. However, in such settings this usually comes down to something similar in practice: the observations that one can tell are non-zero are also the ones whose
-sign can be reliably inferred. In this sense the
-local false sign rate is a natural generalization of
-the local false discovery rate.
+fundamentally more interesting and useful than identifying which are non-zero. 
 
-
-Following these ideas of \cite{gelman.etal}, we define the local False Sign Rate (lfsr) as 
-$$\text{lfsr}_j = \min[ p(\beta_j \geq 0| \hat\beta, s), p(\beta_j \leq 0| \hat\beta, s) ].$$
-To give the intuition behind this, suppose for concreteness
-that the minimum is achieved by the first term, $p(\beta_j \geq 0| \hat\beta, s)=0.05$ say. Then, if we were to declare that $\beta_j$ is negative, the probability that we have
+Following these ideas of \cite{gelman.etal}, we define the local False Sign Rate (lfsr) for observation $j$ as 
+\begin{equation}
+\lfsr_j := \min[ p(\beta_j \geq 0| \hat\beta, s), p(\beta_j \leq 0| \hat\beta, s) ].
+\end{equation}
+Thus $\lfsr_j$ gives the probability that we would get the sign of $\beta_j$ wrong if we
+were to make our best guess. (Note that we count it as an error to state that $\beta$ is positive or negative when it is truly zero.)
+To illustrate, suppose for concreteness
+that the minimum is achieved by the first term, $p(\beta_j \geq 0| \hat\beta, s)=0.05$ say. Then
+our best guess would be that $\beta$ is negative, and the probability that we have
 made an error in sign would be 0.05.
 
 Note that $\text{lfsr}_j \geq \text{lfdr}_j$ 
 because both the events $\beta_j \geq 0$
 and $\beta_j \leq 0$ include the event $\beta_j=0$.
-Thus, lfsr gives an upper bound for the lfdr,
-and so can be used as a conservative estimate of the lfdr
-if an lfdr is desired. (This may be helpful when comparing
-with methods that compute an lfdr.)
-In addition, we intuitively expect the difference $\text{lfsr}_j - \text{lfdr}_j$ to be small, at least when $\text{lfdr}_j$ is small, because when we are confident that a particular effect is non-zero we would expect to be similarly confident about the sign of the effect.
+Thus, lfsr gives an upper bound for lfdr.
+
+
+
 
 
 
@@ -387,6 +392,7 @@ distributions in Step 2.
 
 
 \section*{Results}
+
 
 - Illustration that 2 local false sign rate is approximately local fdr.
  

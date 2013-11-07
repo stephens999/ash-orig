@@ -26,7 +26,24 @@ to identify findings ``significant" at a given False Discovery Rate.
 
 - ...?
 
-# Example: BRCA1 vs BRCA2 expression
+
+# FDR, local fdr, and q values
+
+Although precise definitions vary depending on whether one
+takes a Bayesian or Frequentist approach to the problem, roughly
+
+- The FDR at a threshold $P$ is 
+$$\text{FDR}(P)=\Pr(\beta_j = 0 |  p_j<P).$$
+
+- The q value for observation $j$ is $q_j=\text{FDR}(p_j)$.
+
+- The local false discovery rate, fdr, at threshold $P$ is 
+$$\text{fdr}(P) = \Pr(\beta_j =0 | p_j=P ).$$
+
+- The fdr is more relevant, but slightly harder to estimate than 
+FDR because it involves density estimation rather than tail-area estimation.
+
+# Example: FDR estimation
 
 ```{r, echo=FALSE}
   #Set up Analysis of Hedenfalk BRCA data
@@ -54,15 +71,15 @@ to identify findings ``significant" at a given False Discovery Rate.
 ```
 
 
-```{r, echo=FALSE,fig.height=3.5,fig.width=5,fig.cap=""}
+```{r, echo=FALSE,fig.height=4,fig.cap=""}
   nc=40 #number of bins in histogram
   hh.hist=hist(hh.pval,freq=FALSE,xlab="p value",main="Distribution of p values",nclass=nc,col=altcol)
 
 ```
 
-# Example: BRCA1 vs BRCA2 expression
+# Example:  FDR estimation
 
-```{r, echo=FALSE,fig.height=3.5,fig.width=5,fig.cap=""}
+```{r, echo=FALSE,fig.height=4,fig.cap=""}
   nc=40 #number of bins in histogram
   hh.hist=hist(hh.pval,freq=FALSE,xlab="p value",main="Distribution of p values",nclass=nc,col=altcol)
 
@@ -72,13 +89,13 @@ to identify findings ``significant" at a given False Discovery Rate.
   hh.hist$density=rep(hh.q$pi0,length(hh.hist$density))  
   #hh.hist$counts=rep(hh.q$pi0*length(hh.pval)/nc,length(hh.hist$counts)) 
   plot(hh.hist,add=TRUE,col=nullcol,freq=FALSE)
-  
-
 ```
 
-# Example: BRCA1 vs BRCA2 expression
+Data from Hedenfalk et al, comparing BRCA1 vs BRCA2 expression.
 
-```{r, echo=FALSE,fig.height=3.5,fig.width=5,fig.cap=""}
+# Example:  FDR estimation
+
+```{r, echo=FALSE,fig.height=4,fig.cap=""}
   nc=40 #number of bins in histogram
   hh.hist=hist(hh.pval,freq=FALSE,xlab="p value",main="Distribution of p values",nclass=nc,col=altcol)
 
@@ -96,7 +113,55 @@ to identify findings ``significant" at a given False Discovery Rate.
   text(0.6,3,labels=paste0("FDR = B/(A+B) =  ",round(hh.q$pi0*0.1*length(hh.pval)/sum(hh.pval<0.1),2)),cex=1.2)
 ```
 
-# Example 2: Mouse Heart Data
+
+
+# Example: fdr estimation
+
+```{r, echo=FALSE,fig.height=4,fig.cap=""}
+  nc=40 #number of bins in histogram
+  hh.hist=hist(hh.pval,freq=FALSE,xlab="p value",main="Distribution of p values",nclass=nc,col=altcol)
+
+```
+
+# Example: fdr estimation
+
+```{r, echo=FALSE,fig.height=4,fig.cap=""}
+  nc=40 #number of bins in histogram
+  hh.hist=hist(hh.pval,freq=FALSE,xlab="p value",main="Distribution of p values",nclass=nc,col=altcol)
+  
+  require(fdrtool)
+  hh.gren = grenander(ecdf(hh.pval))
+  abline(h=min(hh.gren$f.knots),col=nullcol,lwd=2)  
+  lines(hh.gren$x.knots,hh.gren$f.knots,lwd=2)
+```
+
+# Example: fdr estimation
+
+```{r, echo=FALSE,fig.height=4,fig.cap=""}
+  nc=40 #number of bins in histogram
+  hh.hist=hist(hh.pval,freq=FALSE,xlab="p value",main="Distribution of p values",nclass=nc,col=altcol)
+  
+  require(fdrtool)
+  hh.gren = grenander(ecdf(hh.pval))
+  abline(h=min(hh.gren$f.knots),col=nullcol,lwd=2)  
+  lines(hh.gren$x.knots,hh.gren$f.knots,lwd=2)
+  abline(v=0.1,lwd=2,col=2)
+  text(0.1,0.9,labels="a",col=2,cex=1)  
+  text(0.1,0.34,labels="b",col=2,cex=1.2)  
+  text(0.6,3,labels=paste0("fdr = b/(a+b) =  ",round(min(hh.gren$f.knots)/approx(hh.gren$x.knots,hh.gren$f.knots,0.1)$y,2)),cex=1.2)
+```
+
+# FDR problem 1: different measurement precision
+
+- If some effects are measured very imprecisely, those tests ``lack power"
+and simply add noise
+
+- In particular, such tests increase the estimated number of nulls, and increase
+the FDR for other tests
+
+- It would seem preferable to simply ignore the tests with very low precision. Summarizing each test by a $p$ value (or $Z$ score) loses the information about precision.
+
+# Example: Mouse Heart Data
 
 ```{r, echo=FALSE}
 setwd("~/Documents/git/ash/talks/")
@@ -149,7 +214,7 @@ zdat.high = cc.assoc.high$zdat
 
 ```
 
-# Example 2: Mouse Heart Data
+# Example: Mouse Heart Data
 
 
 ```{r, echo=FALSE,fig.height=4,fig.cap=""}
@@ -161,16 +226,14 @@ abline(v=0.05,lwd=3)
 text(0.6,3,labels=paste0("FDR = ",round(max(qval$qval[pval<0.05]),2)),cex=1.2)
 ```
 
-
-
-# FDR problem 1: different genes have different precision/power
+# Mouse Data: Counts vary considerably across genes
 
 ```{r, echo=FALSE,fig.height=4,fig.cap=""}
-hist(log10(xx),main="Counts vary considerably across genes", xlab="log10(counts)")
+hist(log10(xx),main="Distribution of total counts", xlab="log10(counts)")
 ```
 
 
-# FDR problem 1: lower count genes, less power, add noise
+# Lower count genes, less power
 
 ```{r, echo=FALSE,fig.height=4,fig.cap=""}
 h=hist(pval[xx<1000],prob=TRUE,ylim=c(0,4),main="p values, low count genes",xlab="p value",breaks=seq(0,1,length=21),col=altcol)
@@ -184,7 +247,7 @@ abline(v=0.05,lwd=3)
 ```
 
 
-# FDR problem 1: higher count genes, more power
+# Higher count genes, more power
 ```{r, echo=FALSE, fig.height=4,fig.cap=""}
 
 h=hist(pval.high,prob=TRUE,ylim=c(0,4),main="p values, high count genes",xlab="p value",col=altcol)
@@ -193,16 +256,20 @@ abline(h=qval.high$pi0,col=nullcol,lwd=2)
 h$density=rep(qval.high$pi0,length(h$density))  
 plot(h,col=nullcol,add=TRUE,freq=FALSE)
 abline(v=0.05,lwd=3)
-text(0.6,3,labels=paste0("FDR = ",round(max(qval.high$qval[pval.high<0.05]),2)),cex=1.2)
+#text(0.6,3,labels=paste0("FDR = ",round(max(qval.high$qval[pval.high<0.05]),2)),cex=1.2)
 #qval.high$q[pval.high<0.05] gives FDR for p<0.05
 ```
 
-# FDR problem 1: q values increased by low count genes
+# FDR problem 1: low count genes add noise, increase q values
 ```{r,echo=FALSE, fig.height=4,fig.cap=""}
-plot(qval$qval[xx>1000],qval.high$qval,xlab="q values from all gene analysis", ylab="q values from high-count gene analysis", main="q values for high count genes",xlim=c(0,.5),ylim=c(0,.5))
+plot(qval.high$qval,qval$qval[xx>1000],xlab="q values from high-count gene analysis", ylab="q values from all gene analysis", main="q values for high count genes",xlim=c(0,.5),ylim=c(0,.5))
 abline(a=0,b=1,col=2)
 ```
 
+# FDR problem 1: Summary
+
+- Analyzing $p$ values or $Z$ scores doesn't fully account 
+for measurement precision.
 
 # Problem 2: The Zero Assumption (ZA)
 
@@ -211,7 +278,7 @@ approach assumes that all the $p$ values near 1 are null.
 
 - Analogously, one can assume that all Z scores near 0 are null. Efron refers to this as the ``Zero Assumption".
 
-- This allows us to estimate $\pi_0$ ``conservatively" using the density of $p$ values near 1.
+- The ZA allows us to estimate the null proportion, $\pi_0$, using the density of $p$ values near 1 (or $Z$ scores near 0).
 
 
 # Problem 2: The ZA 
@@ -233,7 +300,7 @@ require(mixfdr)
 
 # Implied distribution of $p$ values under $H_1$
 
-```{r, echo=FALSE,fig.height=3.5,fig.width=5,fig.cap=""}
+```{r, echo=FALSE,fig.height=4,fig.cap=""}
   nc=40 #number of bins in histogram
   hh.hist=hist(hh.pval,freq=FALSE,xlab="p value",main="Distribution of p values",nclass=nc,col=altcol)
 
@@ -294,32 +361,49 @@ standard fdr tools ignore precision of different measurements
 - Also standard tools focus only on zero vs non-zero effects. (eg what if we would
 like to identify genes that have at least a 2-fold change?)
 
-# Proposed Alternative
+# FDR via Empirical Bayes
 
-- Instead of working with $z$ scores or $p$ values, work with two numbers 
-$(\hat\beta_j,s_j)$ for each test.
+- Following previous work (e.g. Newton, Efron, Muralidharan) we take an empirical Bayes approach to FDR.
 
-- *Incorporate the precision* of the observations $\hat\beta$ into the likelihood.
-Specifically, we approximate likelihood for $\beta_j$ by a normal (``Laplace") approximation: 
+- Eg Efron assumes that the $Z$ scores come from a mixture of null, and alternative:
+$$Z_j \sim f_Z(.) = \pi_0 N(.;0,1) + (1-\pi_0) f_1(.)$$
+where $f_1$ is to be estimated from the data.
+
+- Various semi-parametric approaches taken to estimating $f_1$. For example,
+Efron uses Poisson regression; Muralidharan uses mixture of normal distributions.
+
+- $\text{fdr}(Z) \approx \pi_0 N(Z; 0,1)/ f_Z(Z)$
+
+# FDR: The New Deal
+
+- Instead of modelling $Z$ scores, model the effects $\beta$,
+$$\beta_j \sim \pi_0 \delta_0(.) + (1-\pi_0) g(.)$$
+
+- Constrain $g$ to be unimodal about 0.
+
+- *Incorporate precision* of each observation $\hat\beta$ into the likelihood.
+Specifically, approximate likelihood for $\beta_j$ by a normal: 
 $$L(\beta_j) \propto \exp(-0.5 (\beta_j - \hat\beta_j)^2/s_j^2).$$
 [From $\hat\beta_j \sim N(\beta_j, s_j)$]
 
-- *Directly model the underlying distribution of $\beta$*, using a unimodal family of distributions $g$; estimate $g$ from the data.
+- fdr given by $$p(\beta_j =0 | \hat\beta_j) = \pi_0 p(\hat\beta_j | \beta_j=0)/p(\hat\beta_j)$$
 
-# Proposed Alternative: More details
+
+# FDR - The New Deal
 
 - A convenient way to model $g$ is by a mixture of 0-centered
 normal distributions: 
 $$g(\beta; \pi) = \sum_{k=1}^K \pi_k N(\beta; 0, \sigma^2_k)$$
 
-- The estimating $g$ comes down to estimating $\pi$ - easily done
-by maximum likelihood (EM algorithm) or variational Bayes.
+- Estimating $g$ comes down to estimating $\pi$. Joint estimation of $\pi_0,\pi$ easy by maximum likelihood (EM algorithm) or variational Bayes.
 
 - By allowing $K$ large, and $\sigma_k$ to span a dense grid of values,
 we get a fairly flexible unimodal symmetric distribution.
 
 - Alternatively, a mixture of uniforms, with 0 as one end-point of the range,
-provides still more flexibility, and in particular allows for asymmetry. (Grenander 1953 shows this provides the non-parametric mle in the ``no error" case; Campy + Thomas do the equal-errors case)
+provides still more flexibility, and in particular allows for asymmetry. 
+
+- If allow a very large number of uniforms this provides the non-parametric mle for $g$; cf Grenander 1953; Campy + Thomas.
 
 
 # Illustration: $g$ a mixture of 0-centered normals
@@ -358,32 +442,6 @@ x=seq(-4,4,length=100)
 plot(x, 0.1*dunif(x,0,3)+ 0.3*dunif(x,0,0.2) + 0.2*dunif(x,0,0.5) + 0.1* dunif(x,-0.3,0) + 0.1*dunif(x,-0.3,0)+0.2*dunif(x,-0.4,0),type="s",ylim=c(0,2),ylab="density")
 ```
 
-
-# Illustration: BRCA data
-
-```{r}
-hh.ash = ash(hh.betahat,hh.sebetahat)
-hh.ash.hu = ash(hh.betahat, hh.sebetahat,mixcompdist="halfuniform")
-```
-
-
-```{r, echo=FALSE,fig.height=4,fig.cap=""}
-h=hist(hh.betahat,freq=FALSE,main="BRCA, effect sizes",ylim=c(0,2),nclass=nc)
-x = seq(-3,3,length=100)
-lines(x,density(hh.ash,x),col=2,lwd=2)
-lines(x,density(hh.ash.hu,x),col=3,lwd=2)
-```
-
-# Illustration: BRCA data
-```{r, echo=FALSE,fig.height=4,fig.cap=""}
-nullalthist(hh.zscore,hh.ashz$ZeroProb,main="ash")
-```
-
-# Illustration: BRCA data
-```{r, echo=FALSE,fig.height=4,fig.cap=""}
-nullalthist(hh.zscore,hh.mixfdr$fdr,main="mixfdr")
-```
-
 # Issue: identifiability of $\pi_0$
 
 - For estimating False Discoveries, we are asking whether $\beta_j = 0$.
@@ -391,9 +449,8 @@ nullalthist(hh.zscore,hh.mixfdr$fdr,main="mixfdr")
 - However, the data cannot distinguish between $\beta_j = 0$ and $\beta_j$ "very
 small"
 
-- Similarly, the data can't tell us what proportion of g should be exactly on zero, vs near zero
+- As a result $\pi_0$ is formally unidentifiable. Eg data can never rule out $\pi_0=0$.
 
-- Of course this is true regardless of the method used!
 
 # Issue: identifiability of $\pi_0$
 
@@ -417,6 +474,57 @@ then contradicted the unimodal assumption on g. Thus the upper bound is
 more conservative than under ZA.
 
 - In practice, implement upper bound by putting prior on $\pi_0$ that encourages it to be big, then estimate $\pi$ by posterior mean (VB).
+
+# Illustration: BRCA data
+
+```{r, echo=FALSE,include=FALSE}
+hh.ash = ash(hh.betahat,hh.sebetahat)
+hh.ashz = ash(hh.zscore,1, pointmass=TRUE, prior="nullbiased")
+hh.ash.hu = ash(hh.betahat, hh.sebetahat,mixcompdist="halfuniform")
+```
+
+
+# Example: BRCA data
+
+Compare fitted $f(\beta)$, both estimating $\pi_0$ and fixing $\pi_0=0$.
+```{r, echo=FALSE, includ=FALSE}
+  hh.ash.fdr = ash(hh.zscore,1,pointmass = TRUE,prior="nullbiased")
+  hh.ash.shrink = ash(hh.zscore,1)
+```
+
+```{r, echo=FALSE,fig.height=4,fig.cap=""}
+  plot(x,cdf.ash(hh.ash.fdr,x),col=2,type="l",lwd=3,ylab="cdf")
+  lines(x,cdf.ash(hh.ash.shrink,x),col=3,lwd=3,lty=2)
+```
+
+# Recall Problem: distribution of alternative Z values multimodal
+```{r, echo=FALSE,fig.height=4,fig.cap=""}
+nullalthist(hh.zscore,hh.mixfdr$fdr,main="mixfdr")
+```
+
+# Problem Fixed: distribution of alternative Z values unimodal
+```{r, echo=FALSE,fig.height=4,fig.cap=""}
+nullalthist(hh.zscore,hh.ashz$ZeroProb,main="ash")
+```
+
+
+# BRCA1: Compare $\pi_0$ estimates
+```{r}
+  round(c(hh.fdrtool$param[3],
+  hh.locfdr$fp0[1,3],
+  hh.mixfdr$pi[1],
+  hh.ashz$fitted.g$pi[1]),2)
+```
+
+# BRCA1: Compare number significant at fdr<0.05
+
+```{r}
+  c(sum(hh.fdrtool$lfdr<0.05),
+  sum(hh.locfdr$fdr<0.05),
+  sum(hh.mixfdr$fdr<0.05),
+  sum(hh.ashz$ZeroProb<0.05))
+```
+
 
 # Identifiability of $\pi_0$: Solution 2
 
@@ -451,25 +559,6 @@ bound of how much of the $\Pr(\beta_j<0)=0.975$ might also move to 0.
 
 - Therefore a more conservative estimate of the fsr might be 0.05 (or, more generally, double what you get allowing for point mass)
 
-# Estimation 
-
-- This approach also provides a full posterior distribution for each $\beta_j$. 
-
-- So for example we can easily compute fdrs for discoveries other than ``non-zero" (eg genes with at least 2-fold difference between conditions
-
-
-# Example: BRCA data
-
-Compare fit of $g$ both allowing $\beta_j=0$ and not allowing it.
-```{r, echo=FALSE, includ=FALSE}
-  hh.ash.fdr = ash(hh.betahat,hh.sebetahat,usePointMass = TRUE,prior="nullbiased",VB=TRUE)
-  hh.ash.shrink = ash(hh.betahat,hh.sebetahat)
-```
-
-```{r, echo=FALSE,fig.height=4,fig.cap=""}
-  plot(x,cdf.ash(hh.ash.fdr,x),col=2,type="l",lwd=3,ylab="cdf")
-  lines(x,cdf.ash(hh.ash.shrink,x),col=3,lwd=3,lty=2)
-```
 
 # Example: BRCA data
 
@@ -478,8 +567,22 @@ Compare fit of $g$ both allowing $\beta_j=0$ and not allowing it.
   abline(a=0,b=1,col=2,lwd=2)
 ```
 
-- Because $\pi$ is estimated from the data, the amount
+# Estimation and Shrinkage
+
+- Besides allowing one to estimate fdr and fsr, 
+this approach also provides a full posterior distribution for each $\beta_j$. 
+
+- So for example we can easily compute fdrs for discoveries other than ``non-zero" (eg compute $\Pr(|\beta_j| > 2 \| \hat\beta_j)$).
+
+- And use it to obtain point estimates and credible intervals for each $\beta_j$, taking account of information from all the other $\beta_j$.
+
+- Because $f(\beta)$ is unimodal, the point estimates will tend to be ``shrunk" towards the overall mean (0).
+
+- Because $f(\beta)$ is estimated from the data, the amount
 of shrinkage is adaptive to the data. And because of the role of $s_j$, the amount of shrinkage adapts to the information on each gene.
+
+- So we call the approach ``Adaptive Shrinkage" (ASH).
+
 
 # Example: ASH applied to mouse data
 
@@ -523,13 +626,13 @@ lines(t,dnorm(t,0,sd=0.032), col=2, lwd=2)
 #identify(temp$zdat.ash$localfdr,temp.pval)
 ```
 
-```{r, echo=FALSE,fig.height=3,fig.width=3,fig.cap=""}
+```{r, echo=FALSE,fig.height=3,fig.cap=""}
 plot(zdat.ash$localfdr,pval,ylab="p value", xlab="ASH local fdr")
 ```
 
 # Shrinkage is adaptive to information
 
-```{r, echo=FALSE,fig.height=3,fig.width=3,fig.cap=""}
+```{r, echo=FALSE,fig.height=3,fig.cap=""}
 plot(zdat.ash$localfdr,pval,ylab="p value", xlab="ASH local fdr")
 points(zdat.ash$localfdr[15325],pval[15325],col=2,pch=16)
 points(zdat.ash$localfdr[16123],pval[16123],col=2,pch=16)
@@ -538,33 +641,26 @@ points(zdat.ash$localfdr[16123],pval[16123],col=2,pch=16)
 # Shrinkage is adaptive to information
 
 ```{r, echo=FALSE}
+x = read.table(paste0("../../stat45800/data/nobrega/expression/counts.txt"), header = TRUE)
+xx = rowSums(x[,2:5])
+x = x[xx>0,]
+xx = xx[xx>0]
 cbind(x[,1:5],pval,zdat.ash$localfdr)[c(15325,16123),]
 ```
 
-# Compare q values for high count genes, with and without low count genes
+# Recall FDR problem 1: q values increased by low count genes
+```{r,echo=FALSE, fig.height=4,fig.cap=""}
+plot(qval.high$qval,qval$qval[xx>1000],xlab="q values from high-count gene analysis", ylab="q values from all gene analysis", main="q values for high count genes",xlim=c(0,.5),ylim=c(0,.5))
+abline(a=0,b=1,col=2)
+```
 
-```{r, echo=FALSE,fig.height=3,fig.width=3,fig.cap=""}
-plot(zdat.ash$qvalue[xx>1000],zdat.ash.high$qvalue,xlab="q values from all data",ylab="q values from high only")
+# ASH q values more robust to inclusion of low count genes
+
+```{r, echo=FALSE,fig.height=3,fig.cap=""}
+plot(zdat.ash.high$qvalue,zdat.ash$qvalue[xx>1000],xlab="q values from high only",ylab="q values from all data")
 abline(a=0,b=1,col=2,lwd=2)
 ```
 
-
-# BRCA1: Compare $\pi_0$ estimates
-```{r}
-  c(hh.fdrtool$param[3],
-  hh.locfdr$fp0[1,3],
-  hh.mixfdr$pi[1],
-  hh.ashz$fitted.g$pi[1])
-```
-
-# BRCA1: Compare number significant at fdr<0.05
-
-```{r}
-  c(sum(hh.fdrtool$lfdr<0.05),
-  sum(hh.locfdr$fdr<0.05),
-  sum(hh.mixfdr$fdr<0.05),
-  sum(hh.ashz$ZeroProb<0.05))
-```
 
 # Summary: FDR via Adapative Shrinkage
 
@@ -633,7 +729,7 @@ print(sessionInfo(), locale=FALSE)
 
 # Some odd things in the data
 
-```{r, echo=FALSE,fig.height=3,fig.width=3}
+```{r, echo=FALSE,fig.height=3}
   plot(zdat[3,],zdat[4,],ylab="standard error",xlab="beta-hat")
   x[tail(order(zdat[3,])),]
 ```
