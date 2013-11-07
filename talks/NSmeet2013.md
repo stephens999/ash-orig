@@ -21,7 +21,24 @@ to identify findings ``significant" at a given False Discovery Rate.
 
 - ...?
 
-# Example: BRCA1 vs BRCA2 expression
+
+# FDR, local fdr, and q values
+
+Although precise definitions vary depending on whether one
+takes a Bayesian or Frequentist approach to the problem, roughly
+
+- The FDR at a threshold $P$ is 
+$$\text{FDR}(P)=\Pr(\beta_j = 0 |  p_j<P).$$
+
+- The q value for observation $j$ is $q_j=\text{FDR}(p_j)$.
+
+- The local false discovery rate, fdr, at threshold $P$ is 
+$$\text{fdr}(P) = \Pr(\beta_j =0 | p_j=P ).$$
+
+- The fdr is more relevant, but slightly harder to estimate than 
+FDR because it involves density estimation rather than tail-area estimation.
+
+# Example: FDR estimation
 
 
 
@@ -30,17 +47,51 @@ to identify findings ``significant" at a given False Discovery Rate.
 ![](figure/unnamed-chunk-2.png) 
 
 
-# Example: BRCA1 vs BRCA2 expression
+# Example:  FDR estimation
 
 ![](figure/unnamed-chunk-3.png) 
 
 
-# Example: BRCA1 vs BRCA2 expression
+Data from Hedenfalk et al, comparing BRCA1 vs BRCA2 expression.
+
+# Example:  FDR estimation
 
 ![](figure/unnamed-chunk-4.png) 
 
 
-# Example 2: Mouse Heart Data
+
+
+# Example: fdr estimation
+
+![](figure/unnamed-chunk-5.png) 
+
+
+# Example: fdr estimation
+
+
+```
+## Loading required package: fdrtool
+```
+
+![](figure/unnamed-chunk-6.png) 
+
+
+# Example: fdr estimation
+
+![](figure/unnamed-chunk-7.png) 
+
+
+# FDR problem 1: different measurement precision
+
+- If some effects are measured very imprecisely, those tests ``lack power"
+and simply add noise
+
+- In particular, such tests increase the estimated number of nulls, and increase
+the FDR for other tests
+
+- It would seem preferable to simply ignore the tests with very low precision. Summarizing each test by a $p$ value (or $Z$ score) loses the information about precision.
+
+# Example: Mouse Heart Data
 
 
 
@@ -64,34 +115,36 @@ to identify findings ``significant" at a given False Discovery Rate.
 
 
 
-# Example 2: Mouse Heart Data
+# Example: Mouse Heart Data
 
 
-![](figure/unnamed-chunk-8.png) 
-
-
-
-
-# FDR problem 1: different genes have different precision/power
-
-![](figure/unnamed-chunk-9.png) 
-
-
-
-# FDR problem 1: lower count genes, less power, add noise
-
-![](figure/unnamed-chunk-10.png) 
-
-
-
-# FDR problem 1: higher count genes, more power
 ![](figure/unnamed-chunk-11.png) 
 
 
-# FDR problem 1: q values increased by low count genes
+# Mouse Data: Counts vary considerably across genes
+
 ![](figure/unnamed-chunk-12.png) 
 
 
+
+# Lower count genes, less power
+
+![](figure/unnamed-chunk-13.png) 
+
+
+
+# Higher count genes, more power
+![](figure/unnamed-chunk-14.png) 
+
+
+# FDR problem 1: low count genes add noise, increase q values
+![](figure/unnamed-chunk-15.png) 
+
+
+# FDR problem 1: Summary
+
+- Analyzing $p$ values or $Z$ scores doesn't fully account 
+for measurement precision.
 
 # Problem 2: The Zero Assumption (ZA)
 
@@ -100,7 +153,7 @@ approach assumes that all the $p$ values near 1 are null.
 
 - Analogously, one can assume that all Z scores near 0 are null. Efron refers to this as the ``Zero Assumption".
 
-- This allows us to estimate $\pi_0$ ``conservatively" using the density of $p$ values near 1.
+- The ZA allows us to estimate the null proportion, $\pi_0$, using the density of $p$ values near 1 (or $Z$ scores near 0).
 
 
 # Problem 2: The ZA 
@@ -116,23 +169,23 @@ approach assumes that all the $p$ values near 1 are null.
 
 # Implied distribution of $p$ values under $H_1$
 
-![](figure/unnamed-chunk-14.png) 
+![](figure/unnamed-chunk-17.png) 
 
 
 
 # Implied distribution of Z scores under alternative (fdrtool)
 
-![](figure/unnamed-chunk-15.png) 
+![](figure/unnamed-chunk-18.png) 
 
 
 # Implied distribution of Z scores under alternative (locfdr)
 
-![](figure/unnamed-chunk-16.png) 
+![](figure/unnamed-chunk-19.png) 
 
 
 # Implied distribution of Z scores under alternative (mixfdr)
 
-![](figure/unnamed-chunk-17.png) 
+![](figure/unnamed-chunk-20.png) 
 
 ```
 ## null device 
@@ -150,86 +203,70 @@ standard fdr tools ignore precision of different measurements
 - Also standard tools focus only on zero vs non-zero effects. (eg what if we would
 like to identify genes that have at least a 2-fold change?)
 
-# Proposed Alternative
+# FDR via Empirical Bayes
 
-- Instead of working with $z$ scores or $p$ values, work with two numbers 
-$(\hat\beta_j,s_j)$ for each test.
+- Following previous work (e.g. Newton, Efron, Muralidharan) we take an empirical Bayes approach to FDR.
 
-- *Incorporate the precision* of the observations $\hat\beta$ into the likelihood.
-Specifically, we approximate likelihood for $\beta_j$ by a normal (``Laplace") approximation: 
+- Eg Efron assumes that the $Z$ scores come from a mixture of null, and alternative:
+$$Z_j \sim f_Z(.) = \pi_0 N(.;0,1) + (1-\pi_0) f_1(.)$$
+where $f_1$ is to be estimated from the data.
+
+- Various semi-parametric approaches taken to estimating $f_1$. For example,
+Efron uses Poisson regression; Muralidharan uses mixture of normal distributions.
+
+- $\text{fdr}(Z) \approx \pi_0 N(Z; 0,1)/ f_Z(Z)$
+
+# FDR: The New Deal
+
+- Instead of modelling $Z$ scores, model the effects $\beta$,
+$$\beta_j \sim \pi_0 \delta_0(.) + (1-\pi_0) g(.)$$
+
+- Constrain $g$ to be unimodal about 0.
+
+- *Incorporate precision* of each observation $\hat\beta$ into the likelihood.
+Specifically, approximate likelihood for $\beta_j$ by a normal: 
 $$L(\beta_j) \propto \exp(-0.5 (\beta_j - \hat\beta_j)^2/s_j^2).$$
 [From $\hat\beta_j \sim N(\beta_j, s_j)$]
 
-- *Directly model the underlying distribution of $\beta$*, using a unimodal family of distributions $g$; estimate $g$ from the data.
+- fdr given by $$p(\beta_j =0 | \hat\beta_j) = \pi_0 p(\hat\beta_j | \beta_j=0)/p(\hat\beta_j)$$
 
-# Proposed Alternative: More details
+
+# FDR - The New Deal
 
 - A convenient way to model $g$ is by a mixture of 0-centered
 normal distributions: 
 $$g(\beta; \pi) = \sum_{k=1}^K \pi_k N(\beta; 0, \sigma^2_k)$$
 
-- The estimating $g$ comes down to estimating $\pi$ - easily done
-by maximum likelihood (EM algorithm) or variational Bayes.
+- Estimating $g$ comes down to estimating $\pi$. Joint estimation of $\pi_0,\pi$ easy by maximum likelihood (EM algorithm) or variational Bayes.
 
 - By allowing $K$ large, and $\sigma_k$ to span a dense grid of values,
 we get a fairly flexible unimodal symmetric distribution.
 
 - Alternatively, a mixture of uniforms, with 0 as one end-point of the range,
-provides still more flexibility, and in particular allows for asymmetry. (Grenander 1953 shows this provides the non-parametric mle in the ``no error" case; Campy + Thomas do the equal-errors case)
+provides still more flexibility, and in particular allows for asymmetry. 
+
+- If allow a very large number of uniforms this provides the non-parametric mle for $g$; cf Grenander 1953; Campy + Thomas.
 
 
 # Illustration: $g$ a mixture of 0-centered normals
-
-![](figure/unnamed-chunk-18.png) 
-
-
-# Illustration: $g$ a mixture of 0-centered normals
-
-![](figure/unnamed-chunk-19.png) 
-
-
-
-# Illustration: $g$ a mixture of 0-anchored uniforms
-
-![](figure/unnamed-chunk-20.png) 
-
-
-# Illustration: $g$ a mixture of 0-anchored uniforms
 
 ![](figure/unnamed-chunk-21.png) 
 
 
+# Illustration: $g$ a mixture of 0-centered normals
 
-# Illustration: BRCA data
-
-
-```r
-hh.ash = ash(hh.betahat, hh.sebetahat)
-hh.ash.hu = ash(hh.betahat, hh.sebetahat, mixcompdist = "halfuniform")
-```
-
-```
-## [1] "Warning: Posterior SDs not yet implemented for uniform components"
-```
+![](figure/unnamed-chunk-22.png) 
 
 
+
+# Illustration: $g$ a mixture of 0-anchored uniforms
 
 ![](figure/unnamed-chunk-23.png) 
 
 
-# Illustration: BRCA data
-
-```
-## Error: error in evaluating the argument 'x' in selecting a method for function 'unlist': Error in lapply(split(lfdr, cut(z, h$breaks), drop = FALSE), mean) : 
-##   error in evaluating the argument 'X' in selecting a method for function 'lapply': Error in split(lfdr, cut(z, h$breaks), drop = FALSE) : 
-##   object 'hh.ashz' not found
-```
+# Illustration: $g$ a mixture of 0-anchored uniforms
 
 ![](figure/unnamed-chunk-24.png) 
-
-
-# Illustration: BRCA data
-![](figure/unnamed-chunk-25.png) 
 
 
 # Issue: identifiability of $\pi_0$
@@ -239,9 +276,8 @@ hh.ash.hu = ash(hh.betahat, hh.sebetahat, mixcompdist = "halfuniform")
 - However, the data cannot distinguish between $\beta_j = 0$ and $\beta_j$ "very
 small"
 
-- Similarly, the data can't tell us what proportion of g should be exactly on zero, vs near zero
+- As a result $\pi_0$ is formally unidentifiable. Eg data can never rule out $\pi_0=0$.
 
-- Of course this is true regardless of the method used!
 
 # Issue: identifiability of $\pi_0$
 
@@ -265,6 +301,56 @@ then contradicted the unimodal assumption on g. Thus the upper bound is
 more conservative than under ZA.
 
 - In practice, implement upper bound by putting prior on $\pi_0$ that encourages it to be big, then estimate $\pi$ by posterior mean (VB).
+
+# Illustration: BRCA data
+
+
+
+
+
+# Example: BRCA data
+
+Compare fitted $f(\beta)$, both estimating $\pi_0$ and fixing $\pi_0=0$.
+
+
+
+![](figure/unnamed-chunk-27.png) 
+
+
+# Recall Problem: distribution of alternative Z values multimodal
+![](figure/unnamed-chunk-28.png) 
+
+
+# Problem Fixed: distribution of alternative Z values unimodal
+![](figure/unnamed-chunk-29.png) 
+
+
+
+# BRCA1: Compare $\pi_0$ estimates
+
+```r
+round(c(hh.fdrtool$param[3], hh.locfdr$fp0[1, 3], hh.mixfdr$pi[1], hh.ashz$fitted.g$pi[1]), 
+    2)
+```
+
+```
+## [1] 0.64 0.74 0.80 0.21
+```
+
+
+# BRCA1: Compare number significant at fdr<0.05
+
+
+```r
+c(sum(hh.fdrtool$lfdr < 0.05), sum(hh.locfdr$fdr < 0.05), sum(hh.mixfdr$fdr < 
+    0.05), sum(hh.ashz$ZeroProb < 0.05))
+```
+
+```
+## [1] 154 171 162 341
+```
+
+
 
 # Identifiability of $\pi_0$: Solution 2
 
@@ -299,99 +385,80 @@ bound of how much of the $\Pr(\beta_j<0)=0.975$ might also move to 0.
 
 - Therefore a more conservative estimate of the fsr might be 0.05 (or, more generally, double what you get allowing for point mass)
 
-# Estimation 
-
-- This approach also provides a full posterior distribution for each $\beta_j$. 
-
-- So for example we can easily compute fdrs for discoveries other than ``non-zero" (eg genes with at least 2-fold difference between conditions
-
 
 # Example: BRCA data
 
-Compare fit of $g$ both allowing $\beta_j=0$ and not allowing it.
+![](figure/unnamed-chunk-32.png) 
 
 
+# Estimation and Shrinkage
 
-![](figure/unnamed-chunk-27.png) 
+- Besides allowing one to estimate fdr and fsr, 
+this approach also provides a full posterior distribution for each $\beta_j$. 
 
+- So for example we can easily compute fdrs for discoveries other than ``non-zero" (eg compute $\Pr(|\beta_j| > 2 \| \hat\beta_j)$).
 
-# Example: BRCA data
+- And use it to obtain point estimates and credible intervals for each $\beta_j$, taking account of information from all the other $\beta_j$.
 
-![](figure/unnamed-chunk-28.png) 
+- Because $f(\beta)$ is unimodal, the point estimates will tend to be ``shrunk" towards the overall mean (0).
 
-
-- Because $\pi$ is estimated from the data, the amount
+- Because $f(\beta)$ is estimated from the data, the amount
 of shrinkage is adaptive to the data. And because of the role of $s_j$, the amount of shrinkage adapts to the information on each gene.
 
-# Example: ASH applied to mouse data
-
-![](figure/unnamed-chunk-29.png) 
+- So we call the approach ``Adaptive Shrinkage" (ASH).
 
 
 # Example: ASH applied to mouse data
 
-![](figure/unnamed-chunk-30.png) 
+![](figure/unnamed-chunk-33.png) 
 
 
 # Example: ASH applied to mouse data
-
-![](figure/unnamed-chunk-31.png) 
-
-
-
-# Shrinkage is adaptive to information
-
-
-
-
-
-
-
 
 ![](figure/unnamed-chunk-34.png) 
 
 
-# Shrinkage is adaptive to information
+# Example: ASH applied to mouse data
 
 ![](figure/unnamed-chunk-35.png) 
 
 
+
+# Shrinkage is adaptive to information
+
+
+
+
+
+
+
+
+![](figure/unnamed-chunk-38.png) 
+
+
+# Shrinkage is adaptive to information
+
+![](figure/unnamed-chunk-39.png) 
+
+
 # Shrinkage is adaptive to information
 
 
 ```
-## Error: incorrect number of dimensions
+##         gene  lv1  lv2  rv1  rv2    pval zdat.ash$localfdr
+## 19422 Mgat5b    7   10  320  452 0.03795                 0
+## 20432  Sec63 1042 1034 5496 6649 0.04908                 0
 ```
 
 
-# Compare q values for high count genes, with and without low count genes
-
-![](figure/unnamed-chunk-37.png) 
-
+# Recall FDR problem 1: q values increased by low count genes
+![](figure/unnamed-chunk-41.png) 
 
 
-# BRCA1: Compare $\pi_0$ estimates
+# ASH q values more robust to inclusion of low count genes
 
-```r
-c(hh.fdrtool$param[3], hh.locfdr$fp0[1, 3], hh.mixfdr$pi[1], hh.ashz$fitted.g$pi[1])
-```
+![](figure/unnamed-chunk-42.png) 
 
-```
-## Error: object 'hh.ashz' not found
-```
-
-
-# BRCA1: Compare number significant at fdr<0.05
-
-
-```r
-c(sum(hh.fdrtool$lfdr < 0.05), sum(hh.locfdr$fdr < 0.05), sum(hh.mixfdr$fdr < 
-    0.05), sum(hh.ashz$ZeroProb < 0.05))
-```
-
-```
-## Error: object 'hh.ashz' not found
-```
 
 
 # Summary: FDR via Adapative Shrinkage
@@ -462,17 +529,16 @@ print(sessionInfo(), locale = FALSE)
 ## Platform: x86_64-apple-darwin10.8.0 (64-bit)
 ## 
 ## attached base packages:
-## [1] splines   parallel  stats     graphics  grDevices utils     datasets 
-## [8] methods   base     
+## [1] splines   stats     graphics  grDevices utils     datasets  methods  
+## [8] base     
 ## 
 ## other attached packages:
-## [1] DSS_1.4.0          locfdr_1.1-7       Biobase_2.20.1    
-## [4] BiocGenerics_0.6.0 ashr_0.1           truncnorm_1.0-6   
-## [7] qvalue_1.34.0      knitr_1.5         
+## [1] mixfdr_1.0      locfdr_1.1-7    fdrtool_1.2.11  ashr_0.1       
+## [5] truncnorm_1.0-6 qvalue_1.34.0   knitr_1.5      
 ## 
 ## loaded via a namespace (and not attached):
-## [1] codetools_0.2-8 digest_0.6.3    evaluate_0.5.1  formatR_0.9    
-## [5] stringr_0.6.2   tcltk_3.0.2     tools_3.0.2
+## [1] evaluate_0.5.1 formatR_0.9    stringr_0.6.2  tcltk_3.0.2   
+## [5] tools_3.0.2
 ```
 
 
@@ -481,9 +547,15 @@ print(sessionInfo(), locale = FALSE)
 
 # Some odd things in the data
 
-![plot of chunk unnamed-chunk-40](figure/unnamed-chunk-40.png) 
+![plot of chunk unnamed-chunk-43](figure/unnamed-chunk-43.png) 
 
 ```
-## Error: incorrect number of dimensions
+##          gene lv1 lv2 rv1   rv2 genelength
+## 17711   Napsa   0   1   7   779       1470
+## 6927   Akr1b7   0   2   2  1499       1238
+## 3175       C3   7  11  72  9153       5092
+## 21524 Tmprss4   0   0   0  1130       2254
+## 15560  Guca2b   3   7  14  8762        597
+## 20517   Prap1  10  10  21 16899        617
 ```
 
