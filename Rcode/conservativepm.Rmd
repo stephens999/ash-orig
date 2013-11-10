@@ -1,0 +1,299 @@
+#look into methods for estimating pi0 conservatively
+
+Do some simulations
+
+```{r}
+basicsim=function(mixsd,mixpi_alt,seedval = 100,nsamp=1000,niter=50){
+  require(ashr)
+  require(qvalue)
+  require(fdrtool)
+  require(mixfdr)
+  require(locfdr)
+  set.seed(seedval)  
+  beta =list()
+  betahatsd=list()
+  betahat = list()
+  zscore = list()
+  pval = list()
+  betahat.ash.n = list()
+  betahat.ash.u = list()
+  betahat.ash.npm = list()
+  betahat.qval = list()
+  betahat.fdrtool = list()
+  betahat.locfdr = list()
+  betahat.mixfdr = list()
+  pi0 = rep(0,niter)
+  for(i in 1:niter){
+    pi0[i]=runif(1,0,1)
+    mixpi = c(pi0[i],(1-pi0[i])*mixpi_alt)
+    sd = sample(mixsd,nsamp,prob=mixpi,replace=TRUE )
+    beta[[i]] = rnorm(nsamp,0,sd)
+    betahatsd[[i]] = 1
+    betahat[[i]] = beta[[i]]+rnorm(nsamp,0,betahatsd[[i]])
+    zscore[[i]] = betahat[[i]]/betahatsd[[i]]
+    pval[[i]] = pchisq(zscore[[i]]^2,df=1,lower.tail=F)
+    betahat.ash.n[[i]] = ash(betahat[[i]],betahatsd[[i]],pointmass=TRUE,prior="nullbiased",gridmult=2)
+    betahat.ash.u[[i]] = ash(betahat[[i]],betahatsd[[i]],pointmass=TRUE,prior="uniform",gridmult=2)
+    betahat.ash.npm[[i]] = ash(betahat[[i]],betahatsd[[i]],pointmass=FALSE,prior="uniform",gridmult=2)
+    betahat.qval[[i]] = qvalue(pval[[i]])
+    betahat.fdrtool[[i]] = fdrtool(pval[[i]],statistic="pvalue",plot=FALSE)
+    betahat.locfdr[[i]] = locfdr(zscore[[i]],nulltype=0,plot=0)
+    betahat.mixfdr[[i]] = mixFdr(zscore[[i]],noiseSD=1,theonull=TRUE,plot=FALSE)
+  }
+  return(list(beta =beta,
+  betahatsd=betahatsd,
+  betahat = betahat,
+  zscore = zscore,
+  pval = pval,
+  betahat.ash.n = betahat.ash.n,
+  betahat.ash.u = betahat.ash.u,
+  betahat.ash.npm = betahat.ash.npm,
+  betahat.qval = betahat.qval,
+  betahat.fdrtool = betahat.fdrtool,
+  betahat.locfdr = betahat.locfdr,
+  betahat.mixfdr = betahat.mixfdr,
+    pi0=pi0))
+}    
+mixsd = c(0,0.25,0.5,1,2)
+mixpi_alt = c(0.4,0.2,0.2,0.2) #mixture proportions under the alternative
+simres1 = basicsim(mixsd,mixpi_alt)
+simres2= basicsim(c(0,4),c(1))
+```
+
+Show illustrative example
+```{r}
+plot_FDR_hist=function(sim,iter=1){
+  hh.pval = sim$pval[[iter]]
+  hh.zscore = sim$zscore[[iter]]
+  altcol="cyan" #colors to use
+  nullcol="blue" 
+  nc=40 #number of bins in histograms
+  ncz = 100 # number of bins in z score histograms
+  
+  hh.hist =hist(hh.pval,freq=FALSE,xlab="p value",main="Distribution of p values",nclass=nc,col=altcol)
+
+  hh.q = qvalue(hh.pval)
+  abline(h=hh.q$pi0,col=nullcol,lwd=2)
+  
+  hh.hist$density=rep(hh.q$pi0,length(hh.hist$density))  
+  plot(hh.hist,add=TRUE,col=nullcol,freq=FALSE)
+  
+  abline(v=0.1,lwd=2,col=2)
+  
+  text(0.05,1.2,labels="A",col=2,cex=1.2)  
+  text(0.05,0.4,labels="B",col=2,cex=1.2)  
+  text(0.6,3,labels=paste0("FDR = B/(A+B) =  ",round(hh.q$pi0*0.1*length(hh.pval)/sum(hh.pval<0.1),2)),cex=1.2)
+}
+plot_FDR_hist(simres1,1)
+  
+```
+
+```{r}
+plot_lfdr_hist=function(sim,iter=1){
+  require(fdrtool)
+  hh.pval=sim$pval[[iter]]
+  hh.hist=hist(hh.pval,freq=FALSE,xlab="p value",main="Distribution of p values",nclass=nc,col=altcol)
+  
+  hh.gren = grenander(ecdf(hh.pval))
+  abline(h=min(hh.gren$f.knots),col=nullcol,lwd=2)  
+  lines(hh.gren$x.knots,hh.gren$f.knots,lwd=2)
+  abline(v=0.1,lwd=2,col=2)
+  text(0.1,0.9,labels="a",col=2,cex=1)  
+  text(0.1,0.34,labels="b",col=2,cex=1.2)  
+  text(0.6,3,labels=paste0("lfdr = b/(a+b) =  ",round(min(hh.gren$f.knots)/approx(hh.gren$x.knots,hh.gren$f.knots,0.1)$y,2)),cex=1.2)
+}
+plot_lfdr_hist(simres1,1)
+```
+
+
+```{r}
+#plot a histogram of z scores, highlighting the alternative distribution
+#of z scores that is implied by localfdr values lfdr.
+  nullalthist = function(z,lfdr,...){
+    h=hist(z, freq=FALSE,col=nullcol,nclass=ncz,...)
+    avlfdr = unlist(lapply(split(lfdr,cut(z,h$breaks),drop=FALSE),mean))
+    h$density = (1-avlfdr) * h$density
+    plot(h,add=TRUE,col=altcol,freq=FALSE)
+  }
+  
+#this one puts the null on the bottom
+  altnullhist = function(z,lfdr,...){
+    h=hist(z, freq=FALSE,col=altcol,nclass=ncz,...)
+    avlfdr = unlist(lapply(split(lfdr,cut(z,h$breaks),drop=FALSE),mean))
+    h$density = avlfdr * h$density
+    plot(h,add=TRUE,col=nullcol,freq=FALSE)
+  }
+  
+  plotall_hist=function(sim,iter=1,histfun=nullalthist){
+    hh.zscore=sim$zscore[[iter]]    
+    par(mfcol=c(2,2))
+    histfun(hh.zscore,sim$betahat.fdrtool[[iter]]$lfdr,main="fdrtool")  
+    histfun(hh.zscore,sim$betahat.locfdr[[iter]]$fdr,main="locfdr")
+    histfun(hh.zscore,sim$betahat.mixfdr[[iter]]$fdr,main="mixfdr")
+    histfun(hh.zscore,sim$betahat.ash.n[[iter]]$lfdr,main="ash")
+    par(mfcol=c(1,1))
+  }
+  
+ # pdf("figures/nullalthist.pdf")
+  plotall_hist(simres1,1,nullalthist)
+#  dev.off() 
+
+ # pdf("figures/altnullhist.pdf")
+  plotall_hist(simres1,1,altnullhist)
+#  dev.off()
+
+```
+
+
+```{r}
+#  par(mfcol=c(3,3))
+  plot_ecdf=function(sims){
+    for(i in 1:length(sims$beta)){
+       plot(ecdf(sims$beta[[i]]),xlim=c(-6,6),main=paste0("iteration ",i))
+       x = seq(-6,6,length=1000)
+       lines(cdf.ash(sims$betahat.ash.n[[i]],x),col=2,lwd=2)
+       lines(cdf.ash(sims$betahat.ash.u[[i]],x),col=3,lwd=2)
+    }
+  }
+  plot_ecdf(simres1)
+  plot_ecdf(simres2)
+```
+
+```{r}
+#Plot pi0 from each method
+  get_pi0.fdrtool = function(f){f$param[3]}
+  get_pi0.locfdr = function(f){f$fp0[1,3]}
+  get_pi0.mixfdr = function(f){f$pi[1]}
+
+  plot_pi0 = function(sims){
+    pi0=sims$pi0  
+    pi0_ash.n=unlist(lapply(sims$betahat.ash.n,get_pi0))
+    pi0_ash.u=unlist(lapply(sims$betahat.ash.u,get_pi0)) 
+    pi0_fdrtool = unlist(lapply(sims$betahat.fdrtool,get_pi0.fdrtool))
+    pi0_locfdr=unlist(lapply(sims$betahat.locfdr,get_pi0.locfdr))
+    pi0_mixfdr = unlist(lapply(sims$betahat.mixfdr,get_pi0.mixfdr))
+    pi0_qval = unlist(lapply(sims$betahat.qval,"[[","pi0"))
+    
+    res = data.frame(pi0=pi0,qvalue=pi0_qval,mixfdr=pi0_mixfdr, locfdr=pi0_locfdr, fdrtool=pi0_fdrtool,ash.nullbiased=pi0_ash.n,ash.uniform=pi0_ash.u)
+    require(reshape2)
+    res.melt = melt(res, id.vars=c("pi0"),variable.name="Method")
+    p=ggplot(data=res.melt,aes(pi0,value,colour=Method)) +geom_point(shape=16) +
+        geom_abline(colour = "black") +
+        xlab("True pi0") +
+        ylab("Estimated pi0")
+    print(p +scale_y_continuous(limits=c(0,1)) +
+          scale_x_continuous(limits=c(0,1)) +
+          coord_equal(ratio=1))
+    
+  }
+
+  pdf("figures/estpi0_sim1.pdf")
+    plot_pi0(simres1)
+  dev.off()
+  pdf("figures/estpi0_sim2.pdf")
+    plot_pi0(simres2)
+  dev.off()
+
+```
+
+Figure to show that estimated betahats are not so different
+```{r}
+  plot(betahat.ash.u[[1]]$PosteriorMean,betahat.ash.n[[1]]$PosteriorMean)
+  abline(a=0,b=1,lwd=2,col=2)
+  plot(betahat.ash.u[[1]]$PosteriorSD,betahat.ash.n[[1]]$PosteriorSD)
+  abline(a=0,b=1,lwd=2,col=2)
+```
+
+```{r}
+  rmse = function(x,y){sqrt(mean((x-y)^2))}
+  get_rmse.ash = function(a,b){rmse(a$PosteriorMean,b)}
+  get_rmse.mixfdr = function(a,b){rmse(a$effectSize,b)}
+  plot_rmse = function(sims,inczero=FALSE,incbetahat=FALSE){
+    err.ash.n= mapply(get_rmse.ash,sims$betahat.ash.n,sims$beta)
+    err.ash.u = mapply(get_rmse.ash,sims$betahat.ash.u,sims$beta)
+    err.mixfdr=mapply(get_rmse.mixfdr,sims$betahat.mixfdr,sims$beta)
+    err.betahat = mapply(rmse,sims$betahat,sims$beta)
+    err.zero = unlist(lapply(sims$beta,rmse,y=0))
+    
+     res = data.frame(mixfdr=err.mixfdr,ash.nullbiased=err.ash.n,ash.uniform=err.ash.u)
+    if(inczero){
+      res=data.frame(res,zero=err.zero)
+    }
+    if(incbetahat){
+      res=data.frame(res,betahat=err.betahat)
+    }
+    require(reshape2)
+    res.melt = melt(res, id.vars=c("ash.uniform"),variable.name="Method")
+    
+    p=ggplot(data=res.melt,aes(ash.uniform,value,colour=Method)) +geom_point(shape=16) +
+        geom_abline(colour = "black") +
+        xlab("RMSE (ash.uniform)") +
+        ylab("RMSE (other method)")
+    print(p +scale_y_continuous(limits=c(0,max(res))) +
+          scale_x_continuous(limits=c(0,max(res))) +
+          coord_equal(ratio=1))
+  }
+  pdf("figures/rmse_sim1.pdf")
+    plot_rmse(simres1)
+  dev.off()
+  pdf("figures/rmse_sim2.pdf")
+    plot_rmse(simres2)
+  dev.off()
+```
+
+
+
+
+```{r}
+  plot_LR=function(sims){
+    hist(unlist(lapply(sims$betahat.ash.u,get_loglik))-unlist(lapply(sims$betahat.ash.n,get_loglik)), xlab="loglik difference", main="loglik differences for nullbiased prior vs mle",nclass=10)
+  }
+
+  pdf("figures/logLR.pdf")
+    plot_LR(simres1)
+    plot_LR(simres2)
+  dev.off()
+```
+
+```{r}
+  plot(betahat.ash.n[[1]]$lfdr,betahat.ash.u[[1]]$lfdr,xlab="null-biased prior",ylab="uniform prior", main="fdr is not robust to estimated pi0",xlim=c(0,0.2),ylim=c(0,0.2))
+  abline(a=0,b=1,col=2,lwd=2)
+```
+
+```{r}
+  plot(betahat.ash.n[[1]]$lfsr,betahat.ash.u[[1]]$lfsr,xlab="null-biased prior",ylab="uniform prior", main="fsr is more robust to estimated pi0",xlim=c(0,0.2),ylim=c(0,0.2))
+  points(betahat.ash.n[[1]]$lfsr,betahat.ash.npm[[1]]$lfsr,col=3)
+  abline(a=0,b=1,col=2,lwd=2)
+```
+
+```{r}
+  plot(betahat.ash.n[[1]]$lfsra,betahat.ash.u[[1]]$lfsra,xlab="null-biased prior",ylab="uniform prior", main="fsra is still more robust to estimated pi0",xlim=c(0,0.2),ylim=c(0,0.2))
+  points(betahat.ash.n[[1]]$lfsra,betahat.ash.npm[[1]]$lfsra,col=3)
+  abline(a=0,b=1,col=2,lwd=2)
+```
+
+```{r}
+  plot(betahat.ash.n[[1]]$lfsr,2*betahat.ash.npm[[1]]$lfsr,xlab="null-biased prior",ylab="uniform prior", main="fsra is still more robust to estimated pi0",xlim=c(0,0.2),ylim=c(0,0.2))
+  points(betahat.ash.n[[1]]$lfsra,betahat.ash.npm[[1]]$lfsra,col=3)
+  abline(a=0,b=1,col=2,lwd=2)
+```
+
+QUestion: is the null-biased prior maybe a little too conservative?
+Answer: log likelihoods don't suggest they are
+
+```{r}
+  hist(pval[[1]])
+```
+
+
+
+```{r}
+hh.ashtrue = hh.ashz
+hh.ashtrue$fitted.g$pi = c(2/3,1/15,1/15,1/15,1/15,1/15)
+hh.ashtrue$fitted.g$mean = c(0,0,0,0,0,0)
+hh.ashtrue$fitted.g$sd = sqrt(c(0,1,0.2,0.4,0.8,3))
+
+loglik(hh.ashtrue,betahat,sebetahat)
+loglik(hh.ashz,betahat,sebetahat)
+```
+
