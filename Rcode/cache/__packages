@@ -1,5 +1,8 @@
 ashr
 base
+fdrtool
 knitr
+locfdr
+mixfdr
 qvalue
 truncnorm
