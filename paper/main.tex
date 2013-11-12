@@ -127,7 +127,7 @@
 % Title must be 150 characters or less
 \begin{flushleft}
 {\Large
-\textbf{Shrinkage, False Discovery Rate Estimation, and an alternative to the ``Zero assumption" when precision varies across units}
+\textbf{Shrinkage, False Discovery Rate, and False Sign Rate Estimation when precision varies across units}
 }
 % Insert Author names, affiliations and corresponding author email.
 \\
@@ -156,8 +156,9 @@ each measurement comes with an associated standard error,
 $s_j$. A key aim here will be to take proper account of the fact that some measurements may be more precise than others: that is, to take proper account of variation in $s_j$ across $j$.
 
 A common goal, particularly in genomic studies, is to identify which $\beta_j$ differ from zero. This is commonly tackled
-by first computing a $p$ value for each $j$, testing $H_j:\beta_j=0$, and then applying methods based on False Discovery Rates, such as the qvalue package. For example, we could compute $Z$ scores $Z_j = \beta_j/s_j$, and translate $Z_j$ to a $p$ value, 
-$p_j$, and then use now-standard methods to select a $p$ value threshold to control the FDR. 
+by first computing an effect size estimate ($\hat\beta_j$) and its standard error ($s_j$), converting this to a $Z$ score ($Z_j=\hat\beta_j/s_j$)
+and a corresponding $p$ value ($p_j$), testing $H_j:\beta_j=0$.  Then standard methods (e.g. the qvalue package) can be used
+to estimate False Discovery Rates at any given threshold. 
 
 There are two issues with this approach that I would like to address here. The first is that it really does not take proper account of the measurement errors. To see this, consider an example where half the measurements are quite precise, and the other half are really, really, poor. Intuitively, the poor measurements tell us nothing, and any sane analysis should effectively ignore them. However, in a standard FDR-type analysis, these poor measurements add ``noise" and affect estimated FDRs. This is because the $p$ values from the poor measurements will be effectively uniformly distributed, and some will be significant at any given threshold. 
 
@@ -353,7 +354,7 @@ inference objective is to ask which $\beta_j$ are positive and which are negativ
 $\beta_j$ are exactly zero, it could be argued that identifying which are positive and which negative is
 fundamentally more interesting and useful than identifying which are non-zero. 
 
-Following these ideas of \cite{gelman.etal}, we define the local False Sign Rate (lfsr) for observation $j$ as 
+Following these ideas, we define the local False Sign Rate (lfsr) for observation $j$ as 
 \begin{equation}
 \lfsr_j := \min[ p(\beta_j \geq 0| \hat\beta, s), p(\beta_j \leq 0| \hat\beta, s) ].
 \end{equation}
@@ -362,7 +363,8 @@ were to make our best guess. (Note that we count it as an error to state that $\
 To illustrate, suppose for concreteness
 that the minimum is achieved by the first term, $p(\beta_j \geq 0| \hat\beta, s)=0.05$ say. Then
 our best guess would be that $\beta$ is negative, and the probability that we have
-made an error in sign would be 0.05.
+made an error in sign would be 0.05. We note that the idea of focussing on tail areas, rather than point null hypotheses,
+has a long history (e.g. Altham? others?).
 
 Note that $\text{lfsr}_j \geq \text{lfdr}_j$ 
 because both the events $\beta_j \geq 0$
@@ -393,14 +395,50 @@ distributions in Step 2.
 
 \section*{Results}
 
+\subsection{Improved conservative estimation of $\pi_0$}
 
-- Illustration that 2 local false sign rate is approximately local fdr.
+To illustrate, we provide simulation results for two scenarios, the first being a ``difficult" case where many non-zero $\beta$ are
+too close to  zero to be reliably detected, and the second being an ``easier" case where most non-zero $\beta$ are
+sufficiently different from zero that they can be reliably detected.
+
+Specifically we use the following distributions for the non-zero $\beta$:
+\begin{itemize}
+\item[Simulation 1:]
+\begin{equation}
+f_1(\cdot) =  0.4 N(0,0.25^2) + 0.2 N(0,0.5^2) + 0.2 N(0,1^2), 0.2 N(0,2^2)
+\end{equation}
+\item[Simulation 2:]
+\begin{equation}
+f_1(\cdot) = N(0,4^2)
+\end{equation}
+\end{itemize}
+
+Emphasize that although pi0 is unidentifiable, the underlying distribution g is estimable
+quite accurately.
+
+\subsection{Local False Sign Rate}
+
+There are two reasons to use the lfsr instead of the lfdr: it is more generally meaningful (e.g. it applies
+whether or not zero effects exist),  and estimation of lfsr is more robust to modeling assumptions. 
+
+\begin{figure}[!ht]
+\begin{center}
+\includegraphics[height=320px,width=540px]{Rcode/figures/lfsdr_sim1sim2_blowup.png}
+\end{center}
+\caption{Figure showing lfsr is more robust than lfdr}
+\end{figure}
+
+- Illustration that estimated lfsr is more robust.
+
+- Illustration that adjusted estimate of lfsr is still more robust..
+
+- Compare estimated lfsr with true lfsr for difficult simulation case, to show nearly achieves Bayes Risk?
+
+\subsection{Accounting for measurement precision improves estimates of FDR/fsr}
  
 - Illustration of effects of contamination on FDR by low-quality data
 comparison with ash.
 
-- Illustration of the difference between the zero assumption and no zero assumption on FDR
-in case z is N(0,2) vs N(0,1). [no difference in precision]
 
 - Comparison between exchangeable effects vs Exchangeable standardized effects; Hedenberg data. 
 
