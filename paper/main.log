@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.1415926-2.4-1.40.13 (TeX Live 2012) (format=pdflatex 2012.6.30)  11 NOV 2013 16:45
+This is pdfTeX, Version 3.1415926-2.4-1.40.13 (TeX Live 2012) (format=pdflatex 2012.6.30)  14 NOV 2013 12:07
 entering extended mode
  \write18 enabled.
  %&-line parsing enabled.
@@ -300,53 +300,111 @@ File: umsb.fd 2009/06/22 v3.00 AMS symbols B
 
 ] [2]
 
-LaTeX Warning: Citation `muralidharan:2012' on page 3 undefined on input line 2
-78.
+LaTeX Warning: Citation `efron' on page 3 undefined on input line 249.
 
-[3]
 
-LaTeX Warning: Citation `gelman.etal' on page 4 undefined on input line 346.
+LaTeX Warning: Citation `cai?' on page 3 undefined on input line 249.
 
-[4] <Rcode/figures/lfsdr_sim1sim2_blowup.png, id=25, 722.7pt x 428.60126pt>
+
+LaTeX Warning: Reference `' on page 3 undefined on input line 287.
+
+
+LaTeX Warning: Citation `grenander' on page 3 undefined on input line 289.
+
+
+LaTeX Warning: Citation `campy.thomas' on page 3 undefined on input line 290.
+
+[3] [4]
+
+LaTeX Warning: Citation `muralidharan:2012' on page 5 undefined on input line 3
+52.
+
+
+LaTeX Warning: Citation `gelman.etal' on page 5 undefined on input line 379.
+
+[5] <Rcode/figures/good_poor_hist.pdf, id=29, 433.62pt x 216.81pt>
+File: Rcode/figures/good_poor_hist.pdf Graphic file (type pdf)
+
+<use Rcode/figures/good_poor_hist.pdf>
+Package pdftex.def Info: Rcode/figures/good_poor_hist.pdf used on input line 42
+9.
+(pdftex.def)             Requested size: 433.63878pt x 216.81pt.
+
+<Rcode/figures/good_vs_all.pdf, id=30, 469.755pt x 216.81pt>
+File: Rcode/figures/good_vs_all.pdf Graphic file (type pdf)
+
+<use Rcode/figures/good_vs_all.pdf>
+Package pdftex.def Info: Rcode/figures/good_vs_all.pdf used on input line 430.
+(pdftex.def)             Requested size: 469.75499pt x 216.80946pt.
+
+Overfull \hbox (14.51091pt too wide) in paragraph at lines 429--431
+ [] 
+ []
+
+
+Package caption Warning: \label without proper \caption on input line 474.
+See the caption package documentation for explanation.
+
+
+LaTeX Warning: Reference `fig:pi0' on page 6 undefined on input line 463.
+
+<Rcode/figures/estpi0_sim1sim2.png, id=31, 542.025pt x 160.6pt>
+File: Rcode/figures/estpi0_sim1sim2.png Graphic file (type png)
+
+<use Rcode/figures/estpi0_sim1sim2.png>
+Package pdftex.def Info: Rcode/figures/estpi0_sim1sim2.png used on input line 4
+76.
+(pdftex.def)             Requested size: 542.04848pt x 160.60449pt.
+
+Overfull \hbox (86.8044pt too wide) in paragraph at lines 476--477
+ [] 
+ []
+
+
+LaTeX Warning: Reference `' on page 6 undefined on input line 483.
+
+[6] <Rcode/figures/lfsdr_sim1sim2_blowup.png, id=37, 722.7pt x 428.60126pt>
 File: Rcode/figures/lfsdr_sim1sim2_blowup.png Graphic file (type png)
 
 <use Rcode/figures/lfsdr_sim1sim2_blowup.png>
 Package pdftex.def Info: Rcode/figures/lfsdr_sim1sim2_blowup.png used on input 
-line 426.
+line 496.
 (pdftex.def)             Requested size: 542.03468pt x 321.20163pt.
 
-Overfull \hbox (86.7906pt too wide) in paragraph at lines 426--427
+Overfull \hbox (86.7906pt too wide) in paragraph at lines 496--497
  [] 
  []
 
-[5] [6 <./Rcode/figures/lfsdr_sim1sim2_blowup.png>]
-Overfull \hbox (63.13425pt too wide) in paragraph at lines 508--517
+[7 <./Rcode/figures/good_poor_hist.pdf> <./Rcode/figures/good_vs_all.pdf>]
+[8 <./Rcode/figures/estpi0_sim1sim2.png>] [9 <./Rcode/figures/lfsdr_sim1sim2_bl
+owup.png>]
+Overfull \hbox (63.13425pt too wide) in paragraph at lines 576--585
 []\OT1/cmr/m/n/10 Let's try: ```r beta.ash.pm = ash(ss$\OML/cmm/m/it/10 betahat
 ; ss$\OT1/cmr/m/n/10 betasd, use-Point-Mass=TRUE) print(beta.ash.pm) print(beta
 .ash.auto)
  []
 
 
-Overfull \hbox (0.11345pt too wide) in paragraph at lines 508--517
+Overfull \hbox (0.11345pt too wide) in paragraph at lines 576--585
 \OT1/cmr/m/n/10 plot(beta.ash.auto$\OML/cmm/m/it/10 localfsr; beta:ash:pm$\OT1/
 cmr/m/n/10 localfsr,main="comparison of ash lo-calfsr, with and with-out point
  []
 
 
-Overfull \hbox (41.97943pt too wide) in paragraph at lines 508--517
+Overfull \hbox (41.97943pt too wide) in paragraph at lines 576--585
 \OT1/cmr/m/n/10 mass",xlab="no point mass", ylab="with point mass",xlim=c(0,1),
 ylim=c(0,1)) abline(a=0,b=1) abline(a=0,b=2)
  []
 
-[7]
+[10]
 
-LaTeX Warning: Citation `Rcore:2012' on page 8 undefined on input line 574.
+LaTeX Warning: Citation `Rcore:2012' on page 11 undefined on input line 642.
 
 
-LaTeX Warning: Citation `ggplot2' on page 8 undefined on input line 574.
+LaTeX Warning: Citation `ggplot2' on page 11 undefined on input line 642.
 
 No file main.bbl.
-[8] [9
+[11] [12
 
 ] (./main.aux)
 
@@ -354,13 +412,13 @@ LaTeX Warning: There were undefined references.
 
  ) 
 Here is how much of TeX's memory you used:
- 3792 strings out of 493488
- 54911 string characters out of 3141326
- 115984 words of memory out of 3000000
- 7034 multiletter control sequences out of 15000+200000
+ 3815 strings out of 493488
+ 55474 string characters out of 3141326
+ 117077 words of memory out of 3000000
+ 7054 multiletter control sequences out of 15000+200000
  12208 words of font info for 47 fonts, out of 3000000 for 9000
  957 hyphenation exceptions out of 8191
- 38i,9n,38p,661b,294s stack positions out of 5000i,500n,10000p,200000b,50000s
+ 38i,9n,38p,661b,300s stack positions out of 5000i,500n,10000p,200000b,50000s
 </usr/local/texlive/2012/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb
 ></usr/local/texlive/2012/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb>
 </usr/local/texlive/2012/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb><
@@ -374,10 +432,10 @@ exlive/2012/texmf-dist/fonts/type1/public/amsfonts/cm/cmss10.pfb></usr/local/te
 xlive/2012/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/tex
 live/2012/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></usr/local/texli
 ve/2012/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pfb>
-Output written on main.pdf (9 pages, 270367 bytes).
+Output written on main.pdf (12 pages, 338291 bytes).
 PDF statistics:
- 89 PDF objects out of 1000 (max. 8388607)
- 62 compressed objects within 1 object stream
+ 113 PDF objects out of 1000 (max. 8388607)
+ 77 compressed objects within 1 object stream
  0 named destinations out of 1000 (max. 500000)
- 6 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 21 words of extra memory for PDF output out of 10000 (max. 10000000)
 

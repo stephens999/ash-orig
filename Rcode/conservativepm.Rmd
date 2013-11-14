@@ -42,9 +42,13 @@ basicsim=function(mixsd,mixpi_alt,bsd=1,minpi0=0,seedval = 100,nsamp=1000,niter=
     betahat.ash.npm[[i]] = ash(betahat[[i]],betahatsd[[i]],pointmass=FALSE,prior="uniform",gridmult=2)
     betahat.ash.true[[i]] = ash(betahat[[i]],betahatsd[[i]],g=normalmix(mixpi,rep(0,length(mixpi)),mixsd))
     
+    cat("applying q value\n")
     betahat.qval[[i]] = qvalue(pval[[i]])
+    cat("applying fdrtool\n")
     betahat.fdrtool[[i]] = fdrtool(pval[[i]],statistic="pvalue",plot=FALSE)
-    betahat.locfdr[[i]] = locfdr(zscore[[i]],nulltype=0,plot=0)
+    cat("applying locfdr\n")
+    betahat.locfdr[[i]] = try(locfdr(zscore[[i]],nulltype=0,plot=0))
+    cat("applying mixfdr\n")
     betahat.mixfdr[[i]] = mixFdr(zscore[[i]],noiseSD=1,theonull=TRUE,plot=FALSE)
   }
   return(list(beta =beta,
@@ -71,8 +75,8 @@ mixpi_alt = c(0.4,0.2,0.2,0.2) #mixture proportions under the alternative
 simres1 = basicsim(mixsd,mixpi_alt,niter=200,nsamp=1000)
 simres1a = basicsim(mixsd,mixpi_alt,niter=200,nsamp=10000)
 simres2= basicsim(c(0,4),c(1))
-simres3=basicsim(c(0,4),c(1),bsd=c(rep(1,500),rep(10,500)))
-simres4=basicsim(c(0,4),c(1),bsd=c(rep(1,500),rep(10,500)),minpi0=0.9,seed=200)
+simres3=basicsim(c(0,2),c(1),bsd=c(rep(1,500),rep(10,500)))
+simres4=basicsim(c(0,2),c(1),bsd=c(rep(1,500),rep(10,500)),minpi0=0.9,seed=200)
 ```
 
 Show illustrative example
@@ -183,23 +187,35 @@ plot_lfdr_hist(simres1,1)
   get_pi0.mixfdr = function(f){f$pi[1]}
 
   plot_pi0 = function(sims){
-    pi0=sims$pi0  
-    pi0_ash.n=unlist(lapply(sims$betahat.ash.n,get_pi0))
-    pi0_ash.u=unlist(lapply(sims$betahat.ash.u,get_pi0)) 
-    pi0_fdrtool = unlist(lapply(sims$betahat.fdrtool,get_pi0.fdrtool))
-    pi0_locfdr=unlist(lapply(sims$betahat.locfdr,get_pi0.locfdr))
-    pi0_mixfdr = unlist(lapply(sims$betahat.mixfdr,get_pi0.mixfdr))
-    pi0_qval = unlist(lapply(sims$betahat.qval,"[[","pi0"))
+    res=list()
+    for(i in 1:length(sims)){
+      pi0=sims[[i]]$pi0  
+      pi0_ash.n=unlist(lapply(sims[[i]]$betahat.ash.n,get_pi0))
+      pi0_ash.u=unlist(lapply(sims[[i]]$betahat.ash.u,get_pi0)) 
+      pi0_fdrtool = unlist(lapply(sims[[i]]$betahat.fdrtool,get_pi0.fdrtool))
+      pi0_locfdr=unlist(lapply(sims[[i]]$betahat.locfdr,get_pi0.locfdr))
+      pi0_mixfdr = unlist(lapply(sims[[i]]$betahat.mixfdr,get_pi0.mixfdr))
+      pi0_qval = unlist(lapply(sims[[i]]$betahat.qval,"[[","pi0"))
     
-    res = data.frame(pi0=pi0,qvalue=pi0_qval,mixfdr=pi0_mixfdr, locfdr=pi0_locfdr, fdrtool=pi0_fdrtool,ash.nullbiased=pi0_ash.n,ash.uniform=pi0_ash.u)
+      res[[i]] = data.frame(Scenario=i,pi0=pi0,qvalue=pi0_qval,mixfdr=pi0_mixfdr, locfdr=pi0_locfdr, fdrtool=pi0_fdrtool,ash.nullbiased=pi0_ash.n,ash.uniform=pi0_ash.u)
+    }
+    cbbPalette <- c("#56B4E9", "#009E73", "#F0E442", "#0072B2", "#E69F00", "#000000", "#D55E00", "#CC79A7")
+    labels = c('mixfdr','qvalue','locfdr','fdrtool','ash (null-biased)','ash (mle)')
+    breaks = c("mixfdr","qvalue","locfdr","fdrtool","ash.nullbiased","ash.uniform")
+    
     require(reshape2)
-    res.melt = melt(res, id.vars=c("pi0"),variable.name="Method")
-    p=ggplot(data=res.melt,aes(pi0,value,colour=Method)) +geom_point(shape=16) +
-        geom_abline(colour = "black") +
+    res.melt = melt(res, id.vars=c("pi0","Scenario"),variable.name="Method")
+    res.melt = res.melt[sample(1:nrow(res.melt)),]  
+    res.melt$Scenario = as.factor(res.melt$Scenario)
+    levels(res.melt$Scenario) = c("Scenario 1a","Scenario 1b","Scenario 2")
+    p=ggplot(data=res.melt,aes(pi0,value,colour=Method)) +geom_point(shape=1) +
+        facet_grid(. ~ Scenario) +
+      geom_abline(colour = "black") +
         xlab("True pi0") +
         ylab("Estimated pi0")
     print(p +scale_y_continuous(limits=c(0,1)) +
           scale_x_continuous(limits=c(0,1)) +
+          scale_colour_manual(values=cbbPalette,breaks=breaks,labels=labels) +
           coord_equal(ratio=1))
     
   }
@@ -225,13 +241,10 @@ plot_lfdr_hist(simres1,1)
     
   }
 
-  pdf("figures/estpi0_sim1.pdf")
-    plot_pi0(simres1)
+  png("figures/estpi0_sim1sim2.png",height=160,width=540)
+    plot_pi0(list(simres1,simres1a,simres2))
   dev.off()
-  pdf("figures/estpi0_sim2.pdf")
-    plot_pi0(simres2)
-  dev.off()
-
+ 
 ```
 
 Figure to show that estimated betahats are not so different
@@ -294,7 +307,7 @@ Figure to show that estimated betahats are not so different
 ```
 
 ```{r}
-mean_quant=function (x, mult = 1){
+mean_quant=function(x, mult = 1){
       x <- na.omit(x)
       sd <- mult * sqrt(var(x))
       mean <- mean(x)
@@ -337,7 +350,7 @@ mean_quant=function (x, mult = 1){
     
 
     cbbPalette <- c("#000000","#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
-    labels = c('ash (null-biased)','ash (uniform)')
+    labels = c('ash (null-biased)','ash (mle)')
     breaks = c("ash.nullbiased","ash.uniform")
     if(ptype=="lfdr"){
       labels = c('mixfdr', labels)
@@ -399,9 +412,11 @@ plot_lfsdr=function(sims,maxx=0.1,ptype=c("lfsr","lfsra"),maxy=1){
     require(reshape2)
     
     res.melt = melt(res, id.vars=c("Bayes","Scenario","Measure"),variable.name="Method")
+    res.melt$Scenario = as.factor(res.melt$Scenario)
+    levels(res.melt$Scenario) = c("Scenario 1a","Scenario 1b","Scenario 2")
     
-    cbbPalette <- c("#000000","#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
-    labels = c('mixfdr','ash (null-biased)','ash (uniform)')
+    cbbPalette <- c("#E69F00","#000000", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+    labels = c('mixfdr','ash (null-biased)','ash (mle)')
     breaks = c("mixfdr","ash.nullbiased","ash.uniform")
     
     p=ggplot(data=res.melt,aes(Bayes,value,colour=Method)) + 
@@ -425,6 +440,12 @@ plot_lfsdr=function(sims,maxx=0.1,ptype=c("lfsr","lfsra"),maxy=1){
 ```{r}
 png("figures/lfsdr_sim1sim2_blowup.png",height=427,width=720)
   plot_lfsdr(list(simres1,simres1a,simres2),0.1,ptype="lfsra")
+dev.off()
+```
+
+```{r}
+png("figures/lfsdr_sim1sim2_blowup.png",height=427,width=720)
+  plot_lfsdr(list(simres1,simres1a,simres2),0.1,ymax=0.2,ptype="lfsra")
 dev.off()
 ```
 
