@@ -689,19 +689,26 @@ get_pi0 = function(a){
 #' @title Compute loglikelihood for data from ash fit
 #'
 #' @description Return the log-likelihood of the data betahat, with standard errors betahatsd, 
-#' under the fitted distribution in the ash object
+#' under the fitted distribution in the ash object. 
+#' 
 #'
 #' @param a the fitted ash object
 #' @param betahat the data
 #' @param betahatsd the observed standard errors
-#' 
+#' @param zscores indicates whether ash object was originally fit to z scores 
 #' @details None
 #' 
 #' @export
 #' 
 #'
-loglik.ash = function(a,betahat,betahatsd){
-  return(loglik_conv(a$fitted.g,betahat, betahatsd))
+loglik.ash = function(a,betahat,betahatsd,zscores=FALSE){
+  g=a$fitted.g
+  FUN="+"
+  if(zscores==TRUE){
+    g$sd = sqrt(g$sd^2+1) 
+    FUN="*"
+  }
+  return(loglik_conv(g,betahat, betahatsd,FUN))
 }
 
 #' @title Density method for ash object
