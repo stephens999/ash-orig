@@ -256,57 +256,6 @@ Figure to show that estimated betahats are not so different
 ```
 
 ```{r}
-  rmse = function(x,y){sqrt(mean((x-y)^2))}
-  get_rmse.ash = function(a,b){rmse(a$PosteriorMean,b)}
-  get_rmse.mixfdr = function(a,b){rmse(a$effectSize,b)}
-  plot_rmse = function(sims,inczero=FALSE,incbetahat=FALSE){
-    err.ash.n= mapply(get_rmse.ash,sims$betahat.ash.n,sims$beta)
-    err.ash.u = mapply(get_rmse.ash,sims$betahat.ash.u,sims$beta)
-    err.mixfdr=mapply(get_rmse.mixfdr,sims$betahat.mixfdr,sims$beta)
-    err.betahat = mapply(rmse,sims$betahat,sims$beta)
-    err.zero = unlist(lapply(sims$beta,rmse,y=0))
-    
-     res = data.frame(mixfdr=err.mixfdr,ash.nullbiased=err.ash.n,ash.uniform=err.ash.u)
-    if(inczero){
-      res=data.frame(res,zero=err.zero)
-    }
-    if(incbetahat){
-      res=data.frame(res,betahat=err.betahat)
-    }
-    require(reshape2)
-    res.melt = melt(res, id.vars=c("ash.uniform"),variable.name="Method")
-    
-    p=ggplot(data=res.melt,aes(ash.uniform,value,colour=Method)) +geom_point(shape=16) +
-        geom_abline(colour = "black") +
-        xlab("RMSE (ash.uniform)") +
-        ylab("RMSE (other method)")
-    print(p +scale_y_continuous(limits=c(0,max(res))) +
-          scale_x_continuous(limits=c(0,max(res))) +
-          coord_equal(ratio=1))
-  }
-  pdf("figures/rmse_sim1.pdf")
-    plot_rmse(simres1)
-  dev.off()
-  pdf("figures/rmse_sim2.pdf")
-    plot_rmse(simres2)
-  dev.off()
-```
-
-
-
-
-```{r}
-  plot_LR=function(sims){
-    hist(unlist(lapply(sims$betahat.ash.u,get_loglik))-unlist(lapply(sims$betahat.ash.n,get_loglik)), xlab="loglik difference", main="loglik differences for nullbiased prior vs mle",nclass=10)
-  }
-
-  pdf("figures/logLR.pdf")
-    plot_LR(simres1)
-    plot_LR(simres2)
-  dev.off()
-```
-
-```{r}
 mean_quant=function(x, mult = 1){
       x <- na.omit(x)
       sd <- mult * sqrt(var(x))

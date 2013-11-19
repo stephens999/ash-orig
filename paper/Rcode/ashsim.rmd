@@ -1,0 +1,172 @@
+```{r}
+  require("ashr")
+  ```{r}
+opts_knit$set(progress = TRUE, verbose = TRUE,root.dir="~/Documents/git/ash/paper/Rcode")
+require(ashr)
+require(qvalue)
+require(fdrtool)
+require(mixfdr)
+require(locfdr)
+require(ggplot2)
+#simulate from mixture of normals
+#compare normal, uniform and half-uniform mixtures
+#bsd gives standard deviation of beta
+ashsim=function(mixmean,mixsd,mixpi,bsd=1,seedval = 100,nsamp=1000,niter=50){  
+  set.seed(seedval)  
+  beta =list()
+  betahatsd=list()
+  betahat = list()
+  betahat.ash.n = list()
+  betahat.ash.u = list()
+  betahat.ash.hu = list()
+  k = length(mixmean)
+  for(i in 1:niter){
+    comp = sample(1:k,nsamp,prob=mixpi,replace=TRUE)
+    sd = mixsd[comp]
+    mean = mixmean[comp]
+    beta[[i]] = rnorm(nsamp,mean,sd)
+    betahatsd[[i]] = bsd
+    betahat[[i]] = beta[[i]]+rnorm(nsamp,0,betahatsd[[i]])
+    betahat.ash.n[[i]] = ash(betahat[[i]],betahatsd[[i]],mixcompdist="normal",method="shrink")
+    betahat.ash.u[[i]] = ash(betahat[[i]],betahatsd[[i]],mixcompdist="uniform", method="shrink")
+    betahat.ash.hu[[i]] = ash(betahat[[i]],betahatsd[[i]],mixcompdist="halfuniform", method="shrink")
+    
+  }
+  return(list(beta =beta,
+  betahatsd=betahatsd,
+  betahat = betahat,
+  betahat.ash.n = betahat.ash.n,
+  betahat.ash.u = betahat.ash.u,
+  betahat.ash.hu = betahat.ash.hu))
+}    
+```
+
+```{r}
+sim1= ashsim(c(0,0,0),c(1,1,2),c(1/3,1/3,1/3),niter=20,nsamp=1000)
+sim2= ashsim(c(-1.5,-1,-0.5,0,0.5,1,1.5),rep(0.5,7),rep(1/7,7),niter=20,nsamp=1000)
+sim3= ashsim(c(-2,-1,0,1),c(2,1.5,1,1),c(1/4,1/4,1/3,1/6),niter=20,nsamp=1000)
+
+```
+
+```{r}
+len=length(sim1$beta[[1]])
+res = data.frame(beta = c(sim1$beta[[1]],sim2$beta[[1]],sim3$beta[[1]]), Scenario = c(rep(1,len),rep(2,len),rep(3,len)))
+x = seq(-8,6,length=100)
+y = dnorm(x)
+dens1 = data.frame(x=x,dn= t(density(sim1$betahat.ash.n[[1]],x)$y),du=t(density(sim1$betahat.ash.u[[1]],x)$y),dhu=t(density(sim1$betahat.ash.hu[[1]],x)$y), Scenario=1)
+dens2 = data.frame(x=x,dn = t(density(sim2$betahat.ash.n[[1]],x)$y),du=t(density(sim2$betahat.ash.u[[1]],x)$y), dhu=t(density(sim2$betahat.ash.hu[[1]],x)$y), Scenario=2)
+dens3 = data.frame(x=x,dn = t(density(sim3$betahat.ash.n[[1]],x)$y),du=t(density(sim3$betahat.ash.u[[1]],x)$y), dhu=t(density(sim3$betahat.ash.hu[[1]],x)$y), Scenario=3)
+dens=rbind(dens1,dens2,dens3)
+ggplot(res, aes(x=beta)) + facet_grid(.~Scenario)  +
+    geom_histogram(aes(y=..density..),binwidth=0.5,
+                   colour="black", fill="white") +  
+  geom_line(data = dens, aes(x,du,color='Uniform'),size=1.2,alpha=0.8) +
+  geom_line(data = dens, aes(x,dhu,color='Half Uniform'),size=1.2,alpha=0.8) +
+    geom_line(data = dens, aes(x,dn,color='Normal'),size=1.2,alpha=0.8) +
+  scale_colour_manual(name = 'Method', values = c('red', 'blue','green')) 
+
+```
+
+
+```{r}
+  rmse = function(x,y){sqrt(mean((x-y)^2))}
+  get_rmse.ash = function(a,b){rmse(a$PosteriorMean,b)}
+  get_rmse.mixfdr = function(a,b){rmse(a$effectSize,b)}
+  plot_rmse = function(sims,inczero=FALSE,incbetahat=FALSE){
+    res=list()
+    res2=list()
+    for(i in 1:length(sims)){
+      err.ash.n= mapply(get_rmse.ash,sims[[i]]$betahat.ash.n,sims[[i]]$beta)
+      err.ash.u = mapply(get_rmse.ash,sims[[i]]$betahat.ash.u,sims[[i]]$beta)
+      err.ash.hu = mapply(get_rmse.ash,sims[[i]]$betahat.ash.hu,sims[[i]]$beta)
+    #err.mixfdr=mapply(get_rmse.mixfdr,sims$betahat.mixfdr,sims$beta)
+      err.betahat = mapply(rmse,sims[[i]]$betahat,sims[[i]]$beta)
+      err.zero = unlist(lapply(sims[[i]]$beta,rmse,y=0))
+      loglik.ash.n = unlist(lapply(sims[[i]]$betahat.ash.n,get_loglik))
+      loglik.ash.u = unlist(lapply(sims[[i]]$betahat.ash.u,get_loglik))
+      loglik.ash.hu = unlist(lapply(sims[[i]]$betahat.ash.hu,get_loglik))
+     res[[i]] = data.frame(Scenario=i,ash.normal=err.ash.n,ash.uniform=err.ash.u,ash.halfuniform=err.ash.hu)
+      res2[[i]] = data.frame(Scenario=i,ash.normal=loglik.ash.n,ash.uniform=loglik.ash.u,ash.halfuniform=loglik.ash.hu)
+      
+      if(inczero){
+        res[[i]]=data.frame(res,zero=err.zero)
+      }
+      if(incbetahat){
+        res[[i]]=data.frame(res,betahat=err.betahat)
+      }
+    }
+    require(reshape2)
+    res.melt = melt(res, id.vars=c("Scenario"),variable.name="Method")
+    res2.melt = melt(res2, id.vars=c("Scenario"),variable.name="Method")
+    ggplot(data=res.melt,aes(Method,value)) +geom_boxplot()+         facet_grid(. ~ Scenario)
+     ggplot(data=res2.melt,aes(Method,value)) +geom_boxplot()+         facet_grid(. ~ Scenario)
+    
+    p=ggplot(data=res.melt,aes(ash.halfuniform,value,colour=Method)) +geom_point(shape=16) +
+         facet_grid(. ~ Scenario) +
+        geom_abline(colour = "black") +
+        xlab("RMSE (ash.halfuniform)") +
+        ylab("RMSE (other method)")
+    print(p +
+          coord_equal(ratio=1))
+  }
+  #pdf("figures/rmse_sim1.pdf")
+    plot_rmse(list(sim1,sim2,sim3))
+ #               dev.off()
+  #pdf("figures/rmse_sim2.pdf")
+  #  plot_rmse(simres2)
+  #dev.off()
+```
+
+Try plotting boxplots of rmse and fit impovement compared with most general model
+```{r}
+  rmse = function(x,y){sqrt(mean((x-y)^2))}
+  get_rmse.ash = function(a,b){rmse(a$PosteriorMean,b)}
+  get_rmse.mixfdr = function(a,b){rmse(a$effectSize,b)}
+  boxplot_rmse_loglik = function(sims,inczero=FALSE,incbetahat=FALSE){
+    res=list()
+    res2=list()
+    for(i in 1:length(sims)){
+      err.ash.hu = mapply(get_rmse.ash,sims[[i]]$betahat.ash.hu,sims[[i]]$beta)
+      err.ash.n= mapply(get_rmse.ash,sims[[i]]$betahat.ash.n,sims[[i]]$beta)-err.ash.hu
+      err.ash.u = mapply(get_rmse.ash,sims[[i]]$betahat.ash.u,sims[[i]]$beta)-err.ash.hu
+      #err.mixfdr=mapply(get_rmse.mixfdr,sims$betahat.mixfdr,sims$beta)
+      loglik.ash.hu = unlist(lapply(sims[[i]]$betahat.ash.hu,get_loglik))
+      loglik.ash.n = unlist(lapply(sims[[i]]$betahat.ash.n,get_loglik))-loglik.ash.hu
+      loglik.ash.u = unlist(lapply(sims[[i]]$betahat.ash.u,get_loglik))-loglik.ash.hu
+    
+     res[[i]] = data.frame(Scenario=i,ash.normal.err=err.ash.n,ash.uniform.err=err.ash.u)
+       res2[[i]] = data.frame(Scenario=i,ash.normal=loglik.ash.n,ash.uniform=loglik.ash.u)
+           
+    }
+    require(reshape2)
+    res.melt = melt(res, id.vars=c("Scenario"))
+    
+    res2.melt=melt(res2,id.vars=c("Scenario"))
+    ggplot(res.melt,aes(variable,value)) + geom_boxplot() + facet_grid(.~Scenario)
+    ggplot(res2.melt,aes(variable,value)) + geom_boxplot() + facet_grid(.~Scenario)
+  }
+    
+   
+  pdf("figures/boxplot_rmse_loglik.pdf")
+    boxplot_rmse_loglik(list(sim1,sim2,sim3))
+  dev.off()
+  
+```
+
+
+
+```{r}
+  plot_LR=function(sims){
+    hist(unlist(lapply(sims$betahat.ash.u,get_loglik))-unlist(lapply(sims$betahat.ash.n,get_loglik)), xlab="loglik difference", main="loglik differences for nullbiased prior vs mle",nclass=10)
+  }
+
+  pdf("figures/logLR.pdf")
+    plot_LR(simres1)
+    plot_LR(simres2)
+  dev.off()
+```
+
+```{r}
+  lapply()
+```
+
