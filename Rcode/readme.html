@@ -390,12 +390,10 @@ need to code it. This section is work in progress.</p>
 first with \( \beta \sim \sum_k \pi_k N(0,\sigma_k^2) \), and then \( \beta_s \sim \sum_k \pi_k N(0, \sigma^2_k se^2_s) \):</p>
 
 <pre><code class="r">cat(loglik.ash(hh.ash, hh.betahat, hh.sebetahat), loglik.ash(hh.ash2, hh.betahat, 
-    hh.sebetahat, TRUE), mixseLoglik(hh.betahat, hh.ash$fitted.g$pi, hh.ash$fitted.g$mean, 
-    hh.ash$fitted.g$sd, hh.sebetahat), mixseLoglik(hh.betahat, hh.ash2$fitted.g$pi, 
-    hh.ash2$fitted.g$mean, sqrt(hh.ash2$fitted.g$sd^2 + 1), hh.sebetahat, FUN = &quot;*&quot;))
+    hh.sebetahat, TRUE))
 </code></pre>
 
-<pre><code>## Error: could not find function &quot;mixseLoglik&quot;
+<pre><code>## -1921 -1761
 </code></pre>
 
 <p>Looks like the second model fits better.</p>

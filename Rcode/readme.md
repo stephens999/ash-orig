@@ -238,13 +238,11 @@ first with $\beta \sim \sum_k \pi_k N(0,\sigma_k^2)$, and then $\beta_s \sim \su
 
 ```r
 cat(loglik.ash(hh.ash, hh.betahat, hh.sebetahat), loglik.ash(hh.ash2, hh.betahat, 
-    hh.sebetahat, TRUE), mixseLoglik(hh.betahat, hh.ash$fitted.g$pi, hh.ash$fitted.g$mean, 
-    hh.ash$fitted.g$sd, hh.sebetahat), mixseLoglik(hh.betahat, hh.ash2$fitted.g$pi, 
-    hh.ash2$fitted.g$mean, sqrt(hh.ash2$fitted.g$sd^2 + 1), hh.sebetahat, FUN = "*"))
+    hh.sebetahat, TRUE))
 ```
 
 ```
-## Error: could not find function "mixseLoglik"
+## -1921 -1761
 ```
 
 Looks like the second model fits better.
