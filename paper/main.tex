@@ -148,6 +148,21 @@ $\ast$ E-mail: Corresponding mstephens@uchicago.edu
 
 \section*{Introduction}
 
+It is common in statistics that you measure many ``similar" things imperfectly, and wish to estimate their values. The situation arises commonly in the kinds of genomics applications I am often involved in, but also in other areas of statistics.
+In genomics, for example, a very common goal
+is to compare the mean
+expression (activity) level of many genes in two conditions.
+Let $\mu^0_j$ and $\mu^1_j$ denote the mean expression 
+of gene $j$ ($j=1,\dots,J$) in the two conditions, and define $\beta_j:= \mu^0_j - \mu^1_j$ to be the difference. Typically expression
+measurements are made on only a small number of
+samples in each condition - sometimes as few as one
+sample in each condition. Thus the error in estimates
+of $\mu^0_j$ and $\mu^1_j$ is appreciable, and the error
+in estimates of $\beta_j$ still greater.
+
+A fundamental idea is
+that the measurements of $\beta_j$ for each gene can be used to improve inference for the values of $\beta$ for other genes.
+
 Suppose that we measure, with error, a series of ``effects", $\beta_1,\dots,\beta_J$. To take just one concrete 
 example, $\beta_j$ could be 
 the difference in the mean (log) expression levels of gene $j$ ($j=1,\dots,J$) between 2 conditions. In this case, a measurement of
@@ -176,11 +191,11 @@ the traditional focus of shrinkage-based methods, \emph{and} improved assessment
 By ``adaptive" shrinkage we 
 have two key properties in mind. First, the appropriate amount of shrinkage is determined from the data, rather than being pre-specified. Second, the amount of shrinkage undergone by each $\hat\beta_j$ will depend on the standard error $s_j$: measurements with high standard error will undergo more shrinkage than measurements with low standard error.
 
-Given that shrinkage estimation is widely recognized as a powerful tool, there are suprisingly few software packages for performing the simplest type of shrinkage estimation considered here. (There are more packages for the more complex setting of covariance estimation, where shrinkage is perhaps still more important.)
+Given that shrinkage estimation is widely recognized as a powerful tool, there are surprisingly few software packages for performing the simplest type of shrinkage estimation considered here. (There are more packages for the more complex setting of covariance estimation, where shrinkage is perhaps still more important.)
 The only package we have found that provides anything similar
 to the functionality provided here is mixfdr (Muralidharan). Compared with mixfdr, the key features of ashr are that it
-i) focuses on allowing for variation in the standard deviation of each observation; ii) constrains the underlying density to be unimodal (and possibly symettric).
-NOTE: should emphasise these differences in the examples.
+i) focuses on allowing for variation in the standard deviation of each observation; ii) constrains the underlying density to be unimodal (and possibly symmetric).
+NOTE: should emphasize these differences in the examples.
 
 As an important special case, these methods address the "multiple comparisons" setting, where interest usually focuses on which $\beta_j$ can be confidently inferred to be non-zero. Such problems are usually tackled by computing a $p$ value for each $j$, often by applying a $t$ test to $\hat\beta_j/s_j$,
 and then applying a generic procedure, such as that of Benjamini 
@@ -197,120 +212,124 @@ previously, including Greenland and Robins (1991),
 Efron (2008) and Gelman et al (2012). [Note, check also Louis, JASA, 1984] 
 
 
-
-It is common in statistics that you measure many ``similar" things imperfectly, and wish to estimate their values. The situation arises commonly in the kinds of genomics applications I am often involved in, but also in other areas of statistics.
-In genomics, for example, a very common goal
-is to compare the mean
-expression (activity) level of many genes in two conditions.
-Let $\mu^0_j$ and $\mu^1_j$ denote the mean expression 
-of gene $j$ ($j=1,\dots,J$) in the two conditions, and define $\beta_j:= \mu^0_j - \mu^1_j$ to be the difference. Typically expression
-measurements are made on only a small number of
-samples in each condition - sometimes as few as one
-sample in each condition. Thus the error in estimates
-of $\mu^0_j$ and $\mu^1_j$ is appreciable, and the error
-in estimates of $\beta_j$ still greater.
-
-A fundamental idea is
-that the measurements of $\beta_j$ for each gene can be used to improve inference for the values of $\beta$ for other genes.
-
-A key issue I want to address here is that if these measurements are made with different precisions, then we want to
-take this into account in our analysis.
-We can do this by assuming that the likelihood for $\beta$ is a normal, with mean $\hat\beta_p$ and standard deviation $s_p$. (Note that this is equivalent to the likelihood we would get
-if we ``observed" data $\hat\beta_p \sim N(\beta_p, s_p)$.)
-
-
-
-
  \section*{Methods}
  
  Suppose that we are interested in the values of $n$ ``effects" $\beta_j$ ($j=1,\dots,n$). In some contexts our interest may focus on which of the $\beta_j$ are ``significantly" different from zero, whereas in other contexts our interest may focus on estimating their values; the methods described here are suited to both these contexts.
  We assume that we have obtained data $D_1,\dots,D_n$ that provide independent estimates $\hat\beta_1,\dots,\hat\beta_n$ of these effects,
- with corresponding (estimated) standard errors $s_1,\dots,s_n$. (See Discussion for ideas on how our methods may be applicable more generally; for example
- if, in place of $s_j$, we have a $p$ value testing $\beta_j=0$.)
+ with corresponding (estimated) standard errors $s_1,\dots,s_n$. For our purposes, these estimates and standard errors could be obtained from the data
+ using any method, provided they (approximately) satisfy 
+ \begin{equation} \label{eqn:betahat}
+ \hat\beta_j | \beta_j, s_j \sim N(\beta_j, s_j).
+ \end{equation}
+ [In some settings a $t$ distribution assumption for $\hat\beta_j | s_j, \beta_j$ may be more appropriate, and could also be incorporated into our methods; see Discussion.]
+ %(See Discussion for ideas on how our methods may be applicable more generally; for example if, in place of $s_j$, we have a $p$ value testing $\beta_j=0$.)
  
  In outline, we use a hierarchical model to combine information across measurements, with the aim of improving both accuracy and precision of estimates. 
- Specifically we assume that the effects $\beta_j$ are independent and identically distributed from some unknown distribution $g(\cdot)$.  
- Our methods are based on the following key assumptions:
-   \begin{enumerate}
-  \item The distribution $g(\cdot)$ is unimodal. (We assume here that the mode is at 0, although 
-this could be relaxed.)  
- \item The likelihood $L(\beta_j) = p(D_j | \beta_j)$ can be approximated by a normal likelihood,
- \begin{equation} \label{eqn:lik}
- L(\beta_j) \propto \exp[-0.5(\beta_j-\hat\beta_j)^2/s_j^2].
+ Specifically we assume that the effects $\beta_j$ are independent and identically distributed from some unknown distribution $g(\cdot)$,
+ \begin{equation} \label{eqn:beta}
+ \beta_j \sim g(\cdot),
  \end{equation}
+ where $g$ will be estimated from
+ the data.  Our methods make the following key assumptions, which distinguish them from most previous work in this area:
+   \begin{enumerate}
+  \item[A1:] The distribution $g(\cdot)$ is unimodal. (We assume here that the mode is at 0, although 
+this could be relaxed.)  
+ \item[A2:] The likelihood $L(\beta_j) := p(D_j | \beta_j)$ can be approximated by a normal likelihood,
+ \begin{equation} \label{eqn:lik}
+ \hat{L}_j(\beta_j) \propto \exp[-0.5(\beta_j-\hat\beta_j)^2/s_j^2].
+ \end{equation}
+%which, in light of (\ref{eqn:betahat}), is equivalent to
+ % \begin{equation} \label{eqn:lik2}
+% L(\beta_j) \propto p(\hat\beta_j | \beta_j, s_j).
+ %\end{equation}
  \end{enumerate}
-Although these assumptions will not apply to all situations, we argue that both will be reasonable in many practical contexts. 
-For example, in contexts where interest focusses on which $\beta_j$ differ from zero, and ``$\beta_j=0$" is a plausible null hypothesis,  
+ 
+ \subsubsection*{Discussion on Assumptions}
+ 
+Although the unimodal assumption, A1, will not apply to all situations, we argue that it will be reasonable in many practical contexts. 
+For example, in contexts where interest focusses on which $\beta_j$ differ from zero, which suggests that ``$\beta_j=0$" is a plausible null hypothesis,  
 it seems reasonable to expect that ``$\beta_j$ very near 0" is also plausible, and that the distribution of the effects will be unimodal about 0. 
-Alternatively, in an estimation context, we can motivate Assumption 1 by considering its effect on point estimates, which is to ``shrink" the estimates towards the mode;
-this kind of shrinkage is widely regarded as useful, and provides an alternative motivation for our methods.
-Assumption 2 can be motivated either as a direct approximation to the likelihood (e.g.~by Taylor series expansion of the log-likelihood about $\hat\beta_j$),
-or by assuming that $\hat\beta_j, s_j$ are sufficient statistics for $\beta_j$ [so $L(\beta_j) \propto p(\hat\beta_j, s_j | \beta)$], and assuming that  $\hat\beta_j | s_j, \beta_j \sim N(\beta_j,s_j)$ and that $p(s_j|\beta_j)$ does not depend on $\beta_j$. [In some settings a $t$ distribution assumption for $\hat\beta_j$ may be more appropriate; see Discussion.]
-Assumption 2 has obvious parallels with approaches like \cite{efron, cai?} that model the $Z$ scores $Z_j = \beta_j/s_j$ as normally distributed under the null. However,
-there is an important difference: in our approach observations with a large $s_j$ have an essentially flat likelihood \ref{eqn:lik}, and so do not affect inference for
+Alternatively, we can motivate A1 by its effect on point estimates, which is to ``shrink" the estimates towards the mode - 
+such shrinkage is desirable from several standpoints for improving estimation accuracy. 
+Interestingly, although the unimodal assumption for $g$ seems natural to us, much previous related work on estimating False Discovery Rates  
+has assumed, either explicitly or implicitly, that the effect sizes are multimodal. (In contrast, almost all analogous work in large-scale regression assumes
+unimodal distributions for the effect sizes, such as the spike and slab, Laplace, $t$, normal-gamma, normal-inverse-gamma, or horseshoe priors.)
+We discuss the effects of these assumptions later. For now, it is important to note that assumption A1 relates to the distribution of {\it all} effects, and not only the {\it detectable} effects (i.e.~those that are significantly different from zero). It is very likely that the distribution of {\it detectable} non-zero effects will be multimodal, with one mode for detectable positive effects and another for detectable negative effects, and A1 does not contradict this.
+
+Assumption A2 can be motivated by assuming that a) $\hat\beta_j, s_j$ contain most of the information about $\beta_j$ in the data $D_j$ (i.e. they are
+``approximately sufficient" for $D_j$) and that b) $s_j$ alone contains little information about $\beta$. The former (a) suggests the approximation $\hat{L}_j(\beta_j) \propto p(\hat\beta_j, s_j | \beta) = p(\hat\beta | \beta, s_j) p(s_j | \beta)$, while the latter (b) suggests assuming that $p(s_j|\beta_j)$ does not depend on $\beta_j$. Putting these two together yields $\hat{L}_j(\beta_j) \propto p(\hat\beta_j | \beta, s_j)$, which, from (\ref{eqn:betahat}),  implies A2. (If $\hat\beta_j, s_j$ are not sufficient for $D_j$ then there is some loss of efficiency in making this approximation, but all Bayesian inferences remain valid provided they are interpreted as conditional on $\hat\beta_j,s_j$, rather than conditional on $D_j$.)
+
+While Assumption A2 has parallels with approaches like \cite{efron, cai?} that model the $Z$ scores $Z_j = \hat\beta_j/s_j$ as normally distributed under the null, 
+there is an important difference: here, observations with a large $s_j$ have an essentially flat likelihood (\ref{eqn:lik}), and so do not affect inference for
 other parameters, whereas when modeling the $Z$ scores directly, observations with large $s_j$ produce $N(0,1)$ $Z$ scores that do affect inference. In
 this way the likelihood-based approach can take better account of the informativeness of each measurement, as illustrated in Results below.
 
 %The choice of normal likelihood seems natural, and indeed it can be motivated in multiple ways. For example, we can write $p(\hat\beta_j, s_j | \beta_j) = p(\hat\beta_j | s_j, \beta_j)p(s_j | \beta_j)$. Now, if we are willing to assume that $s_j$ alone contains no information about $\beta_j$, or equivalently that $p(s_j | \beta_j)$ does not depend on $\beta_j$, then $L(\beta_j) \propto p(\hat\beta_j | s_j, \beta_j)$, and if $\hat\beta_j | s_j, \beta_j \sim N(\beta_j, s_j^2)$, as is often asymptotically the case, then we obtain the likelihood (**) above.
 
-
-Interestingly, although the unimodal assumption for $g$ seems natural to us, much previous related work on estimating False Discovery Rates  
-has tended to assume, either explicitly or implicitly, that the effect sizes are multimodal. (In contrast, almost all analogous work in large-scale regression assumes
-unimodal distributions for the effect sizes, such as the spike and slab, Laplace, NEG, $t$, normal-gamma, normal-inverse-gamma, or horseshoe priors.)
-We discuss the effects of these assumptions later. For now, it is important to note that Assumption 1 relates to the distribution of {\it all} effects, and not only the {\it detectable} effects (i.e.~those that are significantly different from zero). It is very likely that the distribution of {\it detectable} non-zero effects will be multimodal, with one mode for detectable positive effects and another for detectable negative effects, and Assumption 1 does not contradict this.
-
-
-In practice, we implement our approach by assuming a parametric finite mixture  for $g$, 
-\begin{equation}
-g(\cdot; \pi) = \pi_0 \delta_0(\cdot) + (1-\pi_0) \sum_{k=1}^K \pi_k f_k(\cdot) 
+\subsubsection*{Implementing the Unimodal assumption}
+ 
+In practice, we implement the unimodal assumption (A1) by assuming a parametric finite mixture for $g$, 
+\begin{equation} \label{eqn:g}
+g(\cdot; \pi) = \pi_0 \delta_0(\cdot) + \sum_{k=1}^K \pi_k f_k(\cdot) 
 \end{equation}
-[Or possibly remove $(1-\pi_0)$ from this?]
-where $\delta_0(\cdot)$ denotes a point mass at 0, $\pi=(\pi_0,\dots,pi_K)$ are mixture proportions to be estimated, and $f_k$ are pre-specified 
+where $\delta_0(\cdot)$ denotes a point mass at 0, $\pi=(\pi_0,\dots,\pi_K)$ are mixture proportions to be estimated (with $\pi_j \geq 0, \sum_j \pi_j=1$), and $f_k$ are pre-specified 
 component distributions with one of the following forms: 
 \begin{enumerate}[i)]
-\item $f_k(\cdot) = N(0, \sigma^2_k)$
-\item $f_k(\cdot) = U[-a_k,a_k]$
-\item $f_k(\cdot) = U[-a_k,0] \text{ or } U[0,a_k]$,
+\item $f_k(\cdot) = N(\cdot; 0, \sigma^2_k)$
+\item $f_k(\cdot) = U[\cdot; -a_k,a_k]$
+\item $f_k(\cdot) = U[\cdot; -a_k,0] \text{ or } U[\cdot; 0,a_k]$,
 \end{enumerate}
-where $N(0,\sigma^2)$ denotes the normal distribution with mean 0 and variance $\sigma^2$ and
-$U[a,b]$ denotes the unform distribution on $[a,b]$.
+where $N(\cdot; 0,\sigma^2)$ denotes the density of a normal distribution with mean 0 and variance $\sigma^2$ and
+$U[\cdot; a,b]$ denotes the density of a uniform distribution on $[a,b]$.
 That is, the non-zero effects are modeled as either i) a mixture of zero-centered normal distributions; ii) a mixture of zero-centered uniform distributions;
-or iii) a mixture of ``zero-anchored" uniform distributions.
+or iii) a mixture of ``zero-anchored" uniform distributions, which have one end of their range at 0. This approach closely mirrors approaches in \cite{campy.thomas}.
+ 
+To see the flexibility of the representation (\ref{eqn:g})
+think of $K$ as being ``large", with the values of $\sigma^2_k$ or $a_k$ 
+spanning a wide range of values, from
+essentially zero to unnecessarily large. In this way, as $K$ increases, the three different choices for $f_k$ can allow $g$ to approximate,
+with arbitrary accuracy,
+\begin{enumerate}[i)]
+\item any scale mixture of normals, which includes as special cases
+the double exponential (Laplace) distribution, any $t$ distribution, and a very large number of other distributions used in 
+high-dimensional regression settings such as the spike and slab prior, the horseshoe prior \ref{}, or the more general three-parameter beta prior \ref{}.
+\item any symmetric unimodal distribution about 0.
+\item any (asymmetric) unimodal distribution about 0.
+\end{enumerate}
+The latter two claims are related to characterizations of unimodal distributions due to Khintchine (1938) and  Shepp (1962); see Feller, 1971, page  158. 
+Furthermore, although it is natural for statisticians to immediately worry about ``overfitting" if $K$ is large, 
+in fact the unimodal constraint is sufficient to prevent serious problems with overfitting. For example, note that the unimodal
+constraint is sufficiently strong that there will exist a non-parametric
+maximum likelihood estimate (NPMLE) for $g$ under this constraint. (Indeed, if the $\beta_j$ are observed without error, corresponding to the standard errors $s_j \rightarrow 0$, this NPMLE has an explicit and elegant form; \cite{grenander}.)
+Thus allowing $K$ to be large in ii) or iii) can be thought of as approximating the NPMLE for $g$, under the constraints of symmetry and unimodality (ii), or unimodality alone (iii). 
 
-Pre-specifying the distributions $f_k$, rather than estimating them, may seem both inelegant and restrictive. However,
- any inelegance is, in our opinion, more than off-set by the very considerable computational simplifications it produces when fitting these models (see below). 
- And any apparent restrictiveness
-is illusory: by making
-$K$ sufficiently large one can approximate any symmetric unimodal distribution arbitrarily closely using the uniforms in (ii),
-and approximate any (asymmetric) unimodal distribution using the uniforms in (iii); and even the more restrictive (i) is sufficiently flexible
-to be useful in practice. Indeed, (i) can approximate arbitrarily closely any scale mixture of normals, which includes as a special case
-the double exponential distribution, any $t$ distribution, and other distributions used in high-dimensional regression settings such as the horseshoe prior \ref{},
-all of which are more restrictive. Furthermore, the unimodal constraint is sufficiently strong to prevent serious problems with overfitting when using large $K$. Indeed, by 
-increasing $K$ one can ultimately approach the non-parametric maximum likelihood estimate for $g$. Related to this, see \cite{grenander}, which provides the (extremely elegant) solution to the non-parametric maximum likelihood estimate for $g$ in the limit as the errors $s_j$ all tend to zero;
-and see \cite{campy.thomas} who suggest similar methods to those used here in the case where $s_j$ are all equal. 
+Having emphasized the flexibility that can be achieved with large $K$, we note that in practice even quite small values of $K$ (e.g. 2-10) provide highly flexible
+and effective methods. See Section \ref{} for our software default choices of $K$ and $\sigma^2_k,a_k$.
 
 % $g() = \sum_{k=1}^K (\pi^+_k U[0,a_k] + \pi^-_k U[-a_k,0])$
 
 \subsection*{Likelihood for $\pi$}
 
-Assuming independence of the data leading to $\hat\beta_1,\dots,\hat\beta_n$, the likelihood for $\pi$ can be written as 
+Assuming independence across units, the likelihood for $\pi$ is 
 \begin{equation}
-p(\hat\beta, s | \pi) = \prod_{j=1}^n p(\hat\beta_j, s_j | \pi).
+L(\pi) := p(D_1,\dots,D_J | \pi) = \prod_{j=1}^n p(D_j | \pi)
+= \prod_j \int p(D_j | \pi, \beta_j) p(\beta_j | \pi) d\beta_j \\
+= \prod_j \int p(D_j | \beta_j) g(\beta_j; \pi) d\beta_j
 \end{equation}
-Further, the assumptions  $\hat\beta_j | \beta, s_j \sim N(\beta,s_j)$ and $\beta_j | s_j, \pi \sim g(\cdot; \pi)$ yield a mixture form for $\hat\beta_j$: 
+
+
+Further, the assumptions  $\hat\beta_j | \beta_j, s_j \sim N(\beta_j,s_j)$ and $\beta_j | s_j, \pi \sim g(\cdot; \pi)$ (given by \ref{eqn:g}) yield: 
 \begin{equation}
-p(\hat\beta_j, s_j | \pi) = \pi_0 N(0,s^2_j) + \sum_k \pi_k \tilde{f}_{kj}(\hat\beta_j)
+p(\hat\beta_j, s_j | \pi) = \pi_0 N(\hat\beta_j; 0,s^2_j) + \sum_k \pi_k \tilde{f}_{kj}(\hat\beta_j)
 \end{equation}
 where $\tilde{f}_{kj}$ denotes the density of a convolution of $f_k$ with an $N(0,s^2_j)$ density.
-For example, if $f_k$ is $N(0,\sigma^2_k)$ then the convolution $\tilde{f}_{kj}$ is also normal, $\tilde{f}_{kj} = N(0,\sigma^2_k + s^2_j)$. If
-$f_k$ is $U[a_k,b_k]$ then 
+For example, if $f_k(\cdot) = N(\cdot; 0,\sigma^2_k)$ then the convolution $\tilde{f}_{kj}$ is also normal, $\tilde{f}_{kj}(\cdot) = N(\cdot; 0,\sigma^2_k + s^2_j)$. If
+$f_k(\cdot) = U[\cdot; a_k,b_k]$ then $\tilde{f}_{kj}$ is the convolution of a normal with a uniform, which has density
 \begin{equation}
-\tilde{f}_{kj}(x) = 
+\tilde{f}_{kj}(x) = (\Phi(b_k/s_j) - \Phi(a_k/s_j))/(b-a),
 \end{equation}
-by standard results on the convolution of a uniform with a normal.
+where $\Phi$ is the cumulative distribution function of the standard normal $N(0,1)$ distribution.
 
-\begin{equation}
-\end{equation}
 Putting these together, the joint model for the unobserved $\beta$ and the observed $\hat\beta, s$ is:
 \begin{align}
 p(\hat\beta, s, \beta | \pi) & = \prod_j g(\beta_j ; \pi) p(\hat\beta_j, s_j | \beta_j) \\
@@ -436,7 +455,7 @@ distributions in Step 2.
 \subsection*{Improved conservative estimation of $\pi_0$}
 
 To illustrate estimation of $\pi_0$ we provide simulation results for two scenarios:
-\begin{itemize}
+\begin{enumerate}
 \item[Scenario 1:]
 \begin{equation}
 f_1(\cdot) =  0.4 N(0,0.25^2) + 0.2 N(0,0.5^2) + 0.2 N(0,1^2), 0.2 N(0,2^2)
@@ -445,7 +464,7 @@ f_1(\cdot) =  0.4 N(0,0.25^2) + 0.2 N(0,0.5^2) + 0.2 N(0,1^2), 0.2 N(0,2^2)
 \begin{equation}
 f_1(\cdot) = N(0,4^2)
 \end{equation}
-\end{itemize}
+\end{enumerate}
 Scenario 1 represents a ``difficult" case where many non-zero $\beta$ are
 too close to  zero to be reliably detected, making reliable estimation of $\pi_0$ essentially impossible; 
 Scenario 2 represents an ``easier" case where most non-zero $\beta$ are
@@ -457,11 +476,12 @@ For each simulation scenario we simulated 200 independent data sets. For each da
 the true value of $\pi_0  \sim U[0,1]$, and then simulated $\beta_j \sim \pi_0 \delta_0 + (1-\pi_0) f_1(\cdot)$
 and $\hat\beta_j | \beta_j = N(\beta_j,1)$ for $j=1,\dots,n$. Thus these simulations assume the same
 precision for each measurement. We applied the methods implemented in the R packages qvalue, fdrtool, locfdr, and mixfdr
-for estimating $\pi_0$. We also applied our shrinkage-based method to estimate $\pi_0$ in two ways, one using a ``prior" distribution to encourage
-$\pi_0$ to be as large as possible (``null-biased"), and the other using maximum likelihood estimation for $\pi$.
+for estimating $\pi_0$. We also applied our method to estimate $\pi_0$ in two ways, one using a penalty encourage
+$\pi_0$ to be as large as possible (``null-biased"), and the other using the maximum likelihood estimate for $\pi$.
+
 
 Figure \ref{fig:pi0} compares estimated and true values of $\pi_0$ under each Scenario. 
-For Scenario 1, none of the method reliably estimate $\pi_0$, as expected since the scenario was designed to make estimation
+For Scenario 1, no method reliably estimates $\pi_0$. This is expected since, the scenario was designed to make accurate estimation
 of $\pi_0$ impossible. However, we see that all the methods except for ash (mle) are able to provide a conservative
 estimate for $\pi_0$. Further, among these the estimates from ash (null-biased) are least conservative. Scenario 2 produces similar patterns,
 except that for this scenario the ash estimates of $\pi_0$ are quite accurate (made possible by the fact that most non-zero effects
@@ -510,9 +530,55 @@ values are computed by Bayes Theorem using the true value of $g$ FILL IN THESE D
 comparison with ash.
 
 
+
+\subsection{Comparison of different underlying component distributions}
+
+We simulated data under three scenarios for the underlying effect size distribution $g$:
+\begin{enumerate}
+\item[Scenario A:]
+A mixture of zero-centered normals,
+\begin{equation}
+g(\cdot) =  (2/3) N(\cdot; 0,1) + (1/3) N(\cdot; 0, 2^2)
+\end{equation}
+\item[Scenario B:]
+A symmetric ``flat-topped" distribution, designed to be difficult to capture by a mixture of zero-centered normals 
+\begin{equation}
+g(\cdot) = (1/7) [N(\cdot; -1.5, 0.5^2) + N(\cdot; -1, 0.5^2) + N(\cdot; 0.5, 0.5^2) + N(\cdot; 0, 0.5^2) + N(\cdot; 0.5, 0.5^2) + N(\cdot; 1, 0.5^2) + N(\cdot; 1.5, 0.5^2)]
+\end{equation}
+\item[Scenario C:]
+An asymmetric distribution, 
+\begin{equation}
+g(\cdot) = (1/4) N(\cdot; -2 ,2^2) + (1/4) N(\cdot; -1 ,1.5^2) + (1/3) N(\cdot; 0 ,1) + (1/6) N(\cdot; 1,1) 
+\end{equation}
+\end{enumerate}
+In each case we simulated $\hat\beta_j  = \beta_j + N(0,s^2_j=1)$.
+
+Because the mixture of zero-anchored uniforms is more flexible than the mixture of zero-centered uniforms, which is more flexible
+than the mixture of zero-centered normals, we expect that the likelihoods will satisfy $L_{hu} > L_u > L_n$. However, for Scenario A we expect the differences in
+likelihood to be small, because the true model here is a mixture of zero-centered normals, so any gain of $L_{hu}$ and $L_u$ over $L_n$ is necessarily due to ``overfitting".
+For Scenario B, we expect that $L_{hu}$ and $L_{u}$ to be significantly larger than $L_n$, but any 
+increase of $L_{hu}$ over $L_u$ must be due to overfitting (because the truth is symmetric). Finally, for Scenario C we
+expect $L_{hu}$ to be significantly larger than the others.
+
+Figure \ref{fig:rmse_loglik_boxplot} illustrates this.
+
+
+\begin{figure}[!ht] \label{fig:rmse_loglik_boxplot}
+\begin{center}
+\includegraphics[width=6.5in]{Rcode/figures/simABC_egdens.pdf}
+%\includegraphics[width=6.5in]{Rcode/figures/rmse_loglik_boxplot.pdf}
+\includegraphics[width=6.5in]{Rcode/figures/rmse_boxplot.pdf}
+\includegraphics[width=6.5in]{Rcode/figures/loglik_boxplot.pdf}
+\end{center}
+\caption{}
+\end{figure}
+
+- how does use of the VB approach to estimate pi affect RMSE?
+
 - Comparison between exchangeable effects vs Exchangeable standardized effects; Hedenberg data. 
 
 - Possibly difference between CIs obtained by ash and usual CIs (e.g. ``of intervals where local fsr is <0.05, what proportion are the sign correct"?).
+
 
 - Asymmetric case (Half uniforms)
 
