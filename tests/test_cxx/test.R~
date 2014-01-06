@@ -1,0 +1,28 @@
+install.packages("../../package/ashr.tar.gz",repos=NULL,type="source")
+library(ashr)
+
+require("qvalue")
+
+set.seed(100)
+
+# simulate n beta-hat values, nnull under the null with altmean and altsd
+# being the mean and sd of beta under the alternative
+simdata = function(n, nnull, altmean, altsd, betasd) {
+        null = c(rep(1, nnull), rep(0, n - nnull))
+            beta = c(rep(0, nnull), rnorm(n - nnull, altmean, altsd))
+            betahat = rnorm(n, beta, betasd)
+            return(list(null = null, beta = beta, betahat = betahat, betasd = betasd))
+    }
+
+ss = simdata(10000, 8000, 0, 2, 1)
+
+system.time((beta.ash = ash(ss$betahat, ss$betasd, prior = "uniform", cxx = FALSE)))
+
+
+system.time((beta.ash.cxx = ash(ss$betahat, ss$betasd, prior = "uniform", cxx = TRUE)))
+expect_that(beta.ash$PosteriorMean, equals(beta.ash.cxx$PosteriorMean))
+expect_that(beta.ash$qvalue, equals(beta.ash.cxx$qvalue))
+expect_that(beta.ash$PositiveProb, equals(beta.ash.cxx$PositiveProb))
+
+
+
