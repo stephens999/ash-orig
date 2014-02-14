@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.1415926-2.4-1.40.13 (TeX Live 2012) (format=pdflatex 2012.6.30)  13 DEC 2013 09:03
+This is pdfTeX, Version 3.1415926-2.4-1.40.13 (TeX Live 2012) (format=pdflatex 2012.6.30)  14 FEB 2014 16:15
 entering extended mode
  \write18 enabled.
  %&-line parsing enabled.
@@ -323,68 +323,100 @@ LaTeX Warning: Reference `' on page 4 undefined on input line 307.
 
 [4]
 
-LaTeX Warning: Citation `muralidharan:2012' on page 5 undefined on input line 3
-71.
+LaTeX Warning: Citation `efron' on page 5 undefined on input line 369.
 
 
-LaTeX Warning: Citation `gelman.etal' on page 5 undefined on input line 398.
+LaTeX Warning: Citation `gelman.etal' on page 5 undefined on input line 377.
 
-[5] <Rcode/figures/good_poor_hist.pdf, id=29, 433.62pt x 216.81pt>
-File: Rcode/figures/good_poor_hist.pdf Graphic file (type pdf)
+[5]
 
-<use Rcode/figures/good_poor_hist.pdf>
-Package pdftex.def Info: Rcode/figures/good_poor_hist.pdf used on input line 44
-8.
-(pdftex.def)             Requested size: 433.63878pt x 216.81pt.
+LaTeX Warning: File `Rcode/figures/good_poor_hist.pdf' not found on input line 
+426.
 
-<Rcode/figures/good_vs_all.pdf, id=30, 469.755pt x 216.81pt>
-File: Rcode/figures/good_vs_all.pdf Graphic file (type pdf)
 
-<use Rcode/figures/good_vs_all.pdf>
-Package pdftex.def Info: Rcode/figures/good_vs_all.pdf used on input line 449.
-(pdftex.def)             Requested size: 469.75499pt x 216.80946pt.
+! Package pdftex.def Error: File `Rcode/figures/good_poor_hist.pdf' not found.
 
-Overfull \hbox (14.51091pt too wide) in paragraph at lines 448--450
+See the pdftex.def package documentation for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.426 ...ht=3in]{Rcode/figures/good_poor_hist.pdf}
+                                                  
+? 
+
+LaTeX Warning: File `Rcode/figures/good_vs_all.pdf' not found on input line 427
+.
+
+
+! Package pdftex.def Error: File `Rcode/figures/good_vs_all.pdf' not found.
+
+See the pdftex.def package documentation for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.427 ...dth=6.5in]{Rcode/figures/good_vs_all.pdf}
+                                                  
+? 
+
+Overfull \hbox (14.51091pt too wide) in paragraph at lines 426--428
  [] 
  []
 
 
-Package caption Warning: \label without proper \caption on input line 494.
+LaTeX Warning: Float too large for page by 122.18607pt on input line 430.
+
+
+Package caption Warning: \label without proper \caption on input line 472.
 See the caption package documentation for explanation.
 
 
-LaTeX Warning: Reference `fig:pi0' on page 6 undefined on input line 483.
+LaTeX Warning: Reference `fig:pi0' on page 6 undefined on input line 461.
 
-[6] <Rcode/figures/estpi0_sim1sim2.png, id=35, 542.025pt x 160.6pt>
-File: Rcode/figures/estpi0_sim1sim2.png Graphic file (type png)
 
-<use Rcode/figures/estpi0_sim1sim2.png>
-Package pdftex.def Info: Rcode/figures/estpi0_sim1sim2.png used on input line 4
-96.
-(pdftex.def)             Requested size: 542.04848pt x 160.60449pt.
+LaTeX Warning: File `Rcode/figures/estpi0_sim1sim2.png' not found on input line
+ 474.
 
-Overfull \hbox (86.8044pt too wide) in paragraph at lines 496--497
+
+! Package pdftex.def Error: File `Rcode/figures/estpi0_sim1sim2.png' not found.
+
+
+See the pdftex.def package documentation for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.474 ...540px]{Rcode/figures/estpi0_sim1sim2.png}
+                                                  
+? 
+
+Overfull \hbox (86.9319pt too wide) in paragraph at lines 474--475
  [] 
  []
 
-[7 <./Rcode/figures/good_poor_hist.pdf> <./Rcode/figures/good_vs_all.pdf>]
 
-LaTeX Warning: Reference `' on page 8 undefined on input line 503.
+LaTeX Warning: Reference `' on page 6 undefined on input line 481.
 
-<Rcode/figures/lfsdr_sim1sim2_blowup.png, id=52, 722.7pt x 428.60126pt>
-File: Rcode/figures/lfsdr_sim1sim2_blowup.png Graphic file (type png)
 
-<use Rcode/figures/lfsdr_sim1sim2_blowup.png>
-Package pdftex.def Info: Rcode/figures/lfsdr_sim1sim2_blowup.png used on input 
-line 516.
-(pdftex.def)             Requested size: 542.03468pt x 321.20163pt.
+LaTeX Warning: File `Rcode/figures/lfsdr_sim1sim2_blowup.png' not found on inpu
+t line 494.
 
-Overfull \hbox (86.7906pt too wide) in paragraph at lines 516--517
+
+! Package pdftex.def Error: File `Rcode/figures/lfsdr_sim1sim2_blowup.png' not 
+found.
+
+See the pdftex.def package documentation for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.494 ...{Rcode/figures/lfsdr_sim1sim2_blowup.png}
+                                                  
+? 
+
+Overfull \hbox (86.9319pt too wide) in paragraph at lines 494--495
  [] 
  []
 
-[8 <./Rcode/figures/estpi0_sim1sim2.png>]
-Overfull \hbox (76.27367pt too wide) detected at line 547
+[6]
+Overfull \hbox (76.27367pt too wide) detected at line 525
 \OML/cmm/m/it/10 g\OT1/cmr/m/n/10 (\OMS/cmsy/m/n/10 ^^A\OT1/cmr/m/n/10 ) = (1\O
 ML/cmm/m/it/10 =\OT1/cmr/m/n/10 7)[\OML/cmm/m/it/10 N\OT1/cmr/m/n/10 (\OMS/cmsy
 /m/n/10 ^^A\OT1/cmr/m/n/10 ; \OMS/cmsy/m/n/10 ^^@\OT1/cmr/m/n/10 1\OML/cmm/m/it
@@ -406,81 +438,105 @@ OML/cmm/m/it/10 :\OT1/cmr/m/n/10 5[])]
  []
 
 
-Package caption Warning: \label without proper \caption on input line 566.
+Package caption Warning: \label without proper \caption on input line 544.
 See the caption package documentation for explanation.
 
 
-LaTeX Warning: Reference `fig:rmse_loglik_boxplot' on page 9 undefined on input
- line 563.
+LaTeX Warning: Reference `fig:rmse_loglik_boxplot' on page 7 undefined on input
+ line 541.
 
-<Rcode/figures/simABC_egdens.pdf, id=57, 469.755pt x 144.54pt>
-File: Rcode/figures/simABC_egdens.pdf Graphic file (type pdf)
 
-<use Rcode/figures/simABC_egdens.pdf>
-Package pdftex.def Info: Rcode/figures/simABC_egdens.pdf used on input line 568
-.
-(pdftex.def)             Requested size: 469.75499pt x 144.53963pt.
+LaTeX Warning: File `Rcode/figures/simABC_egdens.pdf' not found on input line 5
+46.
 
-<Rcode/figures/rmse_boxplot.pdf, id=58, 469.755pt x 144.54pt>
-File: Rcode/figures/rmse_boxplot.pdf Graphic file (type pdf)
 
-<use Rcode/figures/rmse_boxplot.pdf>
-Package pdftex.def Info: Rcode/figures/rmse_boxplot.pdf used on input line 570.
+! Package pdftex.def Error: File `Rcode/figures/simABC_egdens.pdf' not found.
 
-(pdftex.def)             Requested size: 469.75499pt x 144.53963pt.
+See the pdftex.def package documentation for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.546 ...h=6.5in]{Rcode/figures/simABC_egdens.pdf}
+                                                  
+? 
 
-<Rcode/figures/loglik_boxplot.pdf, id=59, 469.755pt x 144.54pt>
-File: Rcode/figures/loglik_boxplot.pdf Graphic file (type pdf)
+LaTeX Warning: File `Rcode/figures/rmse_boxplot.pdf' not found on input line 54
+8.
 
-<use Rcode/figures/loglik_boxplot.pdf>
-Package pdftex.def Info: Rcode/figures/loglik_boxplot.pdf used on input line 57
-1.
-(pdftex.def)             Requested size: 469.75499pt x 144.53963pt.
 
-Overfull \hbox (14.51091pt too wide) in paragraph at lines 568--572
+! Package pdftex.def Error: File `Rcode/figures/rmse_boxplot.pdf' not found.
+
+See the pdftex.def package documentation for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.548 ...th=6.5in]{Rcode/figures/rmse_boxplot.pdf}
+                                                  
+? 
+
+LaTeX Warning: File `Rcode/figures/loglik_boxplot.pdf' not found on input line 
+549.
+
+
+! Package pdftex.def Error: File `Rcode/figures/loglik_boxplot.pdf' not found.
+
+See the pdftex.def package documentation for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.549 ...=6.5in]{Rcode/figures/loglik_boxplot.pdf}
+                                                  
+? 
+
+Overfull \hbox (14.51091pt too wide) in paragraph at lines 546--550
  [] 
  []
 
 
-Overfull \hbox (14.51091pt too wide) in paragraph at lines 568--572
+Overfull \hbox (14.51091pt too wide) in paragraph at lines 546--550
  [] 
  []
 
 
-Overfull \hbox (14.51091pt too wide) in paragraph at lines 568--572
+Overfull \hbox (14.51091pt too wide) in paragraph at lines 546--550
  [] 
  []
 
-[9 <./Rcode/figures/lfsdr_sim1sim2_blowup.png>] [10 <./Rcode/figures/simABC_egd
-ens.pdf> <./Rcode/figures/rmse_boxplot.pdf> <./Rcode/figures/loglik_boxplot.pdf
->] [11]
-Overfull \hbox (63.13425pt too wide) in paragraph at lines 642--651
+
+LaTeX Warning: Float too large for page by 847.14395pt on input line 552.
+
+[7]
+Overfull \hbox (63.13425pt too wide) in paragraph at lines 620--629
 []\OT1/cmr/m/n/10 Let's try: ```r beta.ash.pm = ash(ss$\OML/cmm/m/it/10 betahat
 ; ss$\OT1/cmr/m/n/10 betasd, use-Point-Mass=TRUE) print(beta.ash.pm) print(beta
 .ash.auto)
  []
 
 
-Overfull \hbox (0.11345pt too wide) in paragraph at lines 642--651
+Overfull \hbox (0.11345pt too wide) in paragraph at lines 620--629
 \OT1/cmr/m/n/10 plot(beta.ash.auto$\OML/cmm/m/it/10 localfsr; beta:ash:pm$\OT1/
 cmr/m/n/10 localfsr,main="comparison of ash lo-calfsr, with and with-out point
  []
 
 
-Overfull \hbox (41.97943pt too wide) in paragraph at lines 642--651
+Overfull \hbox (41.97943pt too wide) in paragraph at lines 620--629
 \OT1/cmr/m/n/10 mass",xlab="no point mass", ylab="with point mass",xlim=c(0,1),
 ylim=c(0,1)) abline(a=0,b=1) abline(a=0,b=2)
  []
 
-[12]
+[8] [9]
 
-LaTeX Warning: Citation `Rcore:2012' on page 13 undefined on input line 708.
+LaTeX Warning: Citation `muralidharan:2012' on page 10 undefined on input line 
+691.
 
 
-LaTeX Warning: Citation `ggplot2' on page 13 undefined on input line 708.
+LaTeX Warning: Citation `Rcore:2012' on page 10 undefined on input line 700.
+
+
+LaTeX Warning: Citation `ggplot2' on page 10 undefined on input line 700.
 
 No file main.bbl.
-[13] [14
+[10] [11] [12] [13] [14] [15
 
 ] (./main.aux)
 
@@ -488,11 +544,11 @@ LaTeX Warning: There were undefined references.
 
  ) 
 Here is how much of TeX's memory you used:
- 3834 strings out of 493488
- 56009 string characters out of 3141326
- 116155 words of memory out of 3000000
- 7070 multiletter control sequences out of 15000+200000
- 12208 words of font info for 47 fonts, out of 3000000 for 9000
+ 3808 strings out of 493488
+ 54965 string characters out of 3141326
+ 117157 words of memory out of 3000000
+ 7043 multiletter control sequences out of 15000+200000
+ 12376 words of font info for 48 fonts, out of 3000000 for 9000
  957 hyphenation exceptions out of 8191
  38i,9n,38p,765b,300s stack positions out of 5000i,500n,10000p,200000b,50000s
 </usr/local/texlive/2012/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb
@@ -507,11 +563,12 @@ l/texlive/2012/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb></usr/local/t
 exlive/2012/texmf-dist/fonts/type1/public/amsfonts/cm/cmss10.pfb></usr/local/te
 xlive/2012/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/tex
 live/2012/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></usr/local/texli
-ve/2012/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pfb>
-Output written on main.pdf (14 pages, 359806 bytes).
+ve/2012/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pfb></usr/local/texliv
+e/2012/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt10.pfb>
+Output written on main.pdf (15 pages, 199302 bytes).
 PDF statistics:
- 146 PDF objects out of 1000 (max. 8388607)
- 101 compressed objects within 2 object streams
+ 109 PDF objects out of 1000 (max. 8388607)
+ 77 compressed objects within 1 object stream
  0 named destinations out of 1000 (max. 500000)
- 36 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 1 words of extra memory for PDF output out of 10000 (max. 10000000)
 
