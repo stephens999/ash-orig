@@ -361,35 +361,14 @@ These conditional distributions can be conveniently summarized
 in various ways, including point estimates (e.g. the posterior means or medians),
 and credible intervals/regions.
 
-Efron (2008) states the Zero Assumption as the assumption that ``most of the z-values near zero come from null genes".
-His main aim in making this assumption is to estimate an empirical null though (not assume N(0,1) for the null)
-rather than to impose identifiability.
-
-By modeling the z scores directly under the alternative, rather than the z scores as being the truth plus noise,
-maybe that is what is most problematic? Because the resulting distribution of z scores is just not possible.
-
-Note that \cite{muralidharan:2012} models $z$ scores as something plus noise under both $H_0$ and $H_1$, which
-avoids this problem. (DOes the same maybe apply to modeling beta, rather than z scores, when the errors vary?)
-
-
-Rice and Spiegelhalter - BRCA data?
-
-In practice, we currently fix the number of components $K$ to be large, and take the variances $\sigma_1<\sigma_2<\dots<\sigma_K$ to be fixed, and vary from very small to very large --  sufficiently large that typically $\hat\pi_K \approx 0$.
-
 
 %A Taylor series expansion of the log likelihood around the maximum likelihood estimate $\hat\beta_j$  yields $$l(\beta_j) \approx l(\hat\beta_j) + 0.5* (\beta_j - \hat\beta_j)^2 l''(\hat\beta_j).$$ [Fill in details?]
 
-Using a mixture of normal distributions for $g$ 
-has the advantage that,
-when combined with the normal likelihood, they give
-an analytic form for the conditional distribution $p(\beta_j | \hat\pi, \hat\beta_j, s_j)$ (also a mixture of normals).
-
-
 \subsection*{The local False Sign Rate}
 
-The local False Discovery Rate (lfdr) for observation $j$ is
+The local False Discovery Rate (lfdr) for observation $j$ is defined \cite{efron} as
 \begin{equation}
-\lfdr_j = p(\beta_j = 0 | \hat\beta, s).
+\lfdr_j = p(\beta_j = 0 | \hat\pi, \hat\beta, s).
 \end{equation}
 The lfdr terminology comes from using "discovery" to refer to rejecting the null ($H_j:\beta_j=0$).
 Specifically $\lfdr_j$ is the probability that, if we reject $H_j$,
@@ -402,13 +381,12 @@ Gelman et al suggest that in such settings we
 might replace the concept of a false discovery with the
 concept of an ``error in sign". The idea is that, in settings where $\beta_j=0$ is implausible, the most fundamental
 inference objective is to ask which $\beta_j$ are positive and which are negative. Indeed, even in settings where some
-$\beta_j$ are exactly zero, it could be argued that identifying which are positive and which negative is
-fundamentally more interesting and useful than identifying which are non-zero. For example, when identifying differentially expressed genes,
+$\beta_j$ are exactly zero, separately identifying which are positive and which negative may be useful. For example, when identifying differentially expressed genes,
 analysts will often separate the genes that are ``upregulated" in one condition from those that ``downregulated" in that condition.
 
 Motivated by this, we define the local False Sign Rate (lfsr) for observation $j$ as 
 \begin{equation}
-\lfsr_j := \min[ p(\beta_j \geq 0| \hat\beta, s), p(\beta_j \leq 0| \hat\beta, s) ].
+\lfsr_j := \min[ p(\beta_j \geq 0| \hat\beta, s), p(\beta_j \leq 0| \hat\pi, \hat\beta, s) ].
 \end{equation}
 Thus $\lfsr_j$ gives the probability that we would get the sign of $\beta_j$ wrong if we
 were to make our best guess. (Note that we count it as an error to state that $\beta$ is positive or negative when it is truly zero.)
@@ -700,6 +678,20 @@ seen as an approximation.
 The standard argument is that,
 when performing multiple tests, some will be significant
 just by chance.
+
+\subsection{Discussion}
+
+Efron (2008) states the Zero Assumption as the assumption that ``most of the z-values near zero come from null genes".
+His main aim in making this assumption is to estimate an empirical null though (not assume N(0,1) for the null)
+rather than to impose identifiability.
+
+By modeling the z scores directly under the alternative, rather than the z scores as being the truth plus noise,
+maybe that is what is most problematic? Because the resulting distribution of z scores is just not possible.
+
+Note that \cite{muralidharan:2012} models $z$ scores as something plus noise under both $H_0$ and $H_1$, which
+avoids this problem. (DOes the same maybe apply to modeling beta, rather than z scores, when the errors vary?)
+
+Rice and Spiegelhalter - BRCA data?
 
 
 % Do NOT remove this, even if you are not including acknowledgments
