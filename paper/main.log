@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.1415926-2.4-1.40.13 (TeX Live 2012) (format=pdflatex 2012.6.30)  13 DEC 2013 09:03
+This is pdfTeX, Version 3.1415926-2.4-1.40.13 (TeX Live 2012) (format=pdflatex 2012.6.30)  16 DEC 2013 14:15
 entering extended mode
  \write18 enabled.
  %&-line parsing enabled.
@@ -300,51 +300,60 @@ File: umsb.fd 2009/06/22 v3.00 AMS symbols B
 
 ] [2]
 
-LaTeX Warning: Citation `efron' on page 3 undefined on input line 262.
+LaTeX Warning: Reference `eqn:beta hat' on page 3 undefined on input line 262.
 
 
-LaTeX Warning: Citation `cai?' on page 3 undefined on input line 262.
+LaTeX Warning: Citation `johnson.xx' on page 3 undefined on input line 262.
 
 
-LaTeX Warning: Citation `campy.thomas' on page 3 undefined on input line 285.
+LaTeX Warning: Citation `wakefield.xx' on page 3 undefined on input line 262.
+
+
+LaTeX Warning: Citation `efron' on page 3 undefined on input line 266.
+
+
+LaTeX Warning: Citation `cai?' on page 3 undefined on input line 266.
 
 [3]
 
-LaTeX Warning: Reference `' on page 4 undefined on input line 295.
+LaTeX Warning: Citation `campy.thomas' on page 4 undefined on input line 289.
 
 
-LaTeX Warning: Reference `' on page 4 undefined on input line 295.
+LaTeX Warning: Reference `' on page 4 undefined on input line 299.
 
 
-LaTeX Warning: Citation `grenander' on page 4 undefined on input line 303.
+LaTeX Warning: Reference `' on page 4 undefined on input line 299.
 
 
-LaTeX Warning: Reference `' on page 4 undefined on input line 307.
+LaTeX Warning: Citation `grenander' on page 4 undefined on input line 307.
+
+
+LaTeX Warning: Reference `' on page 4 undefined on input line 311.
 
 [4]
 
 LaTeX Warning: Citation `muralidharan:2012' on page 5 undefined on input line 3
-71.
+75.
 
 
-LaTeX Warning: Citation `gelman.etal' on page 5 undefined on input line 398.
+LaTeX Warning: Citation `gelman.etal' on page 5 undefined on input line 402.
 
 [5] <Rcode/figures/good_poor_hist.pdf, id=29, 433.62pt x 216.81pt>
 File: Rcode/figures/good_poor_hist.pdf Graphic file (type pdf)
 
 <use Rcode/figures/good_poor_hist.pdf>
-Package pdftex.def Info: Rcode/figures/good_poor_hist.pdf used on input line 44
-8.
+Package pdftex.def Info: Rcode/figures/good_poor_hist.pdf used on input line 45
+2.
 (pdftex.def)             Requested size: 433.63878pt x 216.81pt.
 
 <Rcode/figures/good_vs_all.pdf, id=30, 469.755pt x 216.81pt>
 File: Rcode/figures/good_vs_all.pdf Graphic file (type pdf)
 
 <use Rcode/figures/good_vs_all.pdf>
-Package pdftex.def Info: Rcode/figures/good_vs_all.pdf used on input line 449.
+Package pdftex.def Info: Rcode/figures/good_vs_all.pdf used on input line 453.
 (pdftex.def)             Requested size: 469.75499pt x 216.80946pt.
 
-Overfull \hbox (14.51091pt too wide) in paragraph at lines 448--450
+Overfull \hbox (14.51091pt too wide) in paragraph at lines 452--454
  [] 
  []
 
@@ -353,38 +362,38 @@ Package caption Warning: \label without proper \caption on input line 494.
 See the caption package documentation for explanation.
 
 
-LaTeX Warning: Reference `fig:pi0' on page 6 undefined on input line 483.
+LaTeX Warning: Reference `fig:pi0' on page 6 undefined on input line 487.
 
 [6] <Rcode/figures/estpi0_sim1sim2.png, id=35, 542.025pt x 160.6pt>
 File: Rcode/figures/estpi0_sim1sim2.png Graphic file (type png)
 
 <use Rcode/figures/estpi0_sim1sim2.png>
-Package pdftex.def Info: Rcode/figures/estpi0_sim1sim2.png used on input line 4
-96.
+Package pdftex.def Info: Rcode/figures/estpi0_sim1sim2.png used on input line 5
+00.
 (pdftex.def)             Requested size: 542.04848pt x 160.60449pt.
 
-Overfull \hbox (86.8044pt too wide) in paragraph at lines 496--497
+Overfull \hbox (86.8044pt too wide) in paragraph at lines 500--501
  [] 
  []
 
 [7 <./Rcode/figures/good_poor_hist.pdf> <./Rcode/figures/good_vs_all.pdf>]
 
-LaTeX Warning: Reference `' on page 8 undefined on input line 503.
+LaTeX Warning: Reference `' on page 8 undefined on input line 507.
 
 <Rcode/figures/lfsdr_sim1sim2_blowup.png, id=52, 722.7pt x 428.60126pt>
 File: Rcode/figures/lfsdr_sim1sim2_blowup.png Graphic file (type png)
 
 <use Rcode/figures/lfsdr_sim1sim2_blowup.png>
 Package pdftex.def Info: Rcode/figures/lfsdr_sim1sim2_blowup.png used on input 
-line 516.
+line 520.
 (pdftex.def)             Requested size: 542.03468pt x 321.20163pt.
 
-Overfull \hbox (86.7906pt too wide) in paragraph at lines 516--517
+Overfull \hbox (86.7906pt too wide) in paragraph at lines 520--521
  [] 
  []
 
 [8 <./Rcode/figures/estpi0_sim1sim2.png>]
-Overfull \hbox (76.27367pt too wide) detected at line 547
+Overfull \hbox (76.27367pt too wide) detected at line 551
 \OML/cmm/m/it/10 g\OT1/cmr/m/n/10 (\OMS/cmsy/m/n/10 ^^A\OT1/cmr/m/n/10 ) = (1\O
 ML/cmm/m/it/10 =\OT1/cmr/m/n/10 7)[\OML/cmm/m/it/10 N\OT1/cmr/m/n/10 (\OMS/cmsy
 /m/n/10 ^^A\OT1/cmr/m/n/10 ; \OMS/cmsy/m/n/10 ^^@\OT1/cmr/m/n/10 1\OML/cmm/m/it
@@ -411,13 +420,13 @@ See the caption package documentation for explanation.
 
 
 LaTeX Warning: Reference `fig:rmse_loglik_boxplot' on page 9 undefined on input
- line 563.
+ line 567.
 
 <Rcode/figures/simABC_egdens.pdf, id=57, 469.755pt x 144.54pt>
 File: Rcode/figures/simABC_egdens.pdf Graphic file (type pdf)
 
 <use Rcode/figures/simABC_egdens.pdf>
-Package pdftex.def Info: Rcode/figures/simABC_egdens.pdf used on input line 568
+Package pdftex.def Info: Rcode/figures/simABC_egdens.pdf used on input line 572
 .
 (pdftex.def)             Requested size: 469.75499pt x 144.53963pt.
 
@@ -425,7 +434,7 @@ Package pdftex.def Info: Rcode/figures/simABC_egdens.pdf used on input line 568
 File: Rcode/figures/rmse_boxplot.pdf Graphic file (type pdf)
 
 <use Rcode/figures/rmse_boxplot.pdf>
-Package pdftex.def Info: Rcode/figures/rmse_boxplot.pdf used on input line 570.
+Package pdftex.def Info: Rcode/figures/rmse_boxplot.pdf used on input line 574.
 
 (pdftex.def)             Requested size: 469.75499pt x 144.53963pt.
 
@@ -434,50 +443,50 @@ File: Rcode/figures/loglik_boxplot.pdf Graphic file (type pdf)
 
 <use Rcode/figures/loglik_boxplot.pdf>
 Package pdftex.def Info: Rcode/figures/loglik_boxplot.pdf used on input line 57
-1.
+5.
 (pdftex.def)             Requested size: 469.75499pt x 144.53963pt.
 
-Overfull \hbox (14.51091pt too wide) in paragraph at lines 568--572
+Overfull \hbox (14.51091pt too wide) in paragraph at lines 572--576
  [] 
  []
 
 
-Overfull \hbox (14.51091pt too wide) in paragraph at lines 568--572
+Overfull \hbox (14.51091pt too wide) in paragraph at lines 572--576
  [] 
  []
 
 
-Overfull \hbox (14.51091pt too wide) in paragraph at lines 568--572
+Overfull \hbox (14.51091pt too wide) in paragraph at lines 572--576
  [] 
  []
 
 [9 <./Rcode/figures/lfsdr_sim1sim2_blowup.png>] [10 <./Rcode/figures/simABC_egd
 ens.pdf> <./Rcode/figures/rmse_boxplot.pdf> <./Rcode/figures/loglik_boxplot.pdf
 >] [11]
-Overfull \hbox (63.13425pt too wide) in paragraph at lines 642--651
+Overfull \hbox (63.13425pt too wide) in paragraph at lines 646--655
 []\OT1/cmr/m/n/10 Let's try: ```r beta.ash.pm = ash(ss$\OML/cmm/m/it/10 betahat
 ; ss$\OT1/cmr/m/n/10 betasd, use-Point-Mass=TRUE) print(beta.ash.pm) print(beta
 .ash.auto)
  []
 
 
-Overfull \hbox (0.11345pt too wide) in paragraph at lines 642--651
+Overfull \hbox (0.11345pt too wide) in paragraph at lines 646--655
 \OT1/cmr/m/n/10 plot(beta.ash.auto$\OML/cmm/m/it/10 localfsr; beta:ash:pm$\OT1/
 cmr/m/n/10 localfsr,main="comparison of ash lo-calfsr, with and with-out point
  []
 
 
-Overfull \hbox (41.97943pt too wide) in paragraph at lines 642--651
+Overfull \hbox (41.97943pt too wide) in paragraph at lines 646--655
 \OT1/cmr/m/n/10 mass",xlab="no point mass", ylab="with point mass",xlim=c(0,1),
 ylim=c(0,1)) abline(a=0,b=1) abline(a=0,b=2)
  []
 
 [12]
 
-LaTeX Warning: Citation `Rcore:2012' on page 13 undefined on input line 708.
+LaTeX Warning: Citation `Rcore:2012' on page 13 undefined on input line 712.
 
 
-LaTeX Warning: Citation `ggplot2' on page 13 undefined on input line 708.
+LaTeX Warning: Citation `ggplot2' on page 13 undefined on input line 712.
 
 No file main.bbl.
 [13] [14
@@ -486,15 +495,18 @@ No file main.bbl.
 
 LaTeX Warning: There were undefined references.
 
+
+LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
+
  ) 
 Here is how much of TeX's memory you used:
- 3834 strings out of 493488
- 56009 string characters out of 3141326
- 116155 words of memory out of 3000000
- 7070 multiletter control sequences out of 15000+200000
+ 3837 strings out of 493488
+ 56049 string characters out of 3141326
+ 117155 words of memory out of 3000000
+ 7073 multiletter control sequences out of 15000+200000
  12208 words of font info for 47 fonts, out of 3000000 for 9000
  957 hyphenation exceptions out of 8191
- 38i,9n,38p,765b,300s stack positions out of 5000i,500n,10000p,200000b,50000s
+ 38i,9n,38p,1122b,300s stack positions out of 5000i,500n,10000p,200000b,50000s
 </usr/local/texlive/2012/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb
 ></usr/local/texlive/2012/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb>
 </usr/local/texlive/2012/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb><
@@ -508,7 +520,7 @@ exlive/2012/texmf-dist/fonts/type1/public/amsfonts/cm/cmss10.pfb></usr/local/te
 xlive/2012/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/tex
 live/2012/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></usr/local/texli
 ve/2012/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pfb>
-Output written on main.pdf (14 pages, 359806 bytes).
+Output written on main.pdf (14 pages, 360164 bytes).
 PDF statistics:
  146 PDF objects out of 1000 (max. 8388607)
  101 compressed objects within 2 object streams
