@@ -259,14 +259,14 @@ In contrast, almost all analogous work in large-scale regression assumes
 a unimodal prior distribution for the effect sizes, common choices being the spike and slab, Laplace, $t$, normal-gamma, normal-inverse-gamma, or horseshoe priors.
 One of our aims here is to emphasize potential benefits of also making the unimodal assumption in the FDR context.
 
-Assumption A2 can derived from (\ref{eqn:beta hat}) plus a couple of other assumptions. Specifically, assume that a) $\hat\beta_j, s_j$ contain most of the information about $\beta_j$ in the data $D_j$ (i.e. they are ``approximately sufficient" for $D_j$) and that b) $s_j$ alone contains little information about $\beta_j$. The former (a) suggests the approximation $\hat{L}_j(\beta_j) \propto p(\hat\beta_j, s_j | \beta) = p(\hat\beta | \beta, s_j) p(s_j | \beta)$, while the latter (b) suggests assuming that $p(s_j|\beta_j)$ does not depend on $\beta_j$. Putting these two together yields $\hat{L}_j(\beta_j) \propto p(\hat\beta_j | \beta, s_j)$, which, with (\ref{eqn:betahat}),  implies A2. If $\hat\beta_j, s_j$ are not sufficient for $D_j$ then there is some loss of efficiency in making this approximation, but all Bayesian inferences remain valid provided they are interpreted as conditional on $\hat\beta_j,s_j$, rather than conditional on $D_j$. See \cite{johnson.xx} and \cite{wakefield.xx} for more general discussion and examples of Bayesian inference based on summary statistics. 
+Assumption A2 can derived from (\ref{eqn:betahat}) plus a couple of other assumptions. Specifically, assume that a) $\hat\beta_j, s_j$ contain most of the information about $\beta_j$ in the data $D_j$ (i.e. they are ``approximately sufficient" for $D_j$) and that b) $s_j$ alone contains little information about $\beta_j$. The former (a) suggests the approximation $\hat{L}_j(\beta_j) \propto p(\hat\beta_j, s_j | \beta) = p(\hat\beta | \beta, s_j) p(s_j | \beta)$, while the latter (b) suggests assuming that $p(s_j|\beta_j)$ does not depend on $\beta_j$. Putting these two together yields $\hat{L}_j(\beta_j) \propto p(\hat\beta_j | \beta, s_j)$, which, with (\ref{eqn:betahat}),  implies A2. If $\hat\beta_j, s_j$ are not sufficient for $D_j$ then there is some loss of efficiency in making this approximation, but all Bayesian inferences remain valid provided they are interpreted as conditional on $\hat\beta_j,s_j$, rather than conditional on $D_j$. See \cite{johnson.xx} and \cite{wakefield.xx} for more general discussion and examples of Bayesian inference based on summary statistics. 
 
 Alternatively A2 could be considered definitional for $\hat\beta_j,s_j$: that is, choose $\hat\beta_j,s_j$ such that A2 holds. 
 
 While Assumption A2 has parallels with approaches like \cite{efron, cai?} that model the $Z$ scores $Z_j = \hat\beta_j/s_j$ as normally distributed under the null, 
 there is an important difference: here, observations with a large $s_j$ have an essentially flat likelihood (\ref{eqn:lik}), and so do not affect inference for
-other parameters, whereas when modeling the $Z$ scores directly, observations with large $s_j$ produce $N(0,1)$ $Z$ scores that do affect inference. In
-this way the likelihood-based approach can take better account of the informativeness of each measurement, as illustrated in Results below.
+other parameters, whereas when modeling the $Z$ scores directly, observations with large $s_j$ produce $Z$ scores with an $N(0,1)$ distribution that {\it do} affect inference. 
+Because of this the likelihood-based approach can take better account of the informativeness of each measurement, as illustrated in Results below.
 
 %The choice of normal likelihood seems natural, and indeed it can be motivated in multiple ways. For example, we can write $p(\hat\beta_j, s_j | \beta_j) = p(\hat\beta_j | s_j, \beta_j)p(s_j | \beta_j)$. Now, if we are willing to assume that $s_j$ alone contains no information about $\beta_j$, or equivalently that $p(s_j | \beta_j)$ does not depend on $\beta_j$, then $L(\beta_j) \propto p(\hat\beta_j | s_j, \beta_j)$, and if $\hat\beta_j | s_j, \beta_j \sim N(\beta_j, s_j^2)$, as is often asymptotically the case, then we obtain the likelihood (**) above.
 
@@ -286,7 +286,7 @@ component distributions with one of the following forms:
 where $N(\cdot; 0,\sigma^2)$ denotes the density of a normal distribution with mean 0 and variance $\sigma^2$ and
 $U[\cdot; a,b]$ denotes the density of a uniform distribution on $[a,b]$.
 That is, the non-zero effects are modeled as either i) a mixture of zero-centered normal distributions; ii) a mixture of zero-centered uniform distributions;
-or iii) a mixture of ``zero-anchored" uniform distributions, which have one end of their range at 0. This approach closely mirrors approaches in \cite{campy.thomas}.
+or iii) a mixture of ``zero-anchored" uniform distributions, which have one end of their range at 0. These approaches closely mirror approaches in \cite{campy.thomas}.
  
 To see the flexibility of the representation (\ref{eqn:g})
 think of $K$ as being ``large", with the values of $\sigma^2_k$ or $a_k$ 
@@ -301,7 +301,7 @@ high-dimensional regression settings such as the spike and slab prior, the horse
 \item any (asymmetric) unimodal distribution about 0.
 \end{enumerate}
 The latter two claims are related to characterizations of unimodal distributions due to Khintchine (1938) and  Shepp (1962); see Feller, 1971, page  158. 
-Furthermore, although it is natural for statisticians to immediately worry about ``overfitting" if $K$ is large, 
+Furthermore, although it is natural for statisticians to worry about ``overfitting" if $K$ is large, 
 in fact the unimodal constraint is sufficient to prevent serious problems with overfitting. For example, note that the unimodal
 constraint is sufficiently strong that there will exist a non-parametric
 maximum likelihood estimate (NPMLE) for $g$ under this constraint. (Indeed, if the $\beta_j$ are observed without error, corresponding to the standard errors $s_j \rightarrow 0$, this NPMLE has an explicit and elegant form; \cite{grenander}.)
@@ -314,13 +314,16 @@ and effective methods. See Section \ref{} for our software default choices of $K
 
 \subsection*{Likelihood for $\pi$}
 
-Assuming independence across units, the likelihood for $\pi$ is 
-\begin{equation}
-L(\pi) := p(D_1,\dots,D_J | \pi) = \prod_{j=1}^n p(D_j | \pi)
-= \prod_j \int p(D_j | \pi, \beta_j) p(\beta_j | \pi) d\beta_j \\
-= \prod_j \int p(D_j | \beta_j) g(\beta_j; \pi) d\beta_j
-\end{equation}
+Note; this needs some tidying.
 
+Assuming independence across units, the likelihood for $\pi$ is 
+\begin{align}
+L(\pi) := p(D_1,\dots,D_J | \pi) = \prod_{j=1}^n p(D_j | \pi)
+& = \prod_j \int p(D_j | \pi, \beta_j) p(\beta_j | \pi) d\beta_j \\
+& = \prod_j \int p(D_j | \beta_j) g(\beta_j; \pi) d\beta_j \\
+& = \prod_j \int L(\beta_j) g(\beta_j; \pi) d\beta_j \\
+& \approx \prod_j \int \hat{L}(\beta_j) g(\beta_j; \pi) d\beta_j
+\end{align}
 
 Further, the assumptions  $\hat\beta_j | \beta_j, s_j \sim N(\beta_j,s_j)$ and $\beta_j | s_j, \pi \sim g(\cdot; \pi)$ (given by \ref{eqn:g}) yield: 
 \begin{equation}
