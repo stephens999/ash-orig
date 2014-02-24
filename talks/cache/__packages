@@ -4,8 +4,12 @@ Biobase
 BiocGenerics
 DSS
 fdrtool
+ggplot2
 knitr
 locfdr
+mgcv
 mixfdr
+nlme
 qvalue
+reshape2
 truncnorm

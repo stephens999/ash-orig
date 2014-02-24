@@ -1,0 +1,23 @@
+% False Discovery Rates, A New Deal
+% Matthew Stephens
+% 2014/2/24
+
+```{r, include=FALSE}
+require("qvalue")
+require("ashr")
+require("ggplot2")
+```
+
+```{r setup, include=FALSE}
+# set global chunk options
+opts_chunk$set(cache=TRUE,autodep=TRUE,warning=FALSE)
+dep_auto()
+```
+
+# Before we get started: Getting Organized
+
+- Over ~10 years of working with graduate students + postdocs,
+I've noticed something.
+- Organized researchers get more done (and better!).
+- Many of them are more organized than I am!
+- Thought: I should get organized; I should help others get organized.
