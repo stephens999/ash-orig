@@ -21,8 +21,8 @@ I've noticed something.
 - Buy a notebook; bring it to meetings; make notes! 
 - Come to meetings with a written agenda. 
 - While doing research, record what you did and what the outcome was.
-- Use version control [git](http://git-scm.com) and internet repositories ([bitbucket](http://www.bitbucket.org), [github](http://www.github.com)) to organize notes, code, etc.
-- Use knitr to help make your research reproducible.
+- Use version control ([git](http://git-scm.com)) and internet repositories ([bitbucket](http://www.bitbucket.org), [github](http://www.github.com)) to organize notes, code, etc.
+- Use *knitr* to help make your research reproducible.
 
 # What are these repository things?
 
@@ -567,7 +567,7 @@ print(sessionInfo(), locale = FALSE)
 ![plot of chunk unnamed-chunk-40](figure/unnamed-chunk-40.png) 
 
 ```
-## Error: incorrect number of dimensions
+## Error: object 'dd' not found
 ```
 
 

@@ -27,8 +27,8 @@ I've noticed something.
 - Buy a notebook; bring it to meetings; make notes! 
 - Come to meetings with a written agenda. 
 - While doing research, record what you did and what the outcome was.
-- Use version control [git](http://git-scm.com) and internet repositories ([bitbucket](http://www.bitbucket.org), [github](http://www.github.com)) to organize notes, code, etc.
-- Use knitr to help make your research reproducible.
+- Use version control ([git](http://git-scm.com)) and internet repositories ([bitbucket](http://www.bitbucket.org), [github](http://www.github.com)) to organize notes, code, etc.
+- Use *knitr* to help make your research reproducible.
 
 # What are these repository things?
 
@@ -732,7 +732,7 @@ print(sessionInfo(), locale=FALSE)
 
 ```{r, echo=FALSE,fig.height=3}
   plot(zdat[3,],zdat[4,],ylab="standard error",xlab="beta-hat")
-  x[tail(order(zdat[3,])),]
+  dd[tail(order(zdat[3,])),]
 ```
 
 # A technicality
@@ -779,11 +779,11 @@ points(zdat.ash$lfdr[16123],pval[16123],col=2,pch=16)
 # Shrinkage is adaptive to information
 
 ```{r, echo=FALSE}
-x = read.table(paste0("../../stat45800/data/nobrega/expression/counts.txt"), header = TRUE)
-xx = rowSums(x[,2:5])
-x = x[xx>0,]
+dd = read.table(paste0("../../stat45800/data/nobrega/expression/counts.txt"), header = TRUE)
+xx = rowSums(dd[,2:5])
+dd = dd[xx>0,]
 xx = xx[xx>0]
-cbind(x[,1:5],pval,zdat.ash$lfdr)[c(15325,16123),]
+cbind(dd[,1:5],pval,zdat.ash$lfdr)[c(15325,16123),]
 ```
 
 # Recall FDR problem 1: q values increased by low count genes

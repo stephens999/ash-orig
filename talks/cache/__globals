@@ -153,7 +153,7 @@ unnamed-chunk-36	c	hist	T	zdat
 unnamed-chunk-37	c	dnorm	hist	lines	seq	T	zdat
 unnamed-chunk-38	$	c	dnorm	hist	lines	t	T	zdat.ash
 unnamed-chunk-39	$	abline	c	plot	T	zdat	zdat.ash
-unnamed-chunk-40	order	plot	tail	x	zdat
+unnamed-chunk-40	dd	order	plot	tail	zdat
 unnamed-chunk-41
 unnamed-chunk-42
 unnamed-chunk-43	$	plot	pval	zdat.ash
