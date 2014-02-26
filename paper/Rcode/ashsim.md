@@ -73,128 +73,6 @@ source("plot_rmse.R")
 
 
 
-
-```r
-pdf("figures/simABC_egdens.pdf", width = 6.5, height = 2)
-plot_examples(list(simA, simB, simC))
-```
-
-```
-## Warning: Removed 15 rows containing missing values (geom_path).
-## Warning: Removed 15 rows containing missing values (geom_path).
-## Warning: Removed 15 rows containing missing values (geom_path).
-```
-
-```r
-dev.off()
-```
-
-```
-## pdf 
-##   2
-```
-
-
-
-
-```r
-pdf("figures/rmse_biplot.pdf", width = 6.5, height = 2)
-plot_rmse(list(simA, simB, simC))
-dev.off()
-```
-
-```
-## pdf 
-##   2
-```
-
-```r
-
-# This figure not used in paper?
-pdf("figures/rmse_biplot_withzerobetahat.pdf")
-plot_rmse(list(simA, simB, simC), inczero = TRUE, incbetahat = TRUE)
-dev.off()
-```
-
-```
-## pdf 
-##   2
-```
-
-
-
-
-
-```r
-
-pdf("figures/rmse_boxplot.pdf", width = 6.5, height = 2)
-plot_rmse_boxplot(list(simA, simB, simC))
-dev.off()
-```
-
-```
-## pdf 
-##   2
-```
-
-```r
-
-pdf("figures/rmse_boxplot_extended.pdf", width = 6.5, height = 2)
-plot_rmse_boxplot(list(simA, simB, simC), TRUE, TRUE, TRUE)
-dev.off()
-```
-
-```
-## pdf 
-##   2
-```
-
-```r
-
-```
-
-
-
-```r
-
-pdf("figures/loglik_boxplot.pdf", width = 6.5, height = 2)
-plot_loglik_boxplot(list(simA, simB, simC))
-dev.off()
-```
-
-```
-## pdf 
-##   2
-```
-
-```r
-
-```
-
-
-
-
-
-```r
-
-pdf("figures/rmse_loglik_boxplot.pdf", width = 6.5, height = 5)
-plot_rmse_loglik_boxplot(list(simA, simB, simC))
-```
-
-```
-## Error: could not find function "loglik_conv"
-```
-
-```r
-dev.off()
-```
-
-```
-## pdf 
-##   2
-```
-
-
 looking to see why mixfdr gives worse rmse, even though loglik looks ok.
 Perhaps it overshrinks?
 
@@ -202,13 +80,13 @@ Perhaps it overshrinks?
 plot(simC$fit.ash.hu[[1]]$PosteriorMean, simC$fit.mixfdr[[1]]$effectSize)
 ```
 
-![plot of chunk unnamed-chunk-8](figure/unnamed-chunk-81.png) 
+![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-31.png) 
 
 ```r
 plot(simC$fit.ash.fdr.n[[1]]$PosteriorMean, simC$fit.mixfdr[[1]]$effectSize)
 ```
 
-![plot of chunk unnamed-chunk-8](figure/unnamed-chunk-82.png) 
+![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-32.png) 
 
 
 problem seems to be that it overestimates pi0
@@ -251,7 +129,7 @@ temp = mixFdr(simC$betahat[[1]]/simC$betahatsd[[1]], noiseSD = 1, theonull = TRU
 ## Warning: Using an empirical null with a fitted noiseSD gives a substantially different model. Consider rerunning with theonull = FALSE and noiseSD = NA.
 ```
 
-![plot of chunk unnamed-chunk-10](figure/unnamed-chunk-101.png) 
+![plot of chunk unnamed-chunk-5](figure/unnamed-chunk-51.png) 
 
 ```
 ## 
@@ -305,104 +183,16 @@ temp2 = mixFdr(simC$betahat[[1]]/simC$betahatsd[[1]], noiseSD = 1, theonull = TR
 
 ```r
 plot(ecdf(simC$beta[[1]]), xlim = c(-6, 6))
+x = seq(-6, 6, length = 100)
 lines(x, cdf.mixfdr(temp, x), col = 3)
-```
-
-```
-## Error: object 'x' not found
-```
-
-```r
 lines(cdf.ash(simC$fit.ash.n[[1]], x), col = 2)
-```
-
-```
-## Error: object 'x' not found
-```
-
-```r
 lines(cdf.ash(simC$fit.ash.hu[[1]], x), col = 2, lty = 2)
 ```
 
-```
-## Error: object 'x' not found
-```
-
-![plot of chunk unnamed-chunk-10](figure/unnamed-chunk-102.png) 
+![plot of chunk unnamed-chunk-5](figure/unnamed-chunk-52.png) 
 
 
 
-
-
-```r
-plot_LR = function(sims) {
-    hist(unlist(lapply(sims$fit.ash.u, get_loglik)) - unlist(lapply(sims$fit.ash.n, 
-        get_loglik)), xlab = "loglik difference", main = "loglik differences for nullbiased prior vs mle", 
-        nclass = 10)
-}
-
-pdf("figures/logLR.pdf")
-plot_LR(simA)
-plot_LR(simB)
-dev.off()
-```
-
-```
-## pdf 
-##   2
-```
-
-
-## Unused figures?
-
-
-```r
-
-pdf("figures/simABC_eg_withfit.pdf", width = 6.5, height = 2)
-plot_examples_withfit(list(simA, simB, simC))
-```
-
-```
-## Warning: Removed 44 rows containing missing values (geom_path).
-## Warning: Removed 44 rows containing missing values (geom_path).
-## Warning: Removed 44 rows containing missing values (geom_path).
-## Warning: Removed 44 rows containing missing values (geom_path).
-## Warning: Removed 44 rows containing missing values (geom_path).
-## Warning: Removed 44 rows containing missing values (geom_path).
-## Warning: Removed 44 rows containing missing values (geom_path).
-## Warning: Removed 44 rows containing missing values (geom_path).
-## Warning: Removed 44 rows containing missing values (geom_path).
-```
-
-```r
-dev.off()
-```
-
-```
-## pdf 
-##   2
-```
-
-
-
-```r
-pdf("figures/simABC_eg_cdf_withfit.pdf", width = 6.5, height = 2)
-plot_examples_cdf_withfit(list(simA, simB, simC))
-```
-
-```
-## Error: no applicable method for 'mixcdf' applied to an object of class
-## "normalmix"
-```
-
-```r
-dev.off()
-```
-
-```
-## pdf 
-##   2
-```
 
 
 Experiment with mixFdr to see how penalization effects fit. 
@@ -454,88 +244,31 @@ x = seq(-4, 4, length = 100)
 res = data.frame(beta = x, mixfdr.P0 = t(cdf.mixfdr(fit.mixfdr.P0, x)), mixfdr = t(cdf.mixfdr(simA$fit.mixfdr[[1]], 
     x)), ash.n = t(cdf.ash(simA$fit.ash.n[[1]], x)$y), ash.fdr.n = t(cdf.ash(simA$fit.ash.fdr.n[[1]], 
     x)$y))
-```
-
-```
-## Error: no applicable method for 'mixcdf' applied to an object of class
-## "normalmix"
-```
-
-```r
 
 truth = t(cdf.ash(simA$fit.ash.true[[1]], x)$y)
 
 res.melt = melt(res, id.vars = c("beta"), variable.name = "Method")
-```
-
-```
-## Error: object 'res' not found
-```
-
-```r
 res.melt$Penalization = ifelse((res.melt$Method == "mixfdr" | res.melt$Method == 
     "ash.fdr.n"), "Default", "Minimal")
-```
-
-```
-## Error: object 'res.melt' not found
-```
-
-```r
 res.melt$Methodtype = as.character(res.melt$Method)
-```
-
-```
-## Error: object 'res.melt' not found
-```
-
-```r
 res.melt$Methodtype[res.melt$Method == "mixfdr.P0"] = "mixfdr"
-```
-
-```
-## Error: object 'res.melt' not found
-```
-
-```r
 res.melt$Methodtype[res.melt$Method == "ash.fdr.n"] = "ash"
-```
-
-```
-## Error: object 'res.melt' not found
-```
-
-```r
 res.melt$Methodtype[res.melt$Method == "ash.n"] = "ash"
-```
-
-```
-## Error: object 'res.melt' not found
-```
-
-```r
 
 cbbPalette <- c("#56B4E9", "#009E73", "#000000", "#F0E442", "#0072B2", "#E69F00", 
     "#D55E00", "#CC79A7")
 
-pdf("figures/penaltycompare.pdf")
+# pdf('figures/penaltycompare.pdf')
 ggplot(res.melt, aes(x = beta)) + geom_line(aes(x = beta, y = value, color = Methodtype, 
     linetype = Penalization, group = Method), size = 1.5, alpha = 0.8) + geom_line(data = res, 
     aes(y = truth, color = "truth"), alpha = 1, size = 0.5) + scale_colour_manual(name = "Method", 
     values = cbbPalette)
 ```
 
-```
-## Error: object 'res.melt' not found
-```
+![plot of chunk unnamed-chunk-6](figure/unnamed-chunk-6.png) 
 
 ```r
-dev.off()
-```
-
-```
-## pdf 
-##   2
+# dev.off()
 ```
 
 
