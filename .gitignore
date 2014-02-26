@@ -1,6 +1,7 @@
 *.RData
 *.Rout
 *.png
+paper/Rcode/figures/*.pdf
 paper/main.pdf
 paper/main.aux
 paper/main.log
