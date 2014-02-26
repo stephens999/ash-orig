@@ -38,3 +38,24 @@ plot_pi0 = function(sims){
           coord_equal(ratio=1))
   
 }
+
+plot_pi1 = function(sims){
+  pi0=sims$pi0  
+  pi0_ash.n=unlist(lapply(sims$betahat.ash.n,get_pi0))
+  pi0_ash.u=unlist(lapply(sims$betahat.ash.u,get_pi0)) 
+  pi0_fdrtool = unlist(lapply(sims$betahat.fdrtool,get_pi0.fdrtool))
+  pi0_locfdr=unlist(lapply(sims$betahat.locfdr,get_pi0.locfdr))
+  pi0_mixfdr = unlist(lapply(sims$betahat.mixfdr,get_pi0.mixfdr))
+  pi0_qval = unlist(lapply(sims$betahat.qval,"[[","pi0"))
+  
+  res = data.frame(pi0=pi0,qvalue=pi0_qval,mixfdr=pi0_mixfdr, locfdr=pi0_locfdr, fdrtool=pi0_fdrtool,ash.nullbiased=pi0_ash.n,ash.uniform=pi0_ash.u)
+  require(reshape2)
+  res.melt = melt(res, id.vars=c("pi0"),variable.name="Method")
+  p=ggplot(data=res.melt,aes(1-pi0,log2((1-value)/(1-pi0)),colour=Method)) +geom_point(shape=16) +
+    #        geom_abline(colour = "black") +
+    xlab("True pi1") +
+    ylab("log2(Estimated pi1/True pi1)")
+  print(p +scale_y_continuous(limits=c(-4,4)) +
+          scale_x_continuous(limits=c(0,1)))
+  
+}

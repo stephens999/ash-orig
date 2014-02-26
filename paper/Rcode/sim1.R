@@ -67,10 +67,13 @@ mixsd = c(0,0.25,0.5,1,2)
 mixpi_alt = c(0.4,0.2,0.2,0.2) #mixture proportions under the alternative
 
 set.seed(100)
-simres1 = basicsim(mixsd,mixpi_alt,niter=200,nsamp=1000)
-simres1a = basicsim(mixsd,mixpi_alt,niter=200,nsamp=10000)
+#these are the simulations for scenarios 1a, 1b and 2 from the paper
+simres1a = basicsim(mixsd,mixpi_alt,niter=200,nsamp=1000)
+simres1b = basicsim(mixsd,mixpi_alt,niter=200,nsamp=10000)
 simres2= basicsim(c(0,4),c(1))
+
+#these do a situation where precision varies across measurements
 simres3=basicsim(c(0,2),c(1),bsd=c(rep(1,500),rep(10,500)))
 simres4=basicsim(c(0,2),c(1),bsd=c(rep(1,500),rep(10,500)),minpi0=0.9,seed=200)
 
-save.image(file="sim1_out.RData")
+save.image(file="sim1.RData")

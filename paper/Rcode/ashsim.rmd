@@ -10,7 +10,7 @@ require(ggplot2)
 
 
 ```{r}
-  load("ashsim_out.RData")
+  load("simABC.RData")
   source("plot_examples.R")
   source("plot_rmse.R")
 ```
