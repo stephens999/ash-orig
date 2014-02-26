@@ -1,272 +1,60 @@
 ```{r}
-  require("ashr")
-  ```{r}
 opts_knit$set(progress = TRUE, verbose = TRUE,root.dir="~/Documents/git/ash/paper/Rcode")
 require(ashr)
 require(qvalue)
 require(fdrtool)
 require(mixfdr)
 require(locfdr)
-require(ggplot2)
-#simulate from mixture of normals
-#compare normal, uniform and half-uniform mixtures
-#bsd gives standard deviation of beta
-ashsim=function(mixmean,mixsd,mixpi,bsd=1,seedval = 100,nsamp=1000,niter=50){  
-  set.seed(seedval)  
-  beta =list()
-  betahatsd=list()
-  betahat = list()
-  fit.ash.n = list()
-  fit.ash.u = list()
-  fit.ash.hu = list()
-  fit.ash.hu.vb=list()
-  fit.ash.true = list()
-  fit.mixfdr= list()
-  fit.ash.fdr.n = list()
-  
-
-  fit.mixfdr.enull= list()
-  fit.mixfdr.J10= list()
-  fit.mixfdr.J10P0= list()
-  fit.mixfdr.J100= list()
-  k = length(mixmean)
-  for(i in 1:niter){
-    comp = sample(1:k,nsamp,prob=mixpi,replace=TRUE)
-    sd = mixsd[comp]
-    mean = mixmean[comp]
-    beta[[i]] = rnorm(nsamp,mean,sd)
-    betahatsd[[i]] = bsd
-    betahat[[i]] = beta[[i]]+rnorm(nsamp,0,betahatsd[[i]])
-    fit.ash.n[[i]] = ash(betahat[[i]],betahatsd[[i]],mixcompdist="normal",method="shrink")
-    fit.ash.u[[i]] = ash(betahat[[i]],betahatsd[[i]],mixcompdist="uniform", method="shrink")
-    fit.ash.hu[[i]] = ash(betahat[[i]],betahatsd[[i]],mixcompdist="halfuniform", method="shrink")
-    fit.ash.hu.vb[[i]] = ash(betahat[[i]],betahatsd[[i]],mixcompdist="halfuniform",method="shrink",VB=TRUE)
-    fit.ash.true[[i]] = ash(betahat[[i]],betahatsd[[i]],g=normalmix(mixpi,mixmean,mixsd))
-    fit.mixfdr[[i]] = mixFdr(betahat[[i]]/betahatsd[[i]],noiseSD=1,theonull=TRUE,plot=FALSE)
-    
-    fit.ash.fdr.n[[i]] = ash(betahat[[i]],betahatsd[[i]],mixcompdist="normal",method="fdr")
-    #fit.ash.fdr.u[[i]] = ash(betahat[[i]],betahatsd[[i]],mixcompdist="uniform", method="fdr")
-    #fit.ash.fdr.hu[[i]] = ash(betahat[[i]],betahatsd[[i]],mixcompdist="halfuniform", method="fdr")
-    fit.mixfdr.enull[[i]] = mixFdr(betahat[[i]]/betahatsd[[i]],noiseSD=1,theonull=FALSE,plot=FALSE)
-    fit.mixfdr.J10[[i]] = mixFdr(betahat[[i]]/betahatsd[[i]],noiseSD=1,theonull=TRUE,plot=FALSE,J=10)
-     #fit.mixfdr.J100[[i]] = mixFdr(betahat[[i]]/betahatsd[[i]],noiseSD=1,theonull=TRUE,plot=FALSE,J=100)
-    fit.mixfdr.J10P0[[i]] = try(mixFdr(betahat[[i]]/betahatsd[[i]],noiseSD=1,theonull=TRUE,plot=FALSE,J=10,P=0))
-  }
-  return(list(beta =beta,
-  betahatsd=betahatsd,
-  betahat = betahat,
-  fit.ash.n = fit.ash.n,
-  fit.ash.u = fit.ash.u,
-  fit.ash.hu = fit.ash.hu,
-  fit.ash.hu.vb=fit.ash.hu.vb,
-  fit.mixfdr = fit.mixfdr,
-  fit.ash.fdr.n = fit.ash.fdr.n,
-  fit.ash.true=fit.ash.true,
- # fit.ash.fdr.u = fit.ash.fdr.u,
- # fit.ash.fdr.hu = fit.ash.fdr.hu,
-  fit.mixfdr.enull = fit.mixfdr.enull,
-  fit.mixfdr.J10 = fit.mixfdr.J10,
-  #fit.mixfdr.J100= fit.mixfdr.J100,
-  fit.mixfdr.J10P0=fit.mixfdr.J10P0))
-}    
-```
-
-```{r, cache=TRUE}
-sim1= ashsim(c(0,0,0),c(1,1,2),c(1/3,1/3,1/3),niter=20,nsamp=1000)
-sim2= ashsim(c(-1.5,-1,-0.5,0,0.5,1,1.5),rep(0.5,7),rep(1/7,7),niter=20,nsamp=1000)
-sim3= ashsim(c(-2,-1,0,1),c(2,1.5,1,1),c(1/4,1/4,1/3,1/6),niter=20,nsamp=1000)
-
-```
-
-Experiment with mixFdr to see how penalization effects fit. 
-```{r}
-  betahat = sim1$betahat[[1]]
-  betahatsd = sim1$betahatsd[[1]]
-  set.seed(111) #to ensure reproducibility
-  fit.mixfdr.P0 = mixFdr(betahat/betahatsd,noiseSD=1,theonull=TRUE,P=0,plot=FALSE)
-  cdf.mixfdr = function(a,x){mixcdf(normalmix(a$pi,a$mu,a$sigma-1),x)}
-  x = seq(-4,4,length=100)
-
-  res = data.frame(beta=x,
-                  mixfdr.P0 = t(cdf.mixfdr(fit.mixfdr.P0,x)),
-                  mixfdr = t(cdf.mixfdr(sim1$fit.mixfdr[[1]],x)),
-                  ash.n = t(cdf.ash(sim1$fit.ash.n[[1]],x)$y),
-                  ash.fdr.n=t(cdf.ash(sim1$fit.ash.fdr.n[[1]],x)$y))
-
-  truth = t(cdf.ash(sim1$fit.ash.true[[1]],x)$y)
-
-  res.melt=melt(res, id.vars=c("beta"),variable.name="Method")   
-  res.melt$Penalization= ifelse((res.melt$Method=="mixfdr" | res.melt$Method=="ash.fdr.n"),"Default","Minimal")
-  res.melt$Methodtype=as.character(res.melt$Method)
-  res.melt$Methodtype[res.melt$Method=="mixfdr.P0"]="mixfdr"
-  res.melt$Methodtype[res.melt$Method=="ash.fdr.n"]="ash"
-  res.melt$Methodtype[res.melt$Method=="ash.n"]="ash"
-
-cbbPalette <- c("#56B4E9", "#009E73", "#000000","#F0E442", "#0072B2", "#E69F00",  "#D55E00", "#CC79A7")
-pdf("figures/penaltycompare.pdf")
-ggplot(res.melt, aes(x=beta)) +
-  geom_line(aes(x=beta,y=value,color=Methodtype,linetype=Penalization,group=Method),size=1.5,alpha=0.8) +
-  geom_line(data=res, aes(y=truth,color="truth"),alpha=1,size=0.5) +
-  scale_colour_manual(name = 'Method', values = cbbPalette)
-dev.off()
+require(ggplot2)   
 ```
 
 
 ```{r}
-plot_examples = function(sims){
-  sim1= sims[[1]]
-  sim2= sims[[2]]
-  sim3= sims[[3]]
-len=length(sim1$beta[[1]])
-res = data.frame(beta = c(sim1$beta[[1]],sim2$beta[[1]],sim3$beta[[1]]), Scenario = c(rep(1,len),rep(2,len),rep(3,len)))
-x = seq(-8,6,length=100)
-y = dnorm(x)
-dens1 = data.frame(x=x,dtrue=t(density(sim1$fit.ash.true[[1]],x)$y), Scenario=1)
-dens2 = data.frame(x=x,dtrue=t(density(sim2$fit.ash.true[[1]],x)$y), Scenario=2)
-dens3 = data.frame(x=x,dtrue=t(density(sim3$fit.ash.true[[1]],x)$y), Scenario=3)
-dens=rbind(dens1,dens2,dens3)
-ggplot(res) + facet_grid(.~Scenario)  + 
-    geom_line(data = dens, aes(x,dtrue),size=1.2,alpha=0.9,linetype=1) + scale_x_continuous(limits=c(-6,6))
-}
+  load("ashsim_out.RData")
+  source("plot_examples.R")
+  source("plot_rmse.R")
+```
 
+
+
+```{r}
 pdf("figures/simABC_egdens.pdf",width=6.5,height=2)
-plot_examples(list(sim1,sim2,sim3))
+plot_examples(list(simA,simB,simC))
 dev.off()
 ```
 
 
 ```{r}
-  rmse = function(x,y){sqrt(mean((x-y)^2))}
-  get_rmse.ash = function(a,b){rmse(a$PosteriorMean,b)}
-  get_rmse.mixfdr = function(a,b){rmse(a$effectSize,b)}
-  plot_rmse = function(sims,inczero=FALSE,incbetahat=FALSE){
-    res=list()
-    
-    for(i in 1:length(sims)){
-      err.bayes = mapply(get_rmse.ash,sims[[i]]$fit.ash.true,sims[[i]]$beta)
-      err.ash.n= mapply(get_rmse.ash,sims[[i]]$fit.ash.n,sims[[i]]$beta)
-      err.ash.u = mapply(get_rmse.ash,sims[[i]]$fit.ash.u,sims[[i]]$beta)
-      err.ash.hu = mapply(get_rmse.ash,sims[[i]]$fit.ash.hu,sims[[i]]$beta)
-      err.mixfdr=mapply(get_rmse.mixfdr,sims[[i]]$fit.mixfdr,sims[[i]]$beta)
-      err.mixfdr.enull = mapply(get_rmse.mixfdr,sims[[i]]$fit.mixfdr,sims[[i]]$beta)
-       err.mixfdr.J10 = mapply(get_rmse.mixfdr,sims[[i]]$fit.mixfdr.J10,sims[[i]]$beta)
-       #err.mixfdr.J100 = mapply(get_rmse.mixfdr,sims[[i]]$fit.mixfdr.J100,sims[[i]]$beta)
-      err.ash.fdr.n = mapply(get_rmse.ash,sims[[i]]$fit.ash.fdr.n,sims[[i]]$beta)
-          
-      err.betahat = mapply(rmse,sims[[i]]$betahat,sims[[i]]$beta)
-      err.zero = unlist(lapply(sims[[i]]$beta,rmse,y=0))        
-      res[[i]] = data.frame(Scenario=i,bayes=err.bayes,ash.normal=err.ash.n,ash.uniform=err.ash.u,ash.halfuniform=err.ash.hu,mixfdr=err.mixfdr,
-                            mixfdr.enull = err.mixfdr.enull,
-                            mixfdr.J10 = err.mixfdr.J10,
-                            #mixfdr.J100 = err.mixfdr.J100,
-                            ash.normal.fdr = err.ash.fdr.n)
-      if(inczero){
-        res[[i]]=data.frame(res[[i]],zero=err.zero)
-      }
-      if(incbetahat){
-        res[[i]]=data.frame(res[[i]],betahat=err.betahat)
-      }
-    }
-    require(reshape2)
-    res.melt = melt(res, id.vars=c("Scenario","bayes"),variable.name="Method")    
-    p=ggplot(data=res.melt,aes(bayes,value,colour=Method)) +geom_point(shape=16) +
-         facet_grid(. ~ Scenario,scale="free_x") +
-        geom_abline(colour = "black") +
-        xlab("RMSE (Optimal Bayes Rule)") +
-        ylab("RMSE (other method)")
-    print(p +
-          coord_equal(ratio=1))
-  }
   pdf("figures/rmse_biplot.pdf",width=6.5,height=2)
-    plot_rmse(list(sim1,sim2,sim3))
+    plot_rmse(list(simA,simB,simC))
   dev.off()
 
 #This figure not used in paper?
 pdf("figures/rmse_biplot_withzerobetahat.pdf")
-    plot_rmse(list(sim1,sim2,sim3),inczero=TRUE,incbetahat=TRUE)
-  dev.off()
+    plot_rmse(list(simA,simB,simC),inczero=TRUE,incbetahat=TRUE)
+dev.off()
 
 ```
 
 
 
 ```{r}
-  get_rmse.ash = function(a,b){rmse(a$PosteriorMean,b)}
-  get_rmse.mixfdr = function(a,b){rmse(a$effectSize,b)}
-  plot_rmse_boxplot = function(sims,inczero=FALSE,incbetahat=FALSE,incmixfdr=FALSE){
-    res=list()
-    
-    for(i in 1:length(sims)){
-      err.bayes = mapply(get_rmse.ash,sims[[i]]$fit.ash.true,sims[[i]]$beta)
-      err.ash.n= mapply(get_rmse.ash,sims[[i]]$fit.ash.n,sims[[i]]$beta)
-      err.ash.u = mapply(get_rmse.ash,sims[[i]]$fit.ash.u,sims[[i]]$beta)
-      err.ash.hu = mapply(get_rmse.ash,sims[[i]]$fit.ash.hu,sims[[i]]$beta)
-      err.mixfdr=mapply(get_rmse.mixfdr,sims[[i]]$fit.mixfdr,sims[[i]]$beta)
-      err.mixfdr.enull = mapply(get_rmse.mixfdr,sims[[i]]$fit.mixfdr,sims[[i]]$beta)
-       err.mixfdr.J10 = mapply(get_rmse.mixfdr,sims[[i]]$fit.mixfdr.J10,sims[[i]]$beta)
-#       err.mixfdr.J100 = mapply(get_rmse.mixfdr,sims[[i]]$fit.mixfdr.J100,sims[[i]]$beta)
-      err.ash.fdr.n = mapply(get_rmse.ash,sims[[i]]$fit.ash.fdr.n,sims[[i]]$beta)         
-      err.betahat = mapply(rmse,sims[[i]]$betahat,sims[[i]]$beta)
-      err.zero = unlist(lapply(sims[[i]]$beta,rmse,y=0))        
-      res[[i]] = data.frame(Scenario=i,
-                            ash.normal=err.ash.n/err.bayes,
-                            ash.uniform=err.ash.u/err.bayes,
-                            ash.halfuniform=err.ash.hu/err.bayes,
-                            ash.normal.fdr = err.ash.fdr.n/err.bayes
-                            )
-      if(incmixfdr){
-        res[[i]]=data.frame(res[[i]],mixfdr=err.mixfdr/err.bayes,
-                            mixfdr.enull = err.mixfdr.enull/err.bayes,
-                            mixfdr.J10 = err.mixfdr.J10/err.bayes)
-                            #mixfdr.J100 = err.mixfdr.J100/err.bayes)
-      }
-      if(inczero){
-        res[[i]]=data.frame(res[[i]],zero=err.zero/err.bayes)
-      }
-      if(incbetahat){
-        res[[i]]=data.frame(res[[i]],betahat=err.betahat/err.bayes)
-      }
-    }
-    require(reshape2)
-    res.melt = melt(res, id.vars=c("Scenario"),variable.name="Method")    
-    ggplot(res.melt,aes(Method,value,color=Method)) + geom_boxplot() + facet_grid(.~Scenario)
-    
-  }
+
   pdf("figures/rmse_boxplot.pdf",width=6.5,height=2)
-    plot_rmse_boxplot(list(sim1,sim2,sim3))
+    plot_rmse_boxplot(list(simA,simB,simC))
   dev.off()
 
     pdf("figures/rmse_boxplot_extended.pdf",width=6.5,height=2)
-    plot_rmse_boxplot(list(sim1,sim2,sim3),TRUE,TRUE,TRUE)
+    plot_rmse_boxplot(list(simA,simB,simC),TRUE,TRUE,TRUE)
   dev.off()
 
 
 ```
 
 ```{r}
-  plot_loglik_boxplot = function(sims){
-    res=list()
-    for(i in 1:length(sims)){
-      loglik.bayes = mapply(get_loglik,sims[[i]]$fit.ash.true)
-      loglik.ash.n= mapply(get_loglik,sims[[i]]$fit.ash.n)
-      loglik.ash.u = mapply(get_loglik,sims[[i]]$fit.ash.u)
-      loglik.ash.hu = mapply(get_loglik,sims[[i]]$fit.ash.hu)
-     
-      loglik.ash.fdr.n = mapply(get_loglik,sims[[i]]$fit.ash.fdr.n)         
-      res[[i]] = data.frame(Scenario=i,
-                            ash.normal=loglik.ash.n-loglik.bayes,
-                            ash.uniform=loglik.ash.u-loglik.bayes,
-                            ash.halfuniform=loglik.ash.hu-loglik.bayes,
-                            ash.normal.fdr = loglik.ash.fdr.n-loglik.bayes)
-    
-    }
-    require(reshape2)
-    res.melt = melt(res, id.vars=c("Scenario"),variable.name="Method")    
-    ggplot(res.melt,aes(Method,value,color=Method)) + geom_boxplot() + facet_grid(.~Scenario)
-    
-  }
+
   pdf("figures/loglik_boxplot.pdf",width=6.5,height=2)
-    plot_loglik_boxplot(list(sim1,sim2,sim3))
+    plot_loglik_boxplot(list(simA,simB,simC))
   dev.off()
 
 
@@ -275,55 +63,9 @@ pdf("figures/rmse_biplot_withzerobetahat.pdf")
 
 
 ```{r}
-  get_rmse.ash = function(a,b){rmse(a$PosteriorMean,b)}
-  get_rmse.mixfdr = function(a,b){rmse(a$effectSize,b)}
-  get_loglik.mixfdr = function(a,betahat,betahatsd){loglik_conv(normalmix(a$pi,a$mu,a$sigma-1),betahat,betahatsd)}
-  cdf.mixfdr = function(a,x){mixcdf(normalmix(a$pi,a$mu,a$sigma-1),x)}
-  plot_rmse_loglik_boxplot = function(sims){
-    res=list()
-    
-    for(i in 1:length(sims)){
-      err.bayes = mapply(get_rmse.ash,sims[[i]]$fit.ash.true,sims[[i]]$beta)
-      err.ash.n= mapply(get_rmse.ash,sims[[i]]$fit.ash.n,sims[[i]]$beta)
-      err.ash.u = mapply(get_rmse.ash,sims[[i]]$fit.ash.u,sims[[i]]$beta)
-      err.ash.hu = mapply(get_rmse.ash,sims[[i]]$fit.ash.hu,sims[[i]]$beta)
-      err.mixfdr=mapply(get_rmse.mixfdr,sims[[i]]$fit.mixfdr,sims[[i]]$beta)
-      err.ash.fdr.n = mapply(get_rmse.ash,sims[[i]]$fit.ash.fdr.n,sims[[i]]$beta)         
-      
-      res[[i]] = data.frame(Scenario=i,
-                            ash.normal=err.ash.n/err.bayes,
-                            ash.uniform=err.ash.u/err.bayes,
-                            ash.halfuniform=err.ash.hu/err.bayes,
-                            ash.normal.fdr = err.ash.fdr.n/err.bayes)
-     
-    }
-    
-     res2=list()
-    for(i in 1:length(sims)){
-      loglik.bayes = mapply(get_loglik,sims[[i]]$fit.ash.true)
-      loglik.ash.n= mapply(get_loglik,sims[[i]]$fit.ash.n)
-      loglik.ash.u = mapply(get_loglik,sims[[i]]$fit.ash.u)
-      loglik.ash.hu = mapply(get_loglik,sims[[i]]$fit.ash.hu)
-      loglik.mixfdr=mapply(get_loglik.mixfdr,sims[[i]]$fit.mixfdr,sims[[i]]$betahat,sims[[i]]$betahatsd)
-      loglik.ash.fdr.n = mapply(get_loglik,sims[[i]]$fit.ash.fdr.n)         
-      res2[[i]] = data.frame(Scenario=i,
-                            ash.normal=loglik.ash.n-loglik.bayes,
-                            ash.uniform=loglik.ash.u-loglik.bayes,
-                            ash.halfuniform=loglik.ash.hu-loglik.bayes,
-                            ash.normal.fdr = loglik.ash.fdr.n-loglik.bayes)
-     
-      }
-        
-    require(reshape2)
-    res.melt = melt(res, id.vars=c("Scenario"),variable.name="Method")    
-    res2.melt = melt(res2, id.vars=c("Scenario"),variable.name="Method")    
-    res.melt$type='RMSE (vs Bayes Rule)'
-    res2.melt$type='log(likelihood) (vs Bayes Rule)'
-  ggplot(rbind(res.melt,res2.melt),aes(Method,value)) + geom_boxplot() + facet_grid(type~Scenario,scale="free_y")
-    
-  }
+
   pdf("figures/rmse_loglik_boxplot.pdf",width=6.5,height=5)
-    plot_rmse_loglik_boxplot(list(sim1,sim2,sim3))
+    plot_rmse_loglik_boxplot(list(simA,simB,simC))
   dev.off()
  
 ```
@@ -331,24 +73,24 @@ pdf("figures/rmse_biplot_withzerobetahat.pdf")
 looking to see why mixfdr gives worse rmse, even though loglik looks ok.
 Perhaps it overshrinks?
 ```{r}
- plot(sim3$fit.ash.hu[[1]]$PosteriorMean, sim3$fit.mixfdr[[1]]$effectSize)
- plot(sim3$fit.ash.fdr.n[[1]]$PosteriorMean, sim3$fit.mixfdr[[1]]$effectSize)
+ plot(simC$fit.ash.hu[[1]]$PosteriorMean, simC$fit.mixfdr[[1]]$effectSize)
+ plot(simC$fit.ash.fdr.n[[1]]$PosteriorMean, simC$fit.mixfdr[[1]]$effectSize)
 ```
 
 problem seems to be that it overestimates pi0
 ```{r}
- sim3$fit.mixfdr[[1]]$pi
+ simC$fit.mixfdr[[1]]$pi
 ```
 [1] 0.71660654 0.08298064 0.20041282
 
 
 ```{r}
-temp=mixFdr(sim3$betahat[[1]]/sim3$betahatsd[[1]],noiseSD=1,theonull=TRUE,calibrate=TRUE)
-temp2=mixFdr(sim3$betahat[[1]]/sim3$betahatsd[[1]],noiseSD=1,theonull=TRUE,J=10,plot=FALSE)
-plot(ecdf(sim3$beta[[1]]),xlim=c(-6,6))
+temp=mixFdr(simC$betahat[[1]]/simC$betahatsd[[1]],noiseSD=1,theonull=TRUE,calibrate=TRUE)
+temp2=mixFdr(simC$betahat[[1]]/simC$betahatsd[[1]],noiseSD=1,theonull=TRUE,J=10,plot=FALSE)
+plot(ecdf(simC$beta[[1]]),xlim=c(-6,6))
 lines(x,cdf.mixfdr(temp,x),col=3)
-lines(cdf.ash(sim3$fit.ash.n[[1]],x),col=2)
-lines(cdf.ash(sim3$fit.ash.hu[[1]],x),col=2,lty=2)
+lines(cdf.ash(simC$fit.ash.n[[1]],x),col=2)
+lines(cdf.ash(simC$fit.ash.hu[[1]],x),col=2,lty=2)
 ```
 
 
@@ -359,69 +101,57 @@ lines(cdf.ash(sim3$fit.ash.hu[[1]],x),col=2,lty=2)
   }
 
   pdf("figures/logLR.pdf")
-    plot_LR(sim1)
-    plot_LR(sim2)
+    plot_LR(simA)
+    plot_LR(simB)
   dev.off()
 ```
 
 ## Unused figures?
 
 ```{r}
-plot_examples_withfit = function(sims){
-  sim1= sims[[1]]
-  sim2= sims[[2]]
-  sim3= sims[[3]]
-len=length(sim1$beta[[1]])
-res = data.frame(beta = c(sim1$beta[[1]],sim2$beta[[1]],sim3$beta[[1]]), Scenario = c(rep(1,len),rep(2,len),rep(3,len)))
-x = seq(-8,6,length=100)
-y = dnorm(x)
-dens1 = data.frame(x=x,dn= t(density(sim1$fit.ash.n[[1]],x)$y),du=t(density(sim1$fit.ash.u[[1]],x)$y),dhu=t(density(sim1$fit.ash.hu[[1]],x)$y), Scenario=1)
-dens2 = data.frame(x=x,dn = t(density(sim2$fit.ash.n[[1]],x)$y),du=t(density(sim2$fit.ash.u[[1]],x)$y), dhu=t(density(sim2$fit.ash.hu[[1]],x)$y), Scenario=2)
-dens3 = data.frame(x=x,dn = t(density(sim3$fit.ash.n[[1]],x)$y),du=t(density(sim3$fit.ash.u[[1]],x)$y), dhu=t(density(sim3$fit.ash.hu[[1]],x)$y), Scenario=3)
-dens=rbind(dens1,dens2,dens3)
-cbbPalette <- c("#56B4E9", "#009E73", "#F0E442", "#0072B2", "#E69F00", "#000000", "#D55E00", "#CC79A7")
-ggplot(res, aes(x=beta)) + facet_grid(.~Scenario)  +
-    geom_histogram(aes(y=..density..),binwidth=0.5,
-                   colour="black", fill="white") +  
-  geom_line(data = dens, aes(x,du,color='Uniform'),size=1.2,alpha=0.9,linetype=1) +
-  geom_line(data = dens, aes(x,dhu,color='Half Uniform'),size=1.2,alpha=0.9,linetype=1) +
-    geom_line(data = dens, aes(x,dn,color='Normal'),size=1.2,alpha=0.9,linetype=1) +
-  scale_colour_manual(name = 'Method', values = cbbPalette) + scale_x_continuous(limits=c(-4,4))
-}
 
 pdf("figures/simABC_eg_withfit.pdf",width=6.5,height=2)
-plot_examples_withfit(list(sim1,sim2,sim3))
+plot_examples_withfit(list(simA,simB,simC))
 dev.off()
 ```
 
 ```{r}
-cdf.mixfdr = function(a,x){mixcdf(normalmix(a$pi,a$mu,a$sigma-1),x)}
-plot_examples_cdf_withfit = function(sims){
-  sim1= sims[[1]]
-  sim2= sims[[2]]
-  sim3= sims[[3]]
-len=length(sim1$beta[[1]])
-res = data.frame(beta = c(sim1$beta[[1]],sim2$beta[[1]],sim3$beta[[1]]), Scenario = c(rep(1,len),rep(2,len),rep(3,len)))
-x = seq(-6,6,length=100)
-y = dnorm(x)
-cdf1 = data.frame(x=x,dn=t(cdf.ash(sim1$fit.ash.n[[1]],x)$y),du=t(cdf.ash(sim1$fit.ash.u[[1]],x)$y),dhu=t(cdf.ash(sim1$fit.ash.hu[[1]],x)$y), dtrue=t(cdf.ash(sim1$fit.ash.true[[1]],x)$y), dn.fdr=t(cdf.ash(sim1$fit.ash.fdr.n[[1]],x)$y),dm = t(cdf.mixfdr(sim1$fit.mixfdr[[1]],x)), Scenario=1)
-cdf2 = data.frame(x=x,dn=t(cdf.ash(sim2$fit.ash.n[[1]],x)$y),du=t(cdf.ash(sim2$fit.ash.u[[1]],x)$y),dhu=t(cdf.ash(sim2$fit.ash.hu[[1]],x)$y), dtrue=t(cdf.ash(sim2$fit.ash.true[[1]],x)$y),dn.fdr=t(cdf.ash(sim2$fit.ash.fdr.n[[1]],x)$y),dm = t(cdf.mixfdr(sim2$fit.mixfdr[[1]],x)),Scenario=2)
-  cdf3 = data.frame(x=x,dn=t(cdf.ash(sim3$fit.ash.n[[1]],x)$y),du=t(cdf.ash(sim3$fit.ash.u[[1]],x)$y),dhu=t(cdf.ash(sim3$fit.ash.hu[[1]],x)$y), dtrue=t(cdf.ash(sim3$fit.ash.true[[1]],x)$y),dn.fdr=t(cdf.ash(sim3$fit.ash.fdr.n[[1]],x)$y),dm = t(cdf.mixfdr(sim3$fit.mixfdr[[1]],x)),Scenario=3)
-  
-cdf=rbind(cdf1,cdf2,cdf3)
-cbbPalette <- c("#56B4E9", "#009E73","#F0E442",  "#000000","#0072B2", "#E69F00", "#000000", "#D55E00", "#CC79A7")
-ggplot(res, aes(x=beta)) + facet_grid(.~Scenario)  +
-  geom_line(data = cdf, aes(x,dtrue,color='True'),size=1.5,alpha=0.9,linetype=1) +
-  geom_line(data = cdf, aes(x,du,color='Uniform'),size=1,alpha=0.9,linetype=2) +
-  geom_line(data = cdf, aes(x,dhu,color='Half Uniform'),size=1,alpha=0.9,linetype=2) +
-    geom_line(data = cdf, aes(x,dn,color='Normal'),size=1,alpha=0.9,linetype=2) +
-    geom_line(data = cdf, aes(x,dn.fdr,color='Normal, null-biased'),size=1,alpha=0.9,linetype=2) +
-    geom_line(data = cdf, aes(x,dm,color='mixfdr'),size=1,alpha=0.9,linetype=2) +
-  scale_colour_manual(name = 'Method', values = cbbPalette) + scale_x_continuous(limits=c(-6,6))
-}
-
 pdf("figures/simABC_eg_cdf_withfit.pdf",width=6.5,height=2)
-plot_examples_cdf_withfit(list(sim1,sim2,sim3))
+plot_examples_cdf_withfit(list(simA,simB,simC))
+dev.off()
+```
+
+Experiment with mixFdr to see how penalization effects fit. 
+```{r}
+  betahat = simA$betahat[[1]]
+  betahatsd = simA$betahatsd[[1]]
+  set.seed(111) #to ensure reproducibility
+  fit.mixfdr.P0 = mixFdr(betahat/betahatsd,noiseSD=1,theonull=TRUE,P=0,plot=FALSE)
+  cdf.mixfdr = function(a,x){mixcdf(normalmix(a$pi,a$mu,a$sigma-1),x)}
+  x = seq(-4,4,length=100)
+
+  res = data.frame(beta=x,
+                  mixfdr.P0 = t(cdf.mixfdr(fit.mixfdr.P0,x)),
+                  mixfdr = t(cdf.mixfdr(simA$fit.mixfdr[[1]],x)),
+                  ash.n = t(cdf.ash(simA$fit.ash.n[[1]],x)$y),
+                  ash.fdr.n=t(cdf.ash(simA$fit.ash.fdr.n[[1]],x)$y))
+
+  truth = t(cdf.ash(simA$fit.ash.true[[1]],x)$y)
+
+  res.melt=melt(res, id.vars=c("beta"),variable.name="Method")   
+  res.melt$Penalization= ifelse((res.melt$Method=="mixfdr" | res.melt$Method=="ash.fdr.n"),"Default","Minimal")
+  res.melt$Methodtype=as.character(res.melt$Method)
+  res.melt$Methodtype[res.melt$Method=="mixfdr.P0"]="mixfdr"
+  res.melt$Methodtype[res.melt$Method=="ash.fdr.n"]="ash"
+  res.melt$Methodtype[res.melt$Method=="ash.n"]="ash"
+
+cbbPalette <- c("#56B4E9", "#009E73", "#000000","#F0E442", "#0072B2", "#E69F00",  "#D55E00", "#CC79A7")
+
+pdf("figures/penaltycompare.pdf")
+ggplot(res.melt, aes(x=beta)) +
+  geom_line(aes(x=beta,y=value,color=Methodtype,linetype=Penalization,group=Method),size=1.5,alpha=0.8) +
+  geom_line(data=res, aes(y=truth,color="truth"),alpha=1,size=0.5) +
+  scale_colour_manual(name = 'Method', values = cbbPalette)
 dev.off()
 ```
 

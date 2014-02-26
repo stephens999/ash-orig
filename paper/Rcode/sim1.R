@@ -66,7 +66,7 @@ basicsim=function(mixsd,mixpi_alt,bsd=1,minpi0=0,seedval = 100,nsamp=1000,niter=
 mixsd = c(0,0.25,0.5,1,2)
 mixpi_alt = c(0.4,0.2,0.2,0.2) #mixture proportions under the alternative
 
-#simres1 = basicsim(mixsd,mixpi_alt,niter=50,nsamp=1000)
+set.seed(100)
 simres1 = basicsim(mixsd,mixpi_alt,niter=200,nsamp=1000)
 simres1a = basicsim(mixsd,mixpi_alt,niter=200,nsamp=10000)
 simres2= basicsim(c(0,4),c(1))
