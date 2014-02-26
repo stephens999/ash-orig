@@ -1,3 +1,5 @@
+*.RData
+*.Rout
 *.png
 paper/main.pdf
 paper/main.aux

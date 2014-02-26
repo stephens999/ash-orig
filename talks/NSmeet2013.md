@@ -68,6 +68,14 @@ Data from Hedenfalk et al, comparing BRCA1 vs BRCA2 expression.
 
 # Example: fdr estimation
 
+<<<<<<< HEAD
+=======
+
+```
+## Loading required package: fdrtool
+```
+
+>>>>>>> 4db06c5d454e6557784c491eef7bf44a150130d6
 ![](figure/unnamed-chunk-6.png) 
 
 
@@ -441,8 +449,13 @@ of shrinkage is adaptive to the data. And because of the role of $s_j$, the amou
 
 ```
 ##         gene  lv1  lv2  rv1  rv2    pval zdat.ash$localfdr
+<<<<<<< HEAD
 ## 19422 Mgat5b    7   10  320  452 0.03795           0.74069
 ## 20432  Sec63 1042 1034 5496 6649 0.04908           0.06952
+=======
+## 19422 Mgat5b    7   10  320  452 0.03795                 0
+## 20432  Sec63 1042 1034 5496 6649 0.04908                 0
+>>>>>>> 4db06c5d454e6557784c491eef7bf44a150130d6
 ```
 
 
@@ -524,6 +537,7 @@ print(sessionInfo(), locale = FALSE)
 ## Platform: x86_64-apple-darwin10.8.0 (64-bit)
 ## 
 ## attached base packages:
+<<<<<<< HEAD
 ## [1] splines   parallel  stats     graphics  grDevices utils     datasets 
 ## [8] methods   base     
 ## 
@@ -535,6 +549,18 @@ print(sessionInfo(), locale = FALSE)
 ## loaded via a namespace (and not attached):
 ## [1] codetools_0.2-8 digest_0.6.3    evaluate_0.5.1  formatR_0.9    
 ## [5] stringr_0.6.2   tcltk_3.0.2     tools_3.0.2
+=======
+## [1] splines   stats     graphics  grDevices utils     datasets  methods  
+## [8] base     
+## 
+## other attached packages:
+## [1] mixfdr_1.0      locfdr_1.1-7    fdrtool_1.2.11  ashr_0.1       
+## [5] truncnorm_1.0-6 qvalue_1.34.0   knitr_1.5      
+## 
+## loaded via a namespace (and not attached):
+## [1] evaluate_0.5.1 formatR_0.9    stringr_0.6.2  tcltk_3.0.2   
+## [5] tools_3.0.2
+>>>>>>> 4db06c5d454e6557784c491eef7bf44a150130d6
 ```
 
 
