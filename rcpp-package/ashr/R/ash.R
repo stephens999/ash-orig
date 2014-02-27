@@ -57,7 +57,7 @@ ash = function(betahat,sebetahat,method = c("shrink","fdr"),
                mixsd=NULL, VB=FALSE,gridmult=sqrt(2),
                minimaloutput=FALSE,
                g=NULL,
-               cxx=TRUE){
+               cxx=FALSE){
   
     
   #If method is supplied, use it to set up defaults; provide warning if these default values
