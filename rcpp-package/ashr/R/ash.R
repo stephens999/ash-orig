@@ -59,22 +59,24 @@ ash = function(betahat,sebetahat,method = c("shrink","fdr"),
                g=NULL,
                cxx=FALSE){
   
-    
-  #If method is supplied, use it to set up defaults; provide warning if these default values
+  
+  #method provides a convenient interface to set a particular combinations of parameters for prior and pointmass
+  #If method is supplied, use it to set up specific values for these parameters; provide warning if values
   #are also specified by user
-  #If method is not supplied use ..............
+  #If method is not supplied use the user-supplied values (or defaults if user does not specify them)
+  
   if(!missing(method)){
     method = match.arg(method) 
     if(method=="shrink"){
       if(missing(prior)){
         prior = "uniform"
       } else {
-        cat("Warning: specification of prior overrides default for method shrink")
+        warning("Warning: specification of prior overrides default for method shrink")
       }
       if(missing(pointmass)){
         pointmass=FALSE
       } else {
-        cat("Warning: specification of pointmass overrides default for method shrink")
+        warning("Warning: specification of pointmass overrides default for method shrink")
       }
     }
   
@@ -82,12 +84,12 @@ ash = function(betahat,sebetahat,method = c("shrink","fdr"),
       if(missing(prior)){
         prior = "nullbiased"
       } else {
-        cat("Warning: specification of prior overrides default for method fdr")
+        warning("Warning: specification of prior overrides default for method fdr")
       }
       if(missing(pointmass)){
         pointmass=TRUE
       } else {
-        cat("Warning: specification of pointmass overrides default for method fdr")
+        warning("Warning: specification of pointmass overrides default for method fdr")
       }
     }  
   }
