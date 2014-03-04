@@ -1,0 +1,53 @@
+```{r}
+opts_knit$set(progress = TRUE, verbose = TRUE,root.dir="~/Documents/git/ash/paper/Rcode")
+require(ashr)
+require(qvalue)
+require(fdrtool)
+require(mixfdr)
+require(locfdr)
+require(ggplot2)
+```
+
+```{r}
+load("sim1.RData")
+```
+
+#look into methods for estimating pi0 conservatively
+
+
+```{r}
+#  par(mfcol=c(3,3))
+  plot_ecdf=function(sims){
+    for(i in 1:length(sims$beta)){
+       plot(ecdf(sims$beta[[i]]),xlim=c(-6,6),main=paste0("iteration ",i))
+       x = seq(-6,6,length=1000)
+       lines(cdf.ash(sims$betahat.ash.n[[i]],x),col=2,lwd=2)
+       lines(cdf.ash(sims$betahat.ash.u[[i]],x),col=3,lwd=2)
+       lines(cdf.ash(sims$betahat.ash.true[[i]],x),col=4,lwd=2)
+    }
+  }
+  plot_ecdf(simres1)
+  plot_ecdf(simres2)
+```
+
+Figure to show that estimated betahats are not so different
+```{r}
+plot(betahat.ash.u[[1]]$PosteriorMean,betahat.ash.n[[1]]$PosteriorMean)
+abline(a=0,b=1,lwd=2,col=2)
+```
+
+
+QUestion: is the null-biased prior maybe a little too conservative?
+Answer: log likelihoods don't suggest they are
+
+
+```{r}
+#hh.ashtrue = hh.ashz
+#hh.ashtrue$fitted.g$pi = c(2/3,1/15,1/15,1/15,1/15,1/15)
+#hh.ashtrue$fitted.g$mean = c(0,0,0,0,0,0)
+#hh.ashtrue$fitted.g$sd = sqrt(c(0,1,0.2,0.4,0.8,3))
+
+#loglik(hh.ashtrue,betahat,sebetahat)
+#loglik(hh.ashz,betahat,sebetahat)
+```
+

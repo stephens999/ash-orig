@@ -1,3 +1,4 @@
+#' @useDynLib ashr
 #todo
 #
 #' @title Main Adaptive SHrinkage function
@@ -55,7 +56,8 @@ ash = function(betahat,sebetahat,method = c("shrink","fdr"),
                prior=c("uniform","nullbiased"), 
                mixsd=NULL, VB=FALSE,gridmult=sqrt(2),
                minimaloutput=FALSE,
-               g=NULL){
+               g=NULL,
+               cxx=TRUE){
   
     
   #If method is supplied, use it to set up defaults; provide warning if these default values
@@ -159,10 +161,11 @@ ash = function(betahat,sebetahat,method = c("shrink","fdr"),
     if(mixcompdist=="halfuniform") g=unimix(c(pi,pi),c(-mixsd,rep(0,k)),c(rep(0,k),mixsd))
     maxiter = 5000
   } else {
-    maxiter = 1; # if g is specified, don't iterate the EM 
+    maxiter = 1 # if g is specified, don't iterate the EM 
+    prior = rep(1,ncomp(g)) #prior is not actually used if g specified, but required to make sure EM doesn't produce warning
   }
   
-  pi.fit=EMest(betahat[completeobs],lambda1*sebetahat[completeobs]+lambda2,g,prior,null.comp=null.comp,nullcheck=nullcheck,VB=VB,maxiter = maxiter)  
+  pi.fit=EMest(betahat[completeobs],lambda1*sebetahat[completeobs]+lambda2,g,prior,null.comp=null.comp,nullcheck=nullcheck,VB=VB,maxiter = maxiter, cxx=cxx)  
   
 
   if(onlylogLR){
@@ -226,7 +229,7 @@ fast.ash = function(betahat,sebetahat,
                pointmass = TRUE,    
                prior=c("nullbiased","uniform"), 
                mixsd=NULL, VB=FALSE,gridmult=4,
-               g=NULL){
+               g=NULL, cxx=TRUE){
   
     
   #If method is supplied, use it to set up defaults; provide warning if these default values
@@ -280,7 +283,7 @@ fast.ash = function(betahat,sebetahat,
     maxiter = 1; # if g is specified, don't iterate the EM 
   }
   
-  pi.fit=EMest(betahat[completeobs],sebetahat[completeobs],g,prior,null.comp=null.comp,nullcheck=nullcheck,VB=VB,maxiter = maxiter)  
+  pi.fit=EMest(betahat[completeobs],sebetahat[completeobs],g,prior,null.comp=null.comp,nullcheck=nullcheck,VB=VB,maxiter = maxiter, cxx=cxx)  
 
     n=length(betahat)
     PosteriorMean = rep(0,length=n)
@@ -434,7 +437,6 @@ mixEM = function(matrix_lik, prior, pi.init = NULL,tol=0.0001, maxiter=5000){
 }
 
 
-
 #estimate mixture proportions of sigmaa by EM algorithm
 #prior gives the parameter of a Dirichlet prior on pi
 #(prior is used to encourage results towards smallest value of sigma when
@@ -444,8 +446,8 @@ mixEM = function(matrix_lik, prior, pi.init = NULL,tol=0.0001, maxiter=5000){
 #VB provides an approach to estimate the approximate posterior distribution
 #of mixture proportions of sigmaa by variational Bayes method
 #(use Dirichlet prior and approximate Dirichlet posterior)
-
-EMest = function(betahat,sebetahat,g,prior,null.comp=1,nullcheck=TRUE,VB=FALSE,ltol=0.0001, maxiter=5000){ 
+#if cxx TRUE use cpp version of R function mixEM
+EMest = function(betahat,sebetahat,g,prior,null.comp=1,nullcheck=TRUE,VB=FALSE,ltol=0.0001, maxiter=5000, cxx=TRUE){ 
  
   pi.init = g$pi
   k=ncomp(g)
@@ -456,7 +458,10 @@ EMest = function(betahat,sebetahat,g,prior,null.comp=1,nullcheck=TRUE,VB=FALSE,l
   if(VB==TRUE){
     EMfit=mixVBEM(matrix_lik,prior,pi.init,ltol, maxiter)}
   else{
-    EMfit = mixEM(matrix_lik,prior,pi.init,ltol, maxiter)
+    if (cxx==TRUE){
+        EMfit = cxxMixEM(matrix_lik,prior,pi.init,ltol, maxiter)}
+    else{
+        EMfit = mixEM(matrix_lik,prior,pi.init,ltol, maxiter)}
   }
   
   pi = EMfit$pihat     
@@ -466,9 +471,9 @@ EMest = function(betahat,sebetahat,g,prior,null.comp=1,nullcheck=TRUE,VB=FALSE,l
   loglik.final = EMfit$B[niter]
   
   null.loglik = sum(log(matrix_lik[,null.comp]))  
-  
+
   if(nullcheck==TRUE & VB==FALSE){ #null check doesn't work with VB yet
-    if(null.loglik > loglik.final){ #check whether exceeded "null" likelihood where everything is null
+      if(null.loglik > loglik.final){ #check whether exceeded "null" likelihood where everything is null
       pi=rep(0,k)
       pi[null.comp]=1
       m  = t(pi * t(matrix_lik)) 
@@ -688,19 +693,26 @@ get_pi0 = function(a){
 #' @title Compute loglikelihood for data from ash fit
 #'
 #' @description Return the log-likelihood of the data betahat, with standard errors betahatsd, 
-#' under the fitted distribution in the ash object
+#' under the fitted distribution in the ash object. 
+#' 
 #'
 #' @param a the fitted ash object
 #' @param betahat the data
 #' @param betahatsd the observed standard errors
-#' 
+#' @param zscores indicates whether ash object was originally fit to z scores 
 #' @details None
 #' 
 #' @export
 #' 
 #'
-loglik.ash = function(a,betahat,betahatsd){
-  return(loglik_conv(a$fitted.g,betahat, betahatsd))
+loglik.ash = function(a,betahat,betahatsd,zscores=FALSE){
+  g=a$fitted.g
+  FUN="+"
+  if(zscores==TRUE){
+    g$sd = sqrt(g$sd^2+1) 
+    FUN="*"
+  }
+  return(loglik_conv(g,betahat, betahatsd,FUN))
 }
 
 #' @title Density method for ash object

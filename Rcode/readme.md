@@ -170,16 +170,16 @@ sum(hh.q$q < 0.05)
 Now compare this with ASH
 
 ```r
-hh.ash = ash(hh.betahat, hh.sebetahat, df = n1 + n2 - 2)
+hh.ash = ash(hh.betahat, hh.sebetahat, df = n1 + n2 - 2, method = "fdr")
 sum(hh.ash$qvalue < 0.05)
 ```
 
 ```
-## [1] 260
+## [1] 305
 ```
 
 ```r
-plot(hh.ash$localfdr, log(hh.pval), main = "Illustration of how ASH reorders significance of observations", 
+plot(hh.ash$lfdr, log(hh.pval), main = "Illustration of how ASH reorders significance of observations", 
     ylim = c(-10, -1), xlim = c(0, 0.1), cex = 0.2, xlab = "ASH local fdr", 
     ylab = "Original p value")
 ```
@@ -191,8 +191,8 @@ Now see how it compares with ignoring the variability in
 measurement error, by applying ASH to the z scores.
 
 ```r
-hh.ash2 = ash(hh.zscore, rep(1, length(hh.zscore)), df = 20)
-plot(hh.ash$localfdr, hh.ash2$localfdr, cex = 0.2, ylab = "ignoring sd", xlab = "accounting for sd", 
+hh.ash2 = ash(hh.zscore, rep(1, length(hh.zscore)), df = 20, method = "fdr")
+plot(hh.ash$lfdr, hh.ash2$lfdr, cex = 0.2, ylab = "ignoring sd", xlab = "accounting for sd", 
     main = "Effect of accounting for measurement precision on local fdr")
 abline(a = 0, b = 1, col = 2)
 ```
@@ -204,19 +204,19 @@ cat(sum(hh.ash$qvalue < 0.05), sum(hh.ash2$qvalue < 0.05))
 ```
 
 ```
-## 260 391
+## 305 679
 ```
 
 ```r
-cat(sum(hh.ash$localfdr < 0.05), sum(hh.ash2$localfdr < 0.05))
+cat(sum(hh.ash$lfdr < 0.05), sum(hh.ash2$lfdr < 0.05))
 ```
 
 ```
-## 132 194
+## 144 327
 ```
 
 ```r
-plot(hh.ash2$localfdr, log(hh.pval), main = "Illustration of how ASH without precision does not reorder significance?", 
+plot(hh.ash2$lfdr, log(hh.pval), main = "Illustration of how ASH without precision does not reorder significance?", 
     ylim = c(-10, -1), xlim = c(0, 0.1), cex = 0.2, xlab = "ASH local fdr", 
     ylab = "Original p value")
 ```
@@ -237,14 +237,12 @@ The following computes the log likelihood for the two fitted ash models,
 first with $\beta \sim \sum_k \pi_k N(0,\sigma_k^2)$, and then $\beta_s \sim \sum_k \pi_k N(0, \sigma^2_k se^2_s)$:
 
 ```r
-cat(LogLik_conv(hh.ash$fitted.g, hh.betahat, hh.sebetahat), mixseLoglik(hh.betahat, 
-    hh.ash$fitted.g$pi, hh.ash$fitted.g$mean, hh.ash$fitted.g$sd, hh.sebetahat), 
-    mixseLoglik(hh.betahat, hh.ash2$fitted.g$pi, hh.ash2$fitted.g$mean, sqrt(hh.ash2$fitted.g$sd^2 + 
-        1), hh.sebetahat, FUN = "*"))
+cat(loglik.ash(hh.ash, hh.betahat, hh.sebetahat), loglik.ash(hh.ash2, hh.betahat, 
+    hh.sebetahat, TRUE))
 ```
 
 ```
-## Error: could not find function "LogLik_conv"
+## -1921 -1761
 ```
 
 Looks like the second model fits better.
@@ -274,7 +272,7 @@ cat(hh.ash2$fitted.g$pi[1], hh.q$pi0)
 ```
 
 ```
-## 3.393e-05 0.6651
+## 0.1508 0.6651
 ```
 
 At first I was really worried about this - the pi0 estimate
@@ -306,6 +304,149 @@ abline(h = 0)
 ![plot of chunk unnamed-chunk-11](figure/unnamed-chunk-112.png) 
 
 
+Try resampling the z scores from the alternative:
+
+```r
+require(locfdr)
+```
+
+```
+## Loading required package: locfdr
+## Loading required package: splines
+```
+
+```r
+hh.locfdr = locfdr(hh.zscore, nulltype = 0)
+```
+
+![plot of chunk unnamed-chunk-12](figure/unnamed-chunk-121.png) 
+
+```r
+weights = 1 - hh.locfdr$fdr
+altz = hh.zscore[runif(length(weights)) < weights]
+hist(altz)
+```
+
+![plot of chunk unnamed-chunk-12](figure/unnamed-chunk-122.png) 
+
+
+Directly modelling the z scores, without taking account of their errors,
+leads to distributions under the
+alternative that are simply implausible.
+
+```r
+require("mixfdr")
+```
+
+```
+## Loading required package: mixfdr
+```
+
+```r
+source("~/Documents/git/ash/Rcode/mix.R")
+altz.mixfdr = mixFdr(altz, noiseSD = 1, J = 100)
+```
+
+```
+## Warning: Using uncalibrated default penalization P,  which can give misleading results for empirical nulls. Consider rerunning with calibrate = TRUE and using the resulting penalization
+## 
+## Warning: Assuming known noise noiseSD =  1 . If needed rerun with noiseSD = NA to fit noiseSD.
+## Warning: Note that using known noiseSD constrains the null to have sd at least noiseSD. If underdispersion is suspected, rerun with noiseSD = NA.
+```
+
+```
+## Fitting preliminary model 
+## Fitting final model
+```
+
+```
+## Warning: Null proportion pi0 is small. Consider increasing penalization
+## and/or using an empirical null.
+```
+
+![plot of chunk unnamed-chunk-13](figure/unnamed-chunk-131.png) 
+
+```
+## 
+## Fitted Model: J = 100 groups
+## ----------------------------
+## null?		 TRUE	 TRUE	 TRUE	 TRUE	FALSE	FALSE	 TRUE	FALSE	FALSE	FALSE	 TRUE	 TRUE	 TRUE	FALSE	 TRUE	FALSE	 TRUE	 TRUE	 TRUE	 TRUE	FALSE	 TRUE	FALSE	FALSE	 TRUE	 TRUE	FALSE	FALSE	FALSE	FALSE	FALSE	 TRUE	FALSE	FALSE	 TRUE	 TRUE	 TRUE	 TRUE	 TRUE	 TRUE	FALSE	FALSE	FALSE	 TRUE	 TRUE	FALSE	FALSE	 TRUE	 TRUE	 TRUE	 TRUE	 TRUE	FALSE	FALSE	 TRUE	 TRUE	FALSE	 TRUE	 TRUE	FALSE	FALSE	 TRUE	FALSE	 TRUE	 TRUE	FALSE	 TRUE	FALSE	FALSE	 TRUE	FALSE	 TRUE	 TRUE	 TRUE	 TRUE	FALSE	 TRUE	FALSE	 TRUE	FALSE	FALSE	FALSE	 TRUE	 TRUE	FALSE	FALSE	FALSE	 TRUE	FALSE	FALSE	 TRUE	 TRUE	 TRUE	FALSE	FALSE	 TRUE	FALSE	 TRUE	 TRUE	 TRUE	
+## 
+## pi =		0.7766	0.0002	0.0002	0.0002	0.0084	0.0005	0.0002	0.0096	0.0005	0.0005	0.0002	0.0002	0.0002	0.0094	0.0002	0.0005	0.0002	0.0002	0.0002	0.0002	0.0030	0.0002	0.0091	0.0005	0.0002	0.0002	0.0080	0.0096	0.0062	0.0005	0.0011	0.0002	0.0026	0.0008	0.0002	0.0002	0.0002	0.0002	0.0002	0.0002	0.0004	0.0005	0.0093	0.0002	0.0002	0.0005	0.0095	0.0002	0.0002	0.0002	0.0002	0.0002	0.0096	0.0077	0.0002	0.0002	0.0006	0.0002	0.0002	0.0004	0.0005	0.0002	0.0079	0.0002	0.0002	0.0096	0.0002	0.0096	0.0005	0.0002	0.0090	0.0002	0.0002	0.0002	0.0002	0.0009	0.0002	0.0076	0.0002	0.0005	0.0095	0.0087	0.0002	0.0002	0.0005	0.0005	0.0005	0.0002	0.0076	0.0085	0.0002	0.0002	0.0002	0.0096	0.0094	0.0002	0.0005	0.0002	0.0002	0.0002	
+## 
+## mu = 		 2.191	 2.191	 2.192	 2.191	-2.480	 4.550	 2.191	-2.480	 4.550	 4.549	 2.191	 2.191	 2.191	-2.480	 2.191	 4.549	 2.191	 2.191	 2.191	 2.191	-2.480	 2.191	-2.480	 4.550	 2.191	 2.191	-2.480	-2.480	-2.480	 4.550	 6.973	 2.191	-5.092	 6.973	 2.191	 2.191	 2.191	 2.191	 2.191	 2.191	 4.437	 4.550	-2.480	 2.191	 2.191	 4.550	-2.480	 2.192	 2.191	 2.191	 2.191	 2.191	-2.480	-2.480	 2.191	 2.191	 6.971	 2.191	 2.191	 4.547	 4.550	 2.191	-2.480	 2.191	 2.191	-2.480	 2.191	-2.480	 4.550	 2.191	-2.480	 2.191	 2.191	 2.199	 2.191	 6.973	 2.191	-2.480	 2.191	 4.547	-2.480	-2.480	 2.191	 2.191	 4.550	 4.549	 4.550	 2.191	-2.480	-2.480	 2.191	 2.192	 2.191	-2.480	-2.480	 2.191	 4.550	 2.191	 2.191	 2.191	
+## 
+## sigma = 	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	
+## 
+## noiseSD = 	1	
+```
+
+```r
+g = normalmix(altz.mixfdr$pi, altz.mixfdr$mu, altz.mixfdr$sigma)
+x = seq(-8, 8, length = 100)
+par(mfcol = c(1, 1))
+hist(altz, breaks = x, prob = TRUE)
+lines(x, dens(g, x), col = 2)
+```
+
+![plot of chunk unnamed-chunk-13](figure/unnamed-chunk-132.png) 
+
+
+Directly modelling the p values is maybe even worse?
+Here we fit a monotonic decreasing function to the p values.
+Then we subtract the uniform distribution (the null) away from this, to
+give the alternative. 
+
+```r
+hist(hh.pval, probability = TRUE, xlab = "p value", main = "Distribution of p values for Hedenfalk et al data", 
+    nclass = 40, col = 5)
+```
+
+![plot of chunk unnamed-chunk-14](figure/unnamed-chunk-141.png) 
+
+```r
+require(fdrtool)
+```
+
+```
+## Loading required package: fdrtool
+```
+
+```r
+hh.fdrtool = fdrtool(hh.pval, statistic = "pvalue")
+```
+
+```
+## Step 1... determine cutoff point
+## Step 2... estimate parameters of null distribution and eta0
+## Step 3... compute p-values and estimate empirical PDF/CDF
+## Step 4... compute q-values and local fdr
+## Step 5... prepare for plotting
+```
+
+![plot of chunk unnamed-chunk-14](figure/unnamed-chunk-142.png) 
+
+```r
+weights2 = 1 - hh.fdrtool$lfdr
+altz2 = hh.zscore[runif(length(weights2)) < weights2]
+hist(altz2, nclass = 100)
+```
+
+![plot of chunk unnamed-chunk-14](figure/unnamed-chunk-143.png) 
+
+```r
+hist(altz, nclass = 100)
+```
+
+![plot of chunk unnamed-chunk-14](figure/unnamed-chunk-144.png) 
+
+```r
+plot(hh.zscore, hh.locfdr$fdr)
+points(hh.zscore, hh.fdrtool$lfdr, col = 2)
+```
+
+![plot of chunk unnamed-chunk-14](figure/unnamed-chunk-145.png) 
+
 
 ### Errors in sign, and true 0s
 
@@ -326,11 +467,11 @@ the situation where the true $\beta$ are not symmetric around 0.
 musim2 = c(rnorm(1000, -3, 1), rnorm(1000, -1.5, 1), rnorm(1000, 0, 1), rep(0, 
     7000))
 zsim2 = musim2 + rnorm(10000)
-zsim2.ash = ash(zsim2, rep(1, 10000))
+zsim2.ash = ash(zsim2, rep(1, 10000), method = "fdr")
 hist(musim2[1:3000])
 ```
 
-![plot of chunk unnamed-chunk-12](figure/unnamed-chunk-12.png) 
+![plot of chunk unnamed-chunk-15](figure/unnamed-chunk-15.png) 
 
 ```r
 errorinsign = ifelse(musim2 == 0, 0.5, (zsim2.ash$PosteriorMean/musim2) < 0)
@@ -338,7 +479,7 @@ sum(errorinsign[zsim2.ash$qvalue < 0.05])/sum(zsim2.ash$qvalue < 0.05)
 ```
 
 ```
-## [1] 0.03859
+## [1] 0.02901
 ```
 
 
@@ -351,7 +492,7 @@ Simulate data as in Efron, 2008, Section 7.
 ```r
 musim = c(rnorm(1000, -3, 1), rep(0, 9000))
 zsim = musim + rnorm(10000)
-zsim.ash = ash(zsim, rep(1, 10000))
+zsim.ash = ash(zsim, rep(1, 10000), method = "fdr")
 ```
 
 Need to implement a method to find CIs to look at this.
@@ -391,7 +532,7 @@ sum(dnorm(bhat2.test, mhat, sdhat, log = TRUE))
 ```
 
 ```
-## [1] -3145
+## [1] -3063
 ```
 
 ```r
@@ -435,34 +576,34 @@ p2.test = pchisq(z2.test^2, df = 1, lower.tail = F)
 hist(p.test)
 ```
 
-![plot of chunk unnamed-chunk-14](figure/unnamed-chunk-141.png) 
+![plot of chunk unnamed-chunk-17](figure/unnamed-chunk-171.png) 
 
 ```r
 hist(p2.test)
 ```
 
-![plot of chunk unnamed-chunk-14](figure/unnamed-chunk-142.png) 
+![plot of chunk unnamed-chunk-17](figure/unnamed-chunk-172.png) 
 
 ```r
 
-test1.ash1 = ash(bhat.test, hh.sebetahat)
-test1.ash2 = ash(z.test, rep(1, n))
+test1.ash1 = ash(bhat.test, hh.sebetahat, method = "fdr")
+test1.ash2 = ash(z.test, rep(1, n), method = "fdr")
 cat(sum(test1.ash1$qval < 0.05), sum(test1.ash2$qval < 0.05))
 ```
 
 ```
-## 654 474
+## 717 405
 ```
 
 ```r
 
-test2.ash1 = ash(bhat2.test, hh.sebetahat)
-test2.ash2 = ash(z2.test, rep(1, n))
+test2.ash1 = ash(bhat2.test, hh.sebetahat, method = "fdr")
+test2.ash2 = ash(z2.test, rep(1, n), method = "fdr")
 cat(sum(test2.ash1$qval < 0.05), sum(test2.ash2$qval < 0.05))
 ```
 
 ```
-## 117 280
+## 174 564
 ```
 
 ```r
@@ -540,7 +681,7 @@ for (i in 1:length(pvec)) {
 plot(q)
 ```
 
-![plot of chunk unnamed-chunk-15](figure/unnamed-chunk-15.png) 
+![plot of chunk unnamed-chunk-18](figure/unnamed-chunk-18.png) 
 
 
 Here look at the 95th percentile of ABF for different sigma:
@@ -564,7 +705,7 @@ for (i in 1:length(Wvec)) {
 plot(q)
 ```
 
-![plot of chunk unnamed-chunk-16](figure/unnamed-chunk-16.png) 
+![plot of chunk unnamed-chunk-19](figure/unnamed-chunk-19.png) 
 
 so it seems that even in the worst case, the 95th quantile is never much more than 2. It seems this could be used to bound the probability of making a false discovery even for p=1. Then (I believe) under the null, the probability of making a false discovery under the null should be even smaller for large p.
 
@@ -618,7 +759,7 @@ sum(conf > 0.95)
 ```
 
 ```
-## [1] 1133
+## [1] 1137
 ```
 
 ```r
@@ -641,7 +782,7 @@ table(err[conf > 0.95])
 ```
 ## 
 ## FALSE 
-##  1133
+##  1137
 ```
 
 ```r
@@ -665,7 +806,7 @@ plot(cumsum(err[order(qq$qvalues)]), type = "l")
 lines(cumsum(err[order(conf, decreasing = TRUE)]), col = 2)
 ```
 
-![plot of chunk unnamed-chunk-19](figure/unnamed-chunk-19.png) 
+![plot of chunk unnamed-chunk-22](figure/unnamed-chunk-22.png) 
 
 
 

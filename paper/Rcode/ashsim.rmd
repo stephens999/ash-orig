@@ -1,0 +1,80 @@
+```{r}
+opts_knit$set(progress = TRUE, verbose = TRUE,root.dir="~/Documents/git/ash/paper/Rcode")
+require(ashr)
+require(qvalue)
+require(fdrtool)
+require(mixfdr)
+require(locfdr)
+require(ggplot2)   
+```
+
+
+```{r}
+  load("simABC.RData")
+  source("plot_examples.R")
+  source("plot_rmse.R")
+```
+
+
+
+looking to see why mixfdr gives worse rmse, even though loglik looks ok.
+Perhaps it overshrinks?
+```{r}
+ plot(simC$fit.ash.hu[[1]]$PosteriorMean, simC$fit.mixfdr[[1]]$effectSize)
+ plot(simC$fit.ash.fdr.n[[1]]$PosteriorMean, simC$fit.mixfdr[[1]]$effectSize)
+```
+
+problem seems to be that it overestimates pi0
+```{r}
+ simC$fit.mixfdr[[1]]$pi
+```
+[1] 0.71660654 0.08298064 0.20041282
+
+
+```{r}
+temp=mixFdr(simC$betahat[[1]]/simC$betahatsd[[1]],noiseSD=1,theonull=TRUE,calibrate=TRUE)
+temp2=mixFdr(simC$betahat[[1]]/simC$betahatsd[[1]],noiseSD=1,theonull=TRUE,J=10,plot=FALSE)
+plot(ecdf(simC$beta[[1]]),xlim=c(-6,6))
+x= seq(-6,6,length=100)
+lines(x,cdf.mixfdr(temp,x),col=3)
+lines(cdf.ash(simC$fit.ash.n[[1]],x),col=2)
+lines(cdf.ash(simC$fit.ash.hu[[1]],x),col=2,lty=2)
+```
+
+
+
+
+Experiment with mixFdr to see how penalization effects fit. 
+```{r}
+  betahat = simA$betahat[[1]]
+  betahatsd = simA$betahatsd[[1]]
+  set.seed(111) #to ensure reproducibility
+  fit.mixfdr.P0 = mixFdr(betahat/betahatsd,noiseSD=1,theonull=TRUE,P=0,plot=FALSE)
+  cdf.mixfdr = function(a,x){mixcdf(normalmix(a$pi,a$mu,a$sigma-1),x)}
+  x = seq(-4,4,length=100)
+
+  res = data.frame(beta=x,
+                  mixfdr.P0 = t(cdf.mixfdr(fit.mixfdr.P0,x)),
+                  mixfdr = t(cdf.mixfdr(simA$fit.mixfdr[[1]],x)),
+                  ash.n = t(cdf.ash(simA$fit.ash.n[[1]],x)$y),
+                  ash.fdr.n=t(cdf.ash(simA$fit.ash.fdr.n[[1]],x)$y))
+
+  truth = t(cdf.ash(simA$fit.ash.true[[1]],x)$y)
+
+  res.melt=melt(res, id.vars=c("beta"),variable.name="Method")   
+  res.melt$Penalization= ifelse((res.melt$Method=="mixfdr" | res.melt$Method=="ash.fdr.n"),"Default","Minimal")
+  res.melt$Methodtype=as.character(res.melt$Method)
+  res.melt$Methodtype[res.melt$Method=="mixfdr.P0"]="mixfdr"
+  res.melt$Methodtype[res.melt$Method=="ash.fdr.n"]="ash"
+  res.melt$Methodtype[res.melt$Method=="ash.n"]="ash"
+
+cbbPalette <- c("#56B4E9", "#009E73", "#000000","#F0E442", "#0072B2", "#E69F00",  "#D55E00", "#CC79A7")
+
+#pdf("figures/penaltycompare.pdf")
+ggplot(res.melt, aes(x=beta)) +
+  geom_line(aes(x=beta,y=value,color=Methodtype,linetype=Penalization,group=Method),size=1.5,alpha=0.8) +
+  geom_line(data=res, aes(y=truth,color="truth"),alpha=1,size=0.5) +
+  scale_colour_manual(name = 'Method', values = cbbPalette)
+#dev.off()
+```
+

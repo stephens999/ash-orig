@@ -1,4 +1,13 @@
+*.RData
+*.Rout
 *.png
 paper/main.pdf
 paper/main.log
+paper/Rcode/figures/*.pdf
+paper/main.pdf
+paper/main.aux
+paper/main.log
+talks/cache
+Rcode/cache
+paper/Rcode/cache
 Rcode/figure

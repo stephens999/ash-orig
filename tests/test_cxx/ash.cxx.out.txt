@@ -1,0 +1,64 @@
+
+Each sample represents 0.02 seconds.
+Total run time: 12.4 seconds.
+
+Total seconds: time spent in function and callees.
+Self seconds: time spent in function alone.
+
+   %       total       %        self
+ total    seconds     self    seconds    name
+ 100.0     12.40       0.0      0.00     "system.time"
+  99.7     12.36       0.0      0.00     "ash"
+  90.2     11.18       0.0      0.00     "EMest"
+  89.2     11.06      89.2     11.06     ".Call"
+  89.2     11.06       0.0      0.00     "cxxMixEM"
+   9.2      1.14       0.0      0.00     "colSums"
+   9.2      1.14       0.0      0.00     "is.data.frame"
+   7.3      0.90       0.0      0.00     "compdens_conv"
+   7.3      0.90       0.0      0.00     "compdens_conv.normalmix"
+   7.3      0.90       0.0      0.00     "t"
+   6.8      0.84       0.0      0.00     "comppostprob"
+   6.8      0.84       0.0      0.00     "comppostprob.default"
+   4.7      0.58       4.7      0.58     "outer"
+   3.5      0.44       1.6      0.20     "dnorm"
+   3.4      0.42       0.0      0.00     "postsd"
+   3.4      0.42       0.0      0.00     "postsd.default"
+   3.2      0.40       0.0      0.00     "postmean"
+   3.2      0.40       0.0      0.00     "postmean.default"
+   2.9      0.36       0.0      0.00     "dens_conv"
+   2.9      0.36       0.0      0.00     "dens_conv.default"
+   2.6      0.32       0.0      0.00     "cdf_post"
+   2.6      0.32       0.0      0.00     "cdf_post.default"
+   2.1      0.26       2.1      0.26     "/"
+   1.8      0.22       0.0      0.00     "postmean2"
+   1.8      0.22       0.0      0.00     "postmean2.default"
+   1.0      0.12       0.0      0.00     "comp_postmean"
+   1.0      0.12       0.0      0.00     "comp_postmean.normalmix"
+   1.0      0.12       0.0      0.00     "compcdf_post"
+   1.0      0.12       0.0      0.00     "compcdf_post.normalmix"
+   0.8      0.10       0.8      0.10     "t.default"
+   0.5      0.06       0.5      0.06     "sqrt"
+   0.5      0.06       0.0      0.00     "comp_postmean2"
+   0.5      0.06       0.0      0.00     "comp_postmean2.default"
+   0.5      0.06       0.0      0.00     "comp_postsd"
+   0.5      0.06       0.0      0.00     "comp_postsd.normalmix"
+   0.3      0.04       0.3      0.04     "gc"
+   0.3      0.04       0.3      0.04     "list"
+   0.2      0.02       0.2      0.02     "*"
+   0.2      0.02       0.2      0.02     "+"
+   0.2      0.02       0.2      0.02     "pnorm"
+
+
+   %        self       %      total
+  self    seconds    total   seconds    name
+  89.2     11.06      89.2     11.06     ".Call"
+   4.7      0.58       4.7      0.58     "outer"
+   2.1      0.26       2.1      0.26     "/"
+   1.6      0.20       3.5      0.44     "dnorm"
+   0.8      0.10       0.8      0.10     "t.default"
+   0.5      0.06       0.5      0.06     "sqrt"
+   0.3      0.04       0.3      0.04     "gc"
+   0.3      0.04       0.3      0.04     "list"
+   0.2      0.02       0.2      0.02     "*"
+   0.2      0.02       0.2      0.02     "+"
+   0.2      0.02       0.2      0.02     "pnorm"

@@ -1,4 +1,14 @@
 unnamed-chunk-1	^	<	==	apply	F	max	mean	pchisq	read.table	setwd	sqrt	sum	var
+<<<<<<< HEAD
+unnamed-chunk-2	^	<	==	apply	F	max	mean	pchisq	read.table	setwd	sqrt	sum	var
+unnamed-chunk-3	altcol	hh.pval	hist
+unnamed-chunk-4	$	$<-	abline	altcol	hh.pval	hist	length	nullcol	plot	qvalue	rep
+unnamed-chunk-5	<	$	$<-	abline	altcol	hh.pval	hist	length	nullcol	paste0	plot	qvalue	rep	round	sum	text
+unnamed-chunk-6	altcol	hh.pval	hist
+unnamed-chunk-7	$	abline	altcol	ecdf	grenander	hh.pval	hist	lines	min	nullcol	require
+unnamed-chunk-8	$	abline	altcol	approx	ecdf	grenander	hh.pval	hist	lines	min	nullcol	paste0	require	round	text
+unnamed-chunk-9	>	paste0	read.table	rowSums	setwd	source
+=======
 unnamed-chunk-2	altcol	hh.pval	hist
 unnamed-chunk-3	$	$<-	abline	altcol	hh.pval	hist	length	nullcol	plot	qvalue	rep
 unnamed-chunk-4	<	$	$<-	abline	altcol	hh.pval	hist	length	nullcol	paste0	plot	qvalue	rep	round	sum	text
@@ -7,6 +17,7 @@ unnamed-chunk-6	$	abline	altcol	ecdf	grenander	hh.pval	hist	lines	min	nullcol	re
 unnamed-chunk-7	$	abline	altcol	approx	ecdf	grenander	hh.pval	hist	lines	min	nullcol	paste0	require	round	text
 unnamed-chunk-8	>	paste0	read.table	rowSums	setwd	source
 unnamed-chunk-9	head	x
+>>>>>>> 4db06c5d454e6557784c491eef7bf44a150130d6
 unnamed-chunk-1	^	<	==	apply	F	max	mean	pchisq	read.table	setwd	sqrt	sum	var
 unnamed-chunk-1	^	<	==	apply	F	max	mean	pchisq	read.table	setwd	sqrt	sum	var
 unnamed-chunk-1	^	<	==	apply	F	max	mean	pchisq	read.table	setwd	sqrt	sum	var
@@ -38,6 +49,132 @@ unnamed-chunk-1	^	<	==	apply	F	max	mean	pchisq	read.table	setwd	sqrt	sum	var
 unnamed-chunk-1	^	<	==	apply	F	max	mean	pchisq	read.table	setwd	sqrt	sum	var
 unnamed-chunk-1	^	<	==	apply	F	max	mean	pchisq	read.table	setwd	sqrt	sum	var
 unnamed-chunk-1	^	<	==	apply	F	max	mean	pchisq	read.table	setwd	sqrt	sum	var
+<<<<<<< HEAD
+unnamed-chunk-2	^	<	==	apply	F	max	mean	pchisq	read.table	setwd	sqrt	sum	var
+unnamed-chunk-10	head	x
+unnamed-chunk-11	<	>	$	c	counts.associate	dim	ifelse	pt	qvalue	return	T	x	xx
+unnamed-chunk-12	<	$	$<-	abline	altcol	c	hist	length	max	nullcol	paste0	plot	pval	qval	rep	round	seq	text
+unnamed-chunk-13	hist	log10	xx
+unnamed-chunk-14	<	$	$<-	abline	altcol	c	hist	length	nullcol	plot	pval	qvalue	rep	seq	xx
+unnamed-chunk-15	$	$<-	abline	altcol	c	hist	length	nullcol	plot	pval.high	qval.high	rep
+unnamed-chunk-16	>	$	abline	c	plot	qval	qval.high	xx
+unnamed-chunk-17	fdrtool	hh.pval	hh.zscore	locfdr	mixFdr	require
+unnamed-chunk-18	<	$	$<-	abline	altcol	hh.pval	hist	length	nullcol	paste0	plot	qvalue	rep	round	sum	text
+unnamed-chunk-19	$	$<-	altcol	cut	hh.fdrtool	hh.zscore	hist	lapply	mean	ncz	nullcol	plot	split	unlist
+unnamed-chunk-2	^	<	==	apply	F	max	mean	pchisq	read.table	setwd	sqrt	sum	var
+unnamed-chunk-2	^	<	==	apply	F	max	mean	pchisq	read.table	setwd	sqrt	sum	var
+unnamed-chunk-2	^	<	==	apply	F	max	mean	pchisq	read.table	setwd	sqrt	sum	var
+unnamed-chunk-2	^	<	==	apply	F	max	mean	pchisq	read.table	setwd	sqrt	sum	var
+unnamed-chunk-2	^	<	==	apply	F	max	mean	pchisq	read.table	setwd	sqrt	sum	var
+unnamed-chunk-2	^	<	==	apply	F	max	mean	pchisq	read.table	setwd	sqrt	sum	var
+unnamed-chunk-2	^	<	==	apply	F	max	mean	pchisq	read.table	setwd	sqrt	sum	var
+unnamed-chunk-2	^	<	==	apply	F	max	mean	pchisq	read.table	setwd	sqrt	sum	var
+unnamed-chunk-2	^	<	==	apply	F	max	mean	pchisq	read.table	setwd	sqrt	sum	var
+unnamed-chunk-2	^	<	==	apply	F	max	mean	pchisq	read.table	setwd	sqrt	sum	var
+unnamed-chunk-3	altcol	hh.pval	hist
+unnamed-chunk-3	altcol	hh.pval	hist
+unnamed-chunk-3	altcol	hh.pval	hist
+unnamed-chunk-3	altcol	hh.pval	hist
+unnamed-chunk-3	altcol	hh.pval	hist
+unnamed-chunk-3	altcol	hh.pval	hist
+unnamed-chunk-3	altcol	hh.pval	hist
+unnamed-chunk-3	altcol	hh.pval	hist
+unnamed-chunk-3	altcol	hh.pval	hist
+unnamed-chunk-3	altcol	hh.pval	hist
+unnamed-chunk-4	$	$<-	abline	altcol	hh.pval	hist	length	nullcol	plot	qvalue	rep
+unnamed-chunk-2	^	<	==	apply	F	max	mean	pchisq	read.table	setwd	sqrt	sum	var
+unnamed-chunk-2	^	<	==	apply	F	max	mean	pchisq	read.table	setwd	sqrt	sum	var
+unnamed-chunk-3	altcol	hh.pval	hist
+unnamed-chunk-4	$	$<-	abline	altcol	hh.pval	hist	length	nullcol	plot	qvalue	rep
+unnamed-chunk-2	^	<	==	apply	F	max	mean	pchisq	read.table	setwd	sqrt	sum	var
+unnamed-chunk-2	^	<	==	apply	F	max	mean	pchisq	read.table	setwd	sqrt	sum	var
+unnamed-chunk-2	^	<	==	apply	F	max	mean	pchisq	read.table	setwd	sqrt	sum	var
+unnamed-chunk-2	^	<	==	apply	F	max	mean	pchisq	read.table	setwd	sqrt	sum	var
+unnamed-chunk-2	^	<	==	apply	F	max	mean	pchisq	read.table	setwd	sqrt	sum	var
+unnamed-chunk-2	^	<	==	apply	F	max	mean	pchisq	read.table	setwd	sqrt	sum	var
+unnamed-chunk-2	^	<	==	apply	F	max	mean	pchisq	read.table	setwd	sqrt	sum	var
+unnamed-chunk-2	^	<	==	apply	F	max	mean	pchisq	read.table	setwd	sqrt	sum	var
+unnamed-chunk-3	altcol	hh.pval	hist
+unnamed-chunk-3	altcol	hh.pval	hist
+unnamed-chunk-3	altcol	hh.pval	hist
+unnamed-chunk-3	altcol	hh.pval	hist
+unnamed-chunk-3	altcol	hh.pval	hist
+unnamed-chunk-3	altcol	hh.pval	hist
+unnamed-chunk-3	altcol	hh.pval	hist
+unnamed-chunk-3	altcol	hh.pval	hist
+unnamed-chunk-3	altcol	hh.pval	hist
+unnamed-chunk-4	$	$<-	abline	altcol	hh.pval	hist	length	nullcol	plot	qvalue	rep
+unnamed-chunk-4	$	$<-	abline	altcol	hh.pval	hist	length	nullcol	plot	qvalue	rep
+unnamed-chunk-4	$	$<-	abline	altcol	hh.pval	hist	length	nullcol	plot	qvalue	rep
+unnamed-chunk-4	$	$<-	abline	altcol	hh.pval	hist	length	nullcol	plot	qvalue	rep
+unnamed-chunk-3	altcol	hh.pval	hist
+unnamed-chunk-3	altcol	hh.pval	hist
+unnamed-chunk-3	altcol	hh.pval	hist
+unnamed-chunk-3	altcol	hh.pval	hist
+unnamed-chunk-3	altcol	hh.pval	hist
+unnamed-chunk-3	altcol	hh.pval	hist
+unnamed-chunk-3	altcol	hh.pval	hist
+unnamed-chunk-3	altcol	hh.pval	hist
+unnamed-chunk-3	altcol	hh.pval	hist
+unnamed-chunk-3	altcol	hh.pval	hist
+unnamed-chunk-4	$	$<-	abline	altcol	hh.pval	hist	length	nullcol	plot	qvalue	rep
+unnamed-chunk-2	^	<	==	apply	F	max	mean	pchisq	read.table	setwd	sqrt	sum	var
+unnamed-chunk-2	^	<	==	apply	F	max	mean	pchisq	read.table	setwd	sqrt	sum	var
+unnamed-chunk-2	^	<	==	apply	F	max	mean	pchisq	read.table	setwd	sqrt	sum	var
+unnamed-chunk-2	^	<	==	apply	F	max	mean	pchisq	read.table	setwd	sqrt	sum	var
+unnamed-chunk-2	^	<	==	apply	F	max	mean	pchisq	read.table	setwd	sqrt	sum	var
+unnamed-chunk-2	^	<	==	apply	F	max	mean	pchisq	read.table	setwd	sqrt	sum	var
+unnamed-chunk-2	^	<	==	apply	F	max	mean	pchisq	read.table	setwd	sqrt	sum	var
+unnamed-chunk-2	^	<	==	apply	F	max	mean	pchisq	read.table	setwd	sqrt	sum	var
+unnamed-chunk-2	^	<	==	apply	F	max	mean	pchisq	read.table	setwd	sqrt	sum	var
+unnamed-chunk-2	^	<	==	apply	F	max	mean	pchisq	read.table	setwd	sqrt	sum	var
+unnamed-chunk-3	altcol	hh.pval	hist
+unnamed-chunk-3	altcol	hh.pval	hist
+unnamed-chunk-3	altcol	hh.pval	hist
+unnamed-chunk-3	altcol	hh.pval	hist
+unnamed-chunk-3	altcol	hh.pval	hist
+unnamed-chunk-3	altcol	hh.pval	hist
+unnamed-chunk-3	altcol	hh.pval	hist
+unnamed-chunk-3	altcol	hh.pval	hist
+unnamed-chunk-3	altcol	hh.pval	hist
+unnamed-chunk-3	altcol	hh.pval	hist
+unnamed-chunk-4	$	$<-	abline	altcol	hh.pval	hist	length	nullcol	plot	qvalue	rep
+unnamed-chunk-4	$	$<-	abline	altcol	hh.pval	hist	length	nullcol	plot	qvalue	rep
+unnamed-chunk-4	$	$<-	abline	altcol	hh.pval	hist	length	nullcol	plot	qvalue	rep
+unnamed-chunk-4	$	$<-	abline	altcol	hh.pval	hist	length	nullcol	plot	qvalue	rep
+unnamed-chunk-4	$	$<-	abline	altcol	hh.pval	hist	length	nullcol	plot	qvalue	rep
+unnamed-chunk-4	$	$<-	abline	altcol	hh.pval	hist	length	nullcol	plot	qvalue	rep
+unnamed-chunk-4	$	$<-	abline	altcol	hh.pval	hist	length	nullcol	plot	qvalue	rep
+unnamed-chunk-20	$	hh.locfdr	hh.zscore	nullalthist
+unnamed-chunk-21	$	dev.off	hh.mixfdr	hh.zscore	nullalthist
+unnamed-chunk-22	c	dnorm	lines	plot	seq
+unnamed-chunk-23	c	dnorm	plot	seq
+unnamed-chunk-24	c	dunif	lines	plot	seq
+unnamed-chunk-25	c	dunif	plot	seq
+unnamed-chunk-26	load	source
+unnamed-chunk-27	list	plot_pi0	simres1
+unnamed-chunk-28	ash	hh.betahat	hh.sebetahat	hh.zscore
+unnamed-chunk-29	ash	hh.zscore
+unnamed-chunk-30	$	hh.mixfdr	hh.zscore	nullalthist
+unnamed-chunk-31	$	hh.ashz	hh.zscore	nullalthist
+unnamed-chunk-32	$	c	hh.ashz	hh.fdrtool	hh.locfdr	hh.mixfdr	round
+unnamed-chunk-33	<	$	c	hh.ashz	hh.fdrtool	hh.locfdr	hh.mixfdr	sum
+unnamed-chunk-34	list	plot_lfsr	simres1	source
+unnamed-chunk-35	list	plot_lfsr	simres1
+unnamed-chunk-36	c	hist	T	zdat
+unnamed-chunk-37	c	dnorm	hist	lines	seq	T	zdat
+unnamed-chunk-38	$	c	dnorm	hist	lines	t	T	zdat.ash
+unnamed-chunk-39	$	abline	c	plot	T	zdat	zdat.ash
+unnamed-chunk-40	dd	order	plot	tail	zdat
+unnamed-chunk-41
+unnamed-chunk-42
+unnamed-chunk-43	$	plot	pval	zdat.ash
+unnamed-chunk-44	$	plot	points	pval	zdat.ash
+unnamed-chunk-45	>	$	c	cbind	paste0	pval	read.table	rowSums	zdat.ash
+unnamed-chunk-46	>	$	abline	c	plot	qval	qval.high	xx
+unnamed-chunk-47	>	$	abline	plot	xx	zdat.ash	zdat.ash.high
+unnamed-chunk-48	$	cdf.ash	hh.ash.fdr	hh.ash.shrink	lines	plot	seq
+=======
 unnamed-chunk-2	altcol	hh.pval	hist
 unnamed-chunk-10	<	>	$	c	counts.associate	dim	ifelse	pt	qvalue	return	T	x	xx
 unnamed-chunk-11	<	$	$<-	abline	altcol	c	hist	length	max	nullcol	paste0	plot	pval	qval	rep	round	seq	text
@@ -105,3 +242,4 @@ unnamed-chunk-35	$	c	dnorm	hist	lines	t	T	zdat.ash
 unnamed-chunk-36
 unnamed-chunk-37
 unnamed-chunk-38	$	plot	pval	zdat.ash
+>>>>>>> 4db06c5d454e6557784c491eef7bf44a150130d6

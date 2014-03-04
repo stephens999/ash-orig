@@ -1,11 +1,15 @@
 * installing *source* package ‘ashr’ ...
+** libs
+llvm-g++-4.2 -arch x86_64 -I/Library/Frameworks/R.framework/Resources/include -DNDEBUG  -I/usr/local/include -I"/Library/Frameworks/R.framework/Versions/3.0/Resources/library/Rcpp/include"   -fPIC  -mtune=core2 -g -O2  -c MixEM.cpp -o MixEM.o
+llvm-g++-4.2 -arch x86_64 -I/Library/Frameworks/R.framework/Resources/include -DNDEBUG  -I/usr/local/include -I"/Library/Frameworks/R.framework/Versions/3.0/Resources/library/Rcpp/include"   -fPIC  -mtune=core2 -g -O2  -c RcppExports.cpp -o RcppExports.o
+llvm-g++-4.2 -arch x86_64 -dynamiclib -Wl,-headerpad_max_install_names -undefined dynamic_lookup -single_module -multiply_defined suppress -L/usr/local/lib -L/usr/local/lib -o ashr.so MixEM.o RcppExports.o /Library/Frameworks/R.framework/Versions/3.0/Resources/library/Rcpp/lib/libRcpp.a -F/Library/Frameworks/R.framework/.. -framework R -Wl,-framework -Wl,CoreFoundation
+installing to /Users/stephens/Documents/git/ash/package/ashr.Rcheck/ashr/libs
 ** R
 ** preparing package for lazy loading
 ** help
+Warning: /Users/stephens/Documents/git/ash/package/ashr.Rcheck/00_pkg_src/ashr/man/mixEM.Rd:40: unknown macro '\pi'
+Warning: /Users/stephens/Documents/git/ash/package/ashr.Rcheck/00_pkg_src/ashr/man/posterior_dist.Rd:24: unknown macro '\sim'
 *** installing help indices
 ** building package indices
 ** testing if installed package can be loaded
-*** arch - i386
-*** arch - x86_64
-
 * DONE (ashr)

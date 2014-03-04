@@ -1,0 +1,4 @@
+R CMD BATCH sim1.R
+R CMD BATCH simABC.R
+R CMD BATCH makefigs.R
+

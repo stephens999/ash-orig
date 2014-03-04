@@ -114,20 +114,20 @@ sum(hh.q$q<0.05)
 
 Now compare this with ASH
 ```{r}
-hh.ash = ash(hh.betahat,hh.sebetahat,df=n1+n2-2)
+hh.ash = ash(hh.betahat,hh.sebetahat,df=n1+n2-2,method="fdr")
 sum(hh.ash$qvalue<0.05)
-plot(hh.ash$localfdr, log(hh.pval),main="Illustration of how ASH reorders significance of observations",ylim=c(-10,-1),xlim=c(0,0.1),cex=0.2,xlab="ASH local fdr",ylab="Original p value")
+plot(hh.ash$lfdr, log(hh.pval),main="Illustration of how ASH reorders significance of observations",ylim=c(-10,-1),xlim=c(0,0.1),cex=0.2,xlab="ASH local fdr",ylab="Original p value")
 ```
 
 Now see how it compares with ignoring the variability in
 measurement error, by applying ASH to the z scores.
 ```{r}
-hh.ash2 = ash(hh.zscore,rep(1,length(hh.zscore)),df=20)
-plot(hh.ash$localfdr,hh.ash2$localfdr,cex=0.2,ylab="ignoring sd",xlab="accounting for sd",main="Effect of accounting for measurement precision on local fdr")
+hh.ash2 = ash(hh.zscore,rep(1,length(hh.zscore)),df=20,method="fdr")
+plot(hh.ash$lfdr,hh.ash2$lfdr,cex=0.2,ylab="ignoring sd",xlab="accounting for sd",main="Effect of accounting for measurement precision on local fdr")
 abline(a=0,b=1,col=2)
 cat(sum(hh.ash$qvalue<0.05),sum(hh.ash2$qvalue<0.05))
-cat(sum(hh.ash$localfdr<0.05),sum(hh.ash2$localfdr<0.05))
-plot(hh.ash2$localfdr, log(hh.pval),main="Illustration of how ASH without precision does not reorder significance?",ylim=c(-10,-1),xlim=c(0,0.1),cex=0.2,xlab="ASH local fdr",ylab="Original p value")
+cat(sum(hh.ash$lfdr<0.05),sum(hh.ash2$lfdr<0.05))
+plot(hh.ash2$lfdr, log(hh.pval),main="Illustration of how ASH without precision does not reorder significance?",ylim=c(-10,-1),xlim=c(0,0.1),cex=0.2,xlab="ASH local fdr",ylab="Original p value")
 ```
 Hmm - this was unexpected. Why are more being called
 in the second analysis? Could it be that the effect sizes
@@ -142,7 +142,7 @@ need to code it. This section is work in progress.
 The following computes the log likelihood for the two fitted ash models,
 first with $\beta \sim \sum_k \pi_k N(0,\sigma_k^2)$, and then $\beta_s \sim \sum_k \pi_k N(0, \sigma^2_k se^2_s)$:
 ```{r}
-cat(LogLik_conv(hh.ash$fitted.g, hh.betahat, hh.sebetahat),mixseLoglik(hh.betahat,hh.ash$fitted.g$pi, hh.ash$fitted.g$mean, hh.ash$fitted.g$sd, hh.sebetahat),mixseLoglik(hh.betahat,hh.ash2$fitted.g$pi, hh.ash2$fitted.g$mean, sqrt(hh.ash2$fitted.g$sd^2+1), hh.sebetahat,FUN="*"))
+cat(loglik.ash(hh.ash, hh.betahat, hh.sebetahat),loglik.ash(hh.ash2,hh.betahat,hh.sebetahat,TRUE))
 ```
 Looks like the second model fits better.
 
@@ -234,7 +234,7 @@ the situation where the true $\beta$ are not symmetric around 0.
 ```{r}
 musim2 = c(rnorm(1000,-3,1),rnorm(1000,-1.5,1),rnorm(1000,0,1),rep(0,7000))
 zsim2 = musim2+rnorm(10000)
-zsim2.ash=ash(zsim2,rep(1,10000))
+zsim2.ash=ash(zsim2,rep(1,10000),method="fdr")
 hist(musim2[1:3000])
 errorinsign = ifelse(musim2==0,0.5,(zsim2.ash$PosteriorMean/musim2)<0)
 sum(errorinsign[zsim2.ash$qvalue<0.05])/sum(zsim2.ash$qvalue<0.05)
@@ -248,7 +248,7 @@ Simulate data as in Efron, 2008, Section 7.
 ```{r}
 musim = c(rnorm(1000,-3,1),rep(0,9000))
 zsim = musim+rnorm(10000)
-zsim.ash=ash(zsim,rep(1,10000))
+zsim.ash=ash(zsim,rep(1,10000),method="fdr")
 ```
 Need to implement a method to find CIs to look at this.
 
@@ -286,12 +286,12 @@ p2.test = pchisq(z2.test^2,df=1,lower.tail=F)
 hist(p.test)
 hist(p2.test)
 
-test1.ash1 = ash(bhat.test, hh.sebetahat)
-test1.ash2 = ash(z.test, rep(1,n))
+test1.ash1 = ash(bhat.test, hh.sebetahat,method="fdr")
+test1.ash2 = ash(z.test, rep(1,n),method="fdr")
 cat(sum(test1.ash1$qval<0.05),sum(test1.ash2$qval<0.05))
 
-test2.ash1 = ash(bhat2.test, hh.sebetahat)
-test2.ash2 = ash(z2.test, rep(1,n))
+test2.ash1 = ash(bhat2.test, hh.sebetahat,method="fdr")
+test2.ash2 = ash(z2.test, rep(1,n),method="fdr")
 cat(sum(test2.ash1$qval<0.05),sum(test2.ash2$qval<0.05))
 
 
