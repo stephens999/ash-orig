@@ -62,6 +62,7 @@ ash = function(betahat,sebetahat,method = c("shrink","fdr"),
     
   #If method is supplied, use it to set up defaults; provide warning if these default values
   #are also specified by user
+  #If method is not supplied use ..............
   if(!missing(method)){
     method = match.arg(method) 
     if(method=="shrink"){
@@ -127,42 +128,49 @@ ash = function(betahat,sebetahat,method = c("shrink","fdr"),
       stop("Error: all input values are missing")
     }
   }  
-  
-  if(is.null(mixsd)){
-    mixsd= autoselect.mixsd(betahat[completeobs],sebetahat[completeobs],gridmult)
-  }
-  if(pointmass){
-    mixsd = c(0,mixsd)
-  }
-  
-  k=length(mixsd)  
-  null.comp = which.min(mixsd) #which component is the "null"
-  
-  if(!is.numeric(prior)){
-    if(prior=="nullbiased"){ # set up prior to favour "null"
-      prior = rep(1,k)
-      prior[null.comp] = 10 #prior 10-1 in favour of null
-    }else if(prior=="uniform"){
-      prior = rep(1,k)
-    }
-  }
-  
-  if(length(prior)!=k | !is.numeric(prior)){
-    stop("invalid prior specification")
-  }
-  
-  if(missing(g)){
-    pi = prior #default is to initialize pi at prior (mean)
-    if(randomstart){pi=rgamma(k,1,1)}
-  
-    if(!is.element(mixcompdist,c("normal","uniform","halfuniform"))) stop("Error: invalid type of mixcompdist")
-    if(mixcompdist=="normal") g=normalmix(pi,rep(0,k),mixsd)
-    if(mixcompdist=="uniform") g=unimix(pi,-mixsd,mixsd)
-    if(mixcompdist=="halfuniform") g=unimix(c(pi,pi),c(-mixsd,rep(0,k)),c(rep(0,k),mixsd))
-    maxiter = 5000
+
+  if(!missing(g)){
+      maxiter = 1 # if g is specified, don't iterate the EM
+      prior = rep(1,ncomp(g)) #prior is not actually used if g specified, but required to make sure EM doesn't produce warning
   } else {
-    maxiter = 1 # if g is specified, don't iterate the EM 
-    prior = rep(1,ncomp(g)) #prior is not actually used if g specified, but required to make sure EM doesn't produce warning
+      if(is.null(mixsd)){
+          mixsd = autoselect.mixsd(betahat[completeobs],sebetahat[completeobs],gridmult)
+      }
+      if(pointmass){
+          mixsd = c(0,mixsd)
+      }
+  
+      null.comp = which.min(mixsd) #which component is the "null"
+
+      k = length(mixsd)
+      if(!is.numeric(prior)){
+          if(prior=="nullbiased"){ # set up prior to favour "null"
+              prior = rep(1,k)
+              prior[null.comp] = 10 #prior 10-1 in favour of null
+          }else if(prior=="uniform"){
+              prior = rep(1,k)
+          }
+      }
+      
+      if(length(prior)!=k | !is.numeric(prior)){
+          stop("invalid prior specification")
+      }
+  
+      if(randomstart){
+          pi = rgamma(k,1,1)
+      } else {
+          pi = prior #default is to initialize pi at prior (mean)
+      }
+  
+      if(!is.element(mixcompdist,c("normal","uniform","halfuniform"))) stop("Error: invalid type of mixcompdist")
+      if(mixcompdist=="normal") g=normalmix(pi,rep(0,k),mixsd)
+      if(mixcompdist=="uniform") g=unimix(pi,-mixsd,mixsd)
+      if(mixcompdist=="halfuniform"){
+          g = unimix(c(pi,pi),c(-mixsd,rep(0,k)),c(rep(0,k),mixsd))
+          prior = rep(prior, 2)
+          pi = rep(pi, 2)
+      }
+      maxiter = 5000
   }
   
   pi.fit=EMest(betahat[completeobs],lambda1*sebetahat[completeobs]+lambda2,g,prior,null.comp=null.comp,nullcheck=nullcheck,VB=VB,maxiter = maxiter, cxx=cxx)  
