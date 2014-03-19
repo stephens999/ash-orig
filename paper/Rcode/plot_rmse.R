@@ -106,7 +106,7 @@ plot_rmse_boxplot = function(sims,inczero=FALSE,incbetahat=FALSE,incmixfdr=FALSE
     }
   }
   res.melt = melt(res, id.vars=c("Scenario"),variable.name="Method")    
-  ggplot(res.melt,aes(Method,value,color=Method)) + geom_boxplot() + facet_grid(.~Scenario)
+  ggplot(res.melt,aes(Method,value,color=Method)) + coord_flip() + geom_boxplot() + facet_grid(.~Scenario)
   
 }
 
