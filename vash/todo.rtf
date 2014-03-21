@@ -1,0 +1,40 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1265\cocoasubrtf190
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+\margl1440\margr1440\vieww16000\viewh11400\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+
+\f0\fs32 \cf0 To do list:\
+\
+Point 1: shrink observed variances \\hat\{s\}_1,\'85\\hat\{s\}_G\
+Prior: s_j~ Mixture Inverse gamma (unimodal on c) or 1/s_j~Mixture gamma\
+Likelihood: \\hat\{s\}_j~sj*Gamma(n/2, n/2)\
+Posterior: Mixture Inverse gamma\
+Hyperparameter: Prior\'92s mixture proportion, params for IG distribution\
+\
+####TO DO###\
+1. Compare modeling variances with IG, or modeling precisions with Gamma? (Unimodal components)\
+2. Speed up computation: stochastic gradient descent; search log(c) in R, instead of search c in (0,Infty).\
+3. Method\'92s adaptivity in shrinking variances: simulation data with mixtures, compare with methods like limma.\
+4. Look at real microarray data, what\'92s the distributions of s_j? Mixture IG? Single IG? \
+5. Theoretic problem: mixture model vs single comp model, how significant?\
+\
+\
+Point 2: \
+Plug-in the posterior distribution P(s_j|\\hat\{s\}_j), so likelihood P(\\hat\{\\beta\}_j|\\beta_j, \\hat\{s\}_j)=Mixture t distribution.\
+\
+###TO DO###\
+1. Approximate t likelihood with mixture normal for convenience?\
+2. Posterior P(\\beta_j|\\hat\{\\beta\}_j, \\hat\{s\}_j)=?\
+\
+\
+Point 3:\
+RNA-seq data: separate biological variation with sampling errors?\
+\
+###TO DO###\
+1. distribution of GLM standard errors\
+2. Real data: Pickrell\
+\
+\
+\
+}
