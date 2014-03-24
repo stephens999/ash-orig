@@ -29,6 +29,8 @@
 #' @param gridmult: the multiplier by which the default grid values for mixsd differ by one another. (Smaller values produce finer grids)
 #' @param minimal_output: if TRUE, just outputs the fitted g and the lfsr (useful for very big data sets where memory is an issue) 
 #' @param g: the prior distribution for beta (usually estimated from the data; this is used primarily in simulated data to do computations with the "true" g)
+#' @param maxiter: maximum number of iterations of the EM algorithm
+#' @param cxx: flag to indicate whether to use the c++ (Rcpp) version
 #' 
 #' 
 #' @return a list with elements fitted.g is fitted mixture
@@ -57,7 +59,8 @@ ash = function(betahat,sebetahat,method = c("shrink","fdr"),
                mixsd=NULL, VB=FALSE,gridmult=sqrt(2),
                minimaloutput=FALSE,
                g=NULL,
-               cxx=FALSE){
+               maxiter=5000,
+               cxx=TRUE){
   
   
   #method provides a convenient interface to set a particular combinations of parameters for prior and pointmass
@@ -172,7 +175,6 @@ ash = function(betahat,sebetahat,method = c("shrink","fdr"),
           prior = rep(prior, 2)
           pi = rep(pi, 2)
       }
-      maxiter = 5000
   }
   
   pi.fit=EMest(betahat[completeobs],lambda1*sebetahat[completeobs]+lambda2,g,prior,null.comp=null.comp,nullcheck=nullcheck,VB=VB,maxiter = maxiter, cxx=cxx)  

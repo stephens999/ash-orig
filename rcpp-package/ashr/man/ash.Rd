@@ -8,7 +8,8 @@
     randomstart = FALSE, pointmass = FALSE,
     onlylogLR = FALSE, prior = c("uniform", "nullbiased"),
     mixsd = NULL, VB = FALSE, gridmult = sqrt(2),
-    minimaloutput = FALSE, g = NULL, cxx = FALSE)
+    minimaloutput = FALSE, g = NULL, maxiter = 5000,
+    cxx = TRUE)
 }
 \arguments{
   \item{betahat,}{a p vector of estimates}
@@ -73,6 +74,12 @@
   \item{g:}{the prior distribution for beta (usually
   estimated from the data; this is used primarily in
   simulated data to do computations with the "true" g)}
+
+  \item{maxiter:}{maximum number of iterations of the EM
+  algorithm}
+
+  \item{cxx:}{flag to indicate whether to use the c++
+  (Rcpp) version}
 }
 \value{
   a list with elements fitted.g is fitted mixture logLR :
