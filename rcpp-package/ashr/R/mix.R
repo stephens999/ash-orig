@@ -499,7 +499,7 @@ comp_postmean.unimix = function(m,betahat,sebetahat){
 #not yet implemented!
 #just returns 0s for now
 comp_postsd.unimix = function(m,betahat,sebetahat){
-  print("Warning: Posterior SDs not yet implemented for uniform components")
+  warning("Posterior SDs not yet implemented for uniform components")
   k= ncomp(m)
   n=length(betahat)
   return(matrix(NA,nrow=k,ncol=n)) 

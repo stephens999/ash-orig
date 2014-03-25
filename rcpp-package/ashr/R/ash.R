@@ -74,12 +74,12 @@ ash = function(betahat,sebetahat,method = c("shrink","fdr"),
       if(missing(prior)){
         prior = "uniform"
       } else {
-        warning("Warning: specification of prior overrides default for method shrink")
+        warning("Specification of prior overrides default for method shrink")
       }
       if(missing(pointmass)){
         pointmass=FALSE
       } else {
-        warning("Warning: specification of pointmass overrides default for method shrink")
+        warning("Specification of pointmass overrides default for method shrink")
       }
     }
   
@@ -87,12 +87,12 @@ ash = function(betahat,sebetahat,method = c("shrink","fdr"),
       if(missing(prior)){
         prior = "nullbiased"
       } else {
-        warning("Warning: specification of prior overrides default for method fdr")
+        warning("Specification of prior overrides default for method fdr")
       }
       if(missing(pointmass)){
         pointmass=TRUE
       } else {
-        warning("Warning: specification of pointmass overrides default for method fdr")
+        warning("Specification of pointmass overrides default for method fdr")
       }
     }  
   }
