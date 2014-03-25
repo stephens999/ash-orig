@@ -296,7 +296,7 @@ fast.ash = function(betahat,sebetahat,
   }
   
   pi.fit=EMest(betahat[completeobs],sebetahat[completeobs],g,prior,null.comp=null.comp,nullcheck=nullcheck,VB=VB,maxiter = maxiter, cxx=cxx)  
-
+  
     n=length(betahat)
     PosteriorMean = rep(0,length=n)
     PosteriorSD=rep(0,length=n)
@@ -307,7 +307,7 @@ fast.ash = function(betahat,sebetahat,
     #FOR MISSING OBSERVATIONS, USE THE PRIOR INSTEAD OF THE POSTERIOR
     PosteriorMean[!completeobs] = mixmean(pi.fit$g)
     PosteriorSD[!completeobs] =mixsd(pi.fit$g)  
-        
+      
     result = list(fitted.g=pi.fit$g,PosteriorMean = PosteriorMean,PosteriorSD=PosteriorSD,call=match.call(),data=list(betahat = betahat, sebetahat=sebetahat))
     return(result)
 
@@ -380,8 +380,12 @@ mixVBEM = function(matrix_lik, prior, post.init=NULL, tol=0.0001, maxiter=5000){
     if(i>maxiter){i=maxiter}
   }
   
+  converged=(abs(B[i]-B[i-1])<tol)
+  if(!converged){
+    warning("EM algorithm in function mixVBEM failed to converge. Results may be unreliable. Try increasing maxiter and rerunning.")
+  }
    
-  return(list(pihat = pipost/sum(pipost), B=B[1:i], niter = i, converged=(abs(B[i]-B[i-1])<tol),post=pipost))
+  return(list(pihat = pipost/sum(pipost), B=B[1:i], niter = i, converged=converged,post=pipost))
 }
   
 
@@ -443,9 +447,12 @@ mixEM = function(matrix_lik, prior, pi.init = NULL,tol=0.0001, maxiter=5000){
       if(abs(loglik[i]+priordens[i]-loglik[i-1]-priordens[i-1])<tol) break;
     }
   }
-  
+  converged=(abs(loglik[i]+priordens[i]-loglik[i-1]-priordens[i-1])<tol)
+  if(!converged){
+    warning("EM algorithm in function mixEM failed to converge. Results may be unreliable. Try increasing maxiter and rerunning.")
+  }
   return(list(pihat = pi, B=loglik[1:i], 
-              niter = i, converged=(abs(loglik[i]+priordens[i]-loglik[i-1]-priordens[i-1])<tol)))
+              niter = i, converged=converged))
 }
 
 
@@ -471,7 +478,11 @@ EMest = function(betahat,sebetahat,g,prior,null.comp=1,nullcheck=TRUE,VB=FALSE,l
     EMfit=mixVBEM(matrix_lik,prior,pi.init,ltol, maxiter)}
   else{
     if (cxx==TRUE){
-        EMfit = cxxMixEM(matrix_lik,prior,pi.init,ltol, maxiter)}
+        EMfit = cxxMixEM(matrix_lik,prior,pi.init,ltol, maxiter)
+        if(!EMfit$converged){
+           warning("EM algorithm in function cxxMixEM failed to converge. Results may be unreliable. Try increasing maxiter and rerunning.")
+        } 
+    }
     else{
         EMfit = mixEM(matrix_lik,prior,pi.init,ltol, maxiter)}
   }

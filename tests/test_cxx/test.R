@@ -54,3 +54,8 @@ all.equal(beta.ash$PosteriorMean, beta.ash.cxx$PosteriorMean)
 all.equal(beta.ash$qvalue, beta.ash.cxx$qvalue)
 all.equal(beta.ash$PositiveProb, beta.ash.cxx$PositiveProb)
 
+# check that convergence warning is produced
+ash(ss$betahat, ss$betasd, prior = "uniform", mixcompdist="halfuniform",cxx =TRUE,maxiter=2)
+ash(ss$betahat, ss$betasd, prior = "uniform", mixcompdist="halfuniform",cxx =FALSE,maxiter=2)
+ash(ss$betahat, ss$betasd, prior = "uniform", mixcompdist="halfuniform",VB=TRUE,cxx =FALSE,maxiter=2)
+
