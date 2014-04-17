@@ -243,7 +243,7 @@ EMest_meanmix = function(betahat, pi.lik, sigma.lik, sigma.prior, prior.beta='nu
   if(prior.beta=="nullbiased"){ 
     prior.beta = rep(1,L)
     prior.beta[nullcomp] = 10
-  }else if(prior.se=="uniform"){
+  }else if(prior.beta=="uniform"){
     prior.beta = rep(1,L)
   }
   pi = rep(1,L)
@@ -393,7 +393,11 @@ vash = function(betahat,sebetahat,n,localfdr=TRUE,sigma.prior=NULL,prior.se='uni
   post.se = post_distn_se(n,varhat,pifit.se$alpha.vec,pifit.se$modalpha.vec,pifit.se$c,pifit.se$pi)
   
   # Approximate t-mixture likelihood P(betahat|beta,varhat) by normal mixture 
-  sigma.lik = outer(rep(1,N),2^seq(-2,2))*apply(post.se$gammaa/post.se$gammab,1,mean)*n/(n-1.9)
+  if (n>2){
+    sigma.lik = outer(rep(1,N),2^seq(-2,2))*apply(post.se$gammaa/post.se$gammab,1,mean)*n/(n-1.9)
+  }else{
+    sigma.lik = outer(rep(1,N),2^seq(-2,2))*apply(post.se$gammaa/post.se$gammab,1,mean)
+  }
   K = dim(sigma.lik)[2]
   post.se.params = cbind(post.se$gammaa, post.se$gammab, post.se$pi,sigma.lik)
   pi.lik = t(apply(post.se.params,1,approxlik, K=length(pifit.se$pi)))
