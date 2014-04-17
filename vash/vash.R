@@ -76,6 +76,7 @@ gradloglik = function(N,K,logc,alpha.vec,n,varhat,pi,unimodal){
 }
 
 # Gradient of funtion loglike for single component prior (w.r.t logalpha)
+
 gradloglik.a = function(N,K,logc,logalpha.vec,n,varhat,pi,unimodal){
   alpha.vec=exp(logalpha.vec)
   if(unimodal=='variance'){
@@ -90,12 +91,12 @@ gradloglik.a = function(N,K,logc,logalpha.vec,n,varhat,pi,unimodal){
 }
 
 
-# EM algorithm to estimate pi, c, and alpha(only when singlecomp==TRUE)
+# EM algorithm to estimate pi and c
 # prior: nullbiased: add weight to the null component at each iteration; (NEED TESTING!)
 #        uniform: uniform weight
 # ltol: tolerance of convergence
 # maxiter: max number of iterations
-EMest_pi = function(varhat,n,c,alpha.vec,pi,prior='uniform', ltol=0.0001, maxiter=5000, unimodal, SGD, singlecomp){
+EMest_pi = function(varhat,n,c,alpha.vec,pi,prior, ltol=0.0001, maxiter=5000, unimodal, SGD, singlecomp){
   K = length(pi)
   N = length(varhat)
   nullcomp = which.max(alpha.vec)
@@ -155,10 +156,6 @@ EMest_pi = function(varhat,n,c,alpha.vec,pi,prior='uniform', ltol=0.0001, maxite
 }
 
 # Adaptive shrinkage for variances
-# Unimodal: 'variance': variances~Mix IG with common mode c
-#           'precision': precisions~Mix Gamma with common mode c
-# SGD: use stochastic gradient descent to est hyperparams
-# singlecomp: fit single component prior (est both prior mean and var params by EB)
 vash = function(varhat,n,prior='uniform',unimodal='precision',alpha.vec=NULL,c=NULL,pi=NULL,SGD=TRUE,singlecomp=FALSE){
   if(is.null(alpha.vec)){
     alpha.vec = 2+2^seq(-3,10)
@@ -173,31 +170,4 @@ vash = function(varhat,n,prior='uniform',unimodal='precision',alpha.vec=NULL,c=N
   pifit = EMest_pi(varhat,n,c,alpha.vec,pi,prior, ltol=0.001, maxiter=5000, unimodal,SGD, singlecomp)
   post = post_distn(n,varhat,pifit$alpha.vec,pifit$modalpha.vec,pifit$c,pifit$pi)
   return(list(PosteriorMean=post$mean,pifit=pifit,post=post,alpha=alpha.vec,c=pifit$c,pi=pifit$pi,unimodal=unimodal))
-}
-
-# function to plot the Empirical Bayes prior
-# xmax: plot density on (0,xmax)
-vashEBprior=function(vashobj,xmax){
-  xgrid=seq(0.0001,xmax,by=0.01)
-  if(vashobj$unimodal=='variance'){
-    EBprior.var.sep=dgamma(outer(1/xgrid,rep(1,length(vashobj$alpha))),
-                           shape=outer(rep(1,length(xgrid)),vashobj$alpha),
-                           rate=vashobj$c*outer(rep(1,length(xgrid)),vashobj$alpha+1))*outer(1/xgrid^2,rep(1,length(vashobj$alpha)))
-    EBprior.var=rowSums(outer(rep(1,length(xgrid)),vashobj$pi)*EBprior.var.sep)
-    EBprior.prec.sep=dgamma(outer(xgrid,rep(1,length(vashobj$alpha))),
-                            shape=outer(rep(1,length(xgrid)),vashobj$alpha),
-                            rate=vashobj$c*outer(rep(1,length(xgrid)),vashobj$alpha+1))                    
-    EBprior.prec=rowSums(outer(rep(1,length(xgrid)),vashobj$pi)*EBprior.prec.sep)
-  }else if (vashobj$unimodal=='precision'){
-    EBprior.var.sep=dgamma(outer(1/xgrid,rep(1,length(vashobj$alpha))),
-                           shape=outer(rep(1,length(xgrid)),vashobj$alpha),
-                           rate=vashobj$c*outer(rep(1,length(xgrid)),vashobj$alpha-1))*outer(1/xgrid^2,rep(1,length(vashobj$alpha)))
-    EBprior.var=rowSums(outer(rep(1,length(xgrid)),vashobj$pi)*EBprior.var.sep)
-    EBprior.prec.sep=dgamma(outer(xgrid,rep(1,length(vashobj$alpha))),
-                            shape=outer(rep(1,length(xgrid)),vashobj$alpha),
-                            rate=vashobj$c*outer(rep(1,length(xgrid)),vashobj$alpha-1))                   
-    EBprior.prec=rowSums(outer(rep(1,length(xgrid)),vashobj$pi)*EBprior.prec.sep)
-  }
-  return(list(xgrid=xgrid,EBprior.var=EBprior.var,EBprior.prec=EBprior.prec, 
-              EBprior.var.sep=EBprior.var.sep, EBprior.prec.sep=EBprior.prec.sep))
 }
