@@ -259,7 +259,7 @@ old_posterior_dist = function(pi0,mu0,sigma0,betahat,sebetahat){
 #find mean and variance of a mixture of normals
 #INPUT: x is a list with elements pi mu and sigma, each k by n matrices
 #OUTPUT; the n vectors of mean and variances of mixtures correspondign to columns of pi, mu and sigma
-normmix.mv=function(x){
+normmixx.mv=function(x){
   Ex = colSums(x$pi * x$mu)
   Ex2 = colSums(x$pi* (x$mu^2 + x$sigma^2))
   Vx = Ex2- Ex^2
