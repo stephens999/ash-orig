@@ -72,7 +72,7 @@ The estimates of $\pi_0$ from the four methods are given in the following table:
 Now we perform a "sanity check" for each method, comparing its $q$-values against the
 nonparametric $q$ values obtained using the same estimate of $\pi_0$. Both `ash` and `qvalue`
 clearly pass this sanity check (for `qvalue`, this is almost tautological, since it effectively uses the non-parametric procedure). For `locfdr`, it also passes the sanity check except for
-some artifacts near $p=1$ that we do not fully understand. For `mixfdr` there seems to be a systematic deviation from the non-parametric method that suggests.
+some artifacts near $p=1$ that we do not fully understand. For `mixfdr` there seems to be a systematic deviation from the non-parametric method that suggests...
 ```{r}
   par(mfcol=c(2,2))
   plot(qval.nonp(p,get_pi0(test.ash)),test.ash$qvalue, xlab="nonparametric q-values (with pi0 estimated by ash)", ylab = "ash q-values",main="ash")
@@ -106,5 +106,6 @@ accounts for the slightly worse correspondance between the `ash` and non-paramet
 ```
 
 Although these simulations are by no-means comprehensive, they show that, for these the primary
-difference 
+difference between ash $q$ values and qvalue $q$ values is
+the different estimates of $\pi_0$.
 

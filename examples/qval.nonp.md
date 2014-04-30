@@ -51,17 +51,23 @@ library(ashr)
 ```
 
 ```
-## Loading required package: Rcpp
 ## Loading required package: truncnorm
 ```
 
 ```r
 library(qvalue)
+```
+
+```
+## Loading Tcl/Tk interface ... done
+```
+
+```r
 library(locfdr)
 ```
 
 ```
-## Loading required package: splines
+## Error: there is no package called 'locfdr'
 ```
 
 ```r
@@ -75,11 +81,32 @@ In our first simulation, half the $\beta_j$ are null, and the other half are $\b
 set.seed(100)
 test = simdata(10000, 5000, 0, 2, 1)
 test.ash = ash(test$betahat, test$betahatsd, method = "fdr")
+```
+
+```
+## Error: unused argument(s) (method = "fdr")
+```
+
+```r
 z = test$betahat/test$betahatsd
 p = pchisq(z^2, df = 1, lower.tail = FALSE)
 test.qv = qvalue(p)
 test.locfdr = locfdr(z, nulltype = 0, plot = 0)
+```
+
+```
+## Error: could not find function "locfdr"
+```
+
+```r
 test.locfdr.qval = qval.from.lfdr(test.locfdr$fdr)
+```
+
+```
+## Error: could not find function "qval.from.lfdr"
+```
+
+```r
 test.mixfdr = mixFdr(z, theonull = TRUE, noiseSD = 1, plots = FALSE)
 ```
 
@@ -93,6 +120,10 @@ test.mixfdr = mixFdr(z, theonull = TRUE, noiseSD = 1, plots = FALSE)
 test.mixfdr.qval = qval.from.lfdr(test.mixfdr$fdr)
 ```
 
+```
+## Error: could not find function "qval.from.lfdr"
+```
+
 
 The estimates of $\pi_0$ from the four methods are given in the following table:
 
@@ -102,25 +133,34 @@ kable(data.frame(method = c("qvalue", "ash", "locfdr", "mixfdr"), pi0 = round(c(
 ```
 
 ```
-## |method  |   pi0|
-## |:-------|-----:|
-## |qvalue  |  0.72|
-## |ash     |  0.50|
-## |locfdr  |  0.73|
-## |mixfdr  |  0.85|
+## Error: could not find function "get_pi0"
 ```
 
 
 Now we perform a "sanity check" for each method, comparing its $q$-values against the
 nonparametric $q$ values obtained using the same estimate of $\pi_0$. Both `ash` and `qvalue`
 clearly pass this sanity check (for `qvalue`, this is almost tautological, since it effectively uses the non-parametric procedure). For `locfdr`, it also passes the sanity check except for
-some artifacts near $p=1$ that we do not fully understand. For `mixfdr` there seems to be a systematic deviation from the non-parametric method that suggests.
+some artifacts near $p=1$ that we do not fully understand. For `mixfdr` there seems to be a systematic deviation from the non-parametric method that suggests...
 
 ```r
 par(mfcol = c(2, 2))
 plot(qval.nonp(p, get_pi0(test.ash)), test.ash$qvalue, xlab = "nonparametric q-values (with pi0 estimated by ash)", 
     ylab = "ash q-values", main = "ash")
+```
+
+```
+## Error: could not find function "get_pi0"
+```
+
+```r
 abline(a = 0, b = 1, col = 2, lwd = 2)
+```
+
+```
+## Error: plot.new has not been called yet
+```
+
+```r
 
 plot(qval.nonp(p, test.qv$pi0), test.qv$qvalues, xlab = "nonparametric q-values (with pi0 estimated by qvalue)", 
     ylab = "qvalue q-values", main = "qvalue")
@@ -128,18 +168,29 @@ abline(a = 0, b = 1, col = 2, lwd = 2)
 
 plot(qval.nonp(p, test.mixfdr$pi[1]), test.mixfdr.qval, xlab = "nonparametric q-values (with pi0 estimated by mixfdr)", 
     ylab = "mixfdr q-values", main = "mixfdr")
+```
+
+```
+## Error: object 'test.mixfdr.qval' not found
+```
+
+```r
 abline(a = 0, b = 1, col = 2, lwd = 2)
 
 plot(qval.nonp(p, test.locfdr$fp0[1, 3]), test.locfdr.qval, xlab = "nonparametric q-values (with pi0 estimated by locfdr)", 
     ylab = "locfdr q-values", main = "locfdr")
+```
+
+```
+## Error: object 'test.locfdr' not found
+```
+
+```r
 abline(a = 0, b = 1, col = 2, lwd = 2)
+par(mfcol = c(1, 1))
 ```
 
 ![plot of chunk unnamed-chunk-5](figure/unnamed-chunk-5.png) 
-
-```r
-par(mfcol = c(1, 1))
-```
 
 
 
@@ -153,16 +204,33 @@ accounts for the slightly worse correspondance between the `ash` and non-paramet
 set.seed(100)
 test = simdata(10000, 5000, 2, 1, 1)
 test.ash = ash(test$betahat, test$betahatsd, method = "fdr")
+```
+
+```
+## Error: unused argument(s) (method = "fdr")
+```
+
+```r
 z = test$betahat/test$betahatsd
 p = pchisq(z^2, df = 1, lower.tail = FALSE)
 plot(qval.nonp(p, get_pi0(test.ash)), test.ash$qvalue, xlab = "nonparametric q-values (ash estimate of pi0)", 
     ylab = "ash q-values")
+```
+
+```
+## Error: could not find function "get_pi0"
+```
+
+```r
 abline(a = 0, b = 1, col = 2, lwd = 2)
 ```
 
-![plot of chunk unnamed-chunk-6](figure/unnamed-chunk-6.png) 
+```
+## Error: plot.new has not been called yet
+```
 
 
 Although these simulations are by no-means comprehensive, they show that, for these the primary
-difference 
+difference between ash $q$ values and qvalue $q$ values is
+the different estimates of $\pi_0$.
 

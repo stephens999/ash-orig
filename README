@@ -1,10 +1,21 @@
 This repository contains ongoing work on Bayesian FDR and Adaptive Shrinkage.
 
-The (in development) ashr package is in package/ashr_0.1.tar.gz
-To load this into R use:
+The (in development) ashr package is in package subdirectory.
+There are two versions of the package, one which uses some C++ via RCpp, and one that does not.
+The C++ version is faster, but the extra speed is likely only required if using ash 
+many times on large data sets. Since installing the C++ version requires more
+dependencies (e.g. you need to have a C++ compiler installed etc) you might want to start with 
+the non C++ version.
+
+To install the regular R version of the package use 
+> install.packages("truncnorm")
+> install.packages("package/ashr.no.cxx.tar.gz",repos=NULL,type="source")
+
+To install the Rcpp version of the package use 
 > install.packages("truncnorm")
 > install.packages("Rcpp")
 > install.packages("package/ashr.tar.gz",repos=NULL,type="source")
+
 
 The main function is ash. To get minimal help:
 > ?ash
@@ -17,5 +28,3 @@ See for example http://jeromyanglim.blogspot.com/2012/05/getting-started-with-r-
 
 If you are interested in contributing to this project, contact mstephens@uchicago.edu
 
-Note: if you are unable to install Rcpp, try this version of the package:
-> install.packages("package/ashr.no.cxx.tar.gz",repos=NULL,type="source")
