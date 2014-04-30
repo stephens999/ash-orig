@@ -255,9 +255,9 @@ trueFdr = fdrMixModel(s,mTrue,c(TRUE,FALSE))
 fdrCurve = fdrMixModel(s,m,abs(m$mu - m$mu[1])<=0.002) # this tells it which indices to consider null
  plot(s, trueFdr, t = 'l', main = "fdr - Black is true", xlab = "z", ylab = "fdr", ylim = c(0,1))
  lines(s, fdrCurve, col = 2)
-points(ss$betahat,beta.ash$localfdr,col=3)
-points(ss$betahat,beta.ash.u$localfdr,col=4)
-points(ss$betahat,beta.ash.hu$localfdr,col=5)
+points(ss$betahat,beta.ash$lfdr,col=3)
+points(ss$betahat,beta.ash.u$lfdr,col=4)
+points(ss$betahat,beta.ash.hu$lfdr,col=5)
 
 ```
 
@@ -283,7 +283,7 @@ z = c(rnorm(1000), rnorm(100,3,1))
 
  
 z.ash = ash(z,1,mixcompdist="halfuniform")
-points(z,z.ash$localfdr,col=3)
+points(z,z.ash$lfdr,col=3)
 ```
 
 
@@ -484,7 +484,7 @@ lines(x,density(beta.ash.auto,x),col=2)
 ```{r}
 plot(beta.ash.auto$PosteriorMean, beta.ash$PosteriorMean, xlab="Shrunk estimate from auto method", ylab="Shrunk estimate from fixed method")
 abline(a=0,b=1)
-plot(beta.ash.auto$localfdr, beta.ash$localfdr, xlab="lfdr from auto method", ylab="ldfr from fixed method")
+plot(beta.ash.auto$lfdr, beta.ash$lfdr, xlab="lfdr from auto method", ylab="ldfr from fixed method")
 abline(a=0,b=1)
 
 ```
@@ -494,8 +494,8 @@ abline(a=0,b=1)
 plot(beta.ash.auto$PosteriorMean, beta.ash.vb.uniform$PosteriorMean, xlab="Shrunk estimate from auto method", ylab="Shrunk estimate from vb method")
 points(beta.ash.auto$PosteriorMean, beta.ash.vb.null$PosteriorMean, col=2)
 abline(a=0,b=1)
-plot(beta.ash.auto$localfdr, beta.ash.vb.uniform$localfdr, xlab="lfdr from auto method", ylab="ldfr from vb method")
-points(beta.ash.auto$localfdr, beta.ash.vb.null$localfdr, col=2)
+plot(beta.ash.auto$lfdr, beta.ash.vb.uniform$lfdr, xlab="lfdr from auto method", ylab="ldfr from vb method")
+points(beta.ash.auto$lfdr, beta.ash.vb.null$lfdr, col=2)
 abline(a=0,b=1)
 
 ```
@@ -611,8 +611,8 @@ pos= betahat>0
 betapos.ash=ash(betahat[pos],s[pos])
 betaneg.ash = ash(betahat[!pos],s[!pos])
 lfdr = rep(0,length(betahat))
-lfdr[pos] = betapos.ash$localfdr
-lfdr[!pos] = betaneg.ash$localfdr
+lfdr[pos] = betapos.ash$lfdr
+lfdr[!pos] = betaneg.ash$lfdr
 qv = qval.from.localfdr(lfdr)
 o = order(qv)
 plot(cumsum(truenull[o])/(1:10000),qv[o],type="l")
