@@ -248,7 +248,7 @@ mean((beta.ash.hu$PosteriorMean-ss$beta)^2)
 
 #This code mostly borrowed from the examples in mixFdr in R help
 m=beta.mfdr.J15
-mTrue = list(pi=c(0.8,0.2),mu=c(0,0),sig=c(1,2))
+mTrue = list(pi=c(0.8,0.2),mu=c(0,0),sig=c(1,sqrt(5)))
 par(mfcol=c(1,1))
 s = seq(-5,5,by=0.01)
 trueFdr = fdrMixModel(s,mTrue,c(TRUE,FALSE))
