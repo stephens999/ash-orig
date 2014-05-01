@@ -1,0 +1,6 @@
+I deleted the Rcode/ash.R code, because the pacakge is now "mature" and I don't want
+multiple versions of code around. Here are some files that source that code, and need updating!
+
+batch.R:source("ash.R")
+cash.R:source('Rcode/ash.R')
+jash_test.R:source('ash.R')
