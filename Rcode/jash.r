@@ -1,5 +1,3 @@
-source('ash.R')
-
 # Y: N by n observation matrix (N tests, n replicate obs for each test)
 # Model: Y_{jk}|beta_j,tau_j ~ N(beta_j,1/tau_j)
 # Prior: beta_j|tau_j~N(mu_j,1/(c_l*tau_j)), tau_j~lambda_k*Gamma(a_m,a_m), w.p. pi_{klm}
@@ -266,7 +264,7 @@ jash = function(Y, auto=FALSE, precShape=NULL, precMulti=NULL, compprecPrior=NUL
     mu = rep(0,N)
   }
   if(auto==TRUE){
-    precMulti = autoselect.precPrior(Y)
+    precMulti = autoselect.precMulti(Y)
   }
   if(is.null(precShape)){
     precShape = c(0.01,0.1,1,10,100)
@@ -304,7 +302,7 @@ jash = function(Y, auto=FALSE, precShape=NULL, precMulti=NULL, compprecPrior=NUL
   postprob = Postprob(post$pi,post$gammaa,post$gammab,post$normmean,post$normc,post$c.vec)
   if(localfdr==TRUE){
     localfdr = computefdr(postprob$ZeroProb,postprob$PositiveProb,postprob$NegativeProb)$localfdr
-    qvalue = qval.from.localfdr(localfdr)
+    qvalue = qval.from.lfdr(localfdr)
   }else{
     localfdr = NULL
     qvalue = NULL

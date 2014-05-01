@@ -1,6 +1,6 @@
 set.seed(22222)
-source('ash.R')
-source('jash.R')
+require(ashr)
+source("jash.r")
 
 # N: num of obs
 # n: num of replicates
@@ -17,10 +17,10 @@ beta.jash.auto = jash(ss$Y,auto=TRUE)
 
 betahat = apply(ss$Y,1,mean)
 sebetahat = apply(ss$Y,1,sd)/sqrt(dim(ss$Y)[2])
-beta.ash.auto = ash(betahat,sebetahat,auto=TRUE)
+beta.ash.auto = ash(betahat,sebetahat,method="fdr")
 
 # Histogram of true beta
-hist(ss$beta, prob = TRUE, breaks = seq(-8, 8, length = 20))
+hist(ss$beta, prob = TRUE, breaks = seq(-11, 11, length = 20))
 
 plot(betahat,beta.jash$PosteriorMean,xlab='Observed betahat',ylab='Posterior mean',cex=0.5,pch=20)
 points(betahat,beta.ash.auto$PosteriorMean, col=2, cex=0.5,pch=20)
