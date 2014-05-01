@@ -532,9 +532,9 @@ fdrCurve = fdrMixModel(s, m, abs(m$mu - m$mu[1]) <= 0.002)  # this tells it whic
 plot(s, trueFdr, t = "l", main = "fdr - Black is true", xlab = "z", ylab = "fdr", 
     ylim = c(0, 1))
 lines(s, fdrCurve, col = 2)
-points(ss$betahat, beta.ash$localfdr, col = 3)
-points(ss$betahat, beta.ash.u$localfdr, col = 4)
-points(ss$betahat, beta.ash.hu$localfdr, col = 5)
+points(ss$betahat, beta.ash$lfdr, col = 3)
+points(ss$betahat, beta.ash.u$lfdr, col = 4)
+points(ss$betahat, beta.ash.hu$lfdr, col = 5)
 ```
 
 ![plot of chunk unnamed-chunk-5](figure/unnamed-chunk-56.png) 
@@ -605,7 +605,7 @@ z.ash = ash(z, 1, mixcompdist = "halfuniform")
 ```
 
 ```r
-points(z, z.ash$localfdr, col = 3)
+points(z, z.ash$lfdr, col = 3)
 ```
 
 ![plot of chunk unnamed-chunk-6](figure/unnamed-chunk-62.png) 
@@ -1186,8 +1186,7 @@ abline(a = 0, b = 1)
 ```
 
 ```r
-plot(beta.ash.auto$localfdr, beta.ash$localfdr, xlab = "lfdr from auto method", 
-    ylab = "ldfr from fixed method")
+plot(beta.ash.auto$lfdr, beta.ash$lfdr, xlab = "lfdr from auto method", ylab = "ldfr from fixed method")
 ```
 
 ```
@@ -1231,7 +1230,7 @@ abline(a = 0, b = 1)
 ```
 
 ```r
-plot(beta.ash.auto$localfdr, beta.ash.vb.uniform$localfdr, xlab = "lfdr from auto method", 
+plot(beta.ash.auto$lfdr, beta.ash.vb.uniform$lfdr, xlab = "lfdr from auto method", 
     ylab = "ldfr from vb method")
 ```
 
@@ -1240,7 +1239,7 @@ plot(beta.ash.auto$localfdr, beta.ash.vb.uniform$localfdr, xlab = "lfdr from aut
 ```
 
 ```r
-points(beta.ash.auto$localfdr, beta.ash.vb.null$localfdr, col = 2)
+points(beta.ash.auto$lfdr, beta.ash.vb.null$lfdr, col = 2)
 ```
 
 ```
@@ -1449,22 +1448,8 @@ pos = betahat > 0
 betapos.ash = ash(betahat[pos], s[pos])
 betaneg.ash = ash(betahat[!pos], s[!pos])
 lfdr = rep(0, length(betahat))
-lfdr[pos] = betapos.ash$localfdr
-```
-
-```
-## Error: replacement has length zero
-```
-
-```r
-lfdr[!pos] = betaneg.ash$localfdr
-```
-
-```
-## Error: replacement has length zero
-```
-
-```r
+lfdr[pos] = betapos.ash$lfdr
+lfdr[!pos] = betaneg.ash$lfdr
 qv = qval.from.localfdr(lfdr)
 ```
 
