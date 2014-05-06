@@ -1,5 +1,7 @@
 This repository contains ongoing work on Bayesian FDR and Adaptive Shrinkage.
 
+# R Package 
+
 The (in development) ashr package is in the `package` subdirectory.
 
 There are two versions of the package, one which uses some C++ via RCpp, and one that does not.
@@ -9,27 +11,45 @@ many times on large data sets. Since installing the C++ version requires more
 dependencies (e.g. you need to have a C++ compiler installed etc) you might want to start with 
 the non C++ version.
 
-To install the package, first download either `package/ashr.no.cxx.tar.gz` or `package/ashr.tar.gz`
-You can download these by, for example, going to 
-[https://github.com/stephens999/ash/blob/master/package/ashr.no.cxx.tar.gz](https://github.com/stephens999/ash/blob/master/package/ashr.no.cxx.tar.gz) and click "View Raw".
-After saving the file somewhere on your computer, you can install the package as follows: 
+## Non C++ version
 
-To install the regular R version of the package use 
+To install the pure-R version of the package, first download `package/ashr.no.cxx.tar.gz`.
+You can download this either by cloning the whole repo, or by, for example, going to 
+[https://github.com/stephens999/ash/blob/master/package/ashr.no.cxx.tar.gz](https://github.com/stephens999/ash/blob/master/package/ashr.no.cxx.tar.gz) and click "View Raw".
+Your browser will likely download the file automatically and save it in some
+default place (e.g. "Downloads"). 
+
+After saving the file somewhere on your computer, you can install the package as follows: 
 ```
 > install.packages("truncnorm")
 > install.packages("/path/to/ashr.no.cxx.tar.gz",repos=NULL,type="source")
 ```
+Here `/path/to/` indicates where on your computer you have saved the file.
 
-To install the Rcpp version of the package use 
+
+## C++ version
+
+We also have a faster version of the package, which exploits the very helpful Rcpp package
+to interface R with C++.
+
+To install the C++ version, first download `package/ashr.tar.gz`.
+You can download this either by cloning the whole repo, or by, for example, going to
+[https://github.com/stephens999/ash/blob/master/package/ashr.tar.gz](https://github.com/stephens999/ash/blob/master/package/ashr.tar.gz) and click "View Raw".
+Your browser will likely download the file automatically and save it in some
+default place (e.g. "Downloads"). 
+
+After saving the file somewhere on your computer, you can install the package as follows:
 ```
 > install.packages("truncnorm")
 > install.packages("Rcpp")
 > install.packages("/path/to/ashr.tar.gz",repos=NULL,type="source")
 ```
-
 Here `/path/to/` indicates where on your computer you have saved the file.
 
-The main function is ash. To get minimal help:
+## Running Adaptive SHrinkage
+
+
+The main function in the ashr package is `ash`. To get minimal help:
 ```
 > library("ashr")
 > ?ash
