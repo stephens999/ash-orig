@@ -1,0 +1,535 @@
+% False Discovery Rates, A New Deal
+% Matthew Stephens
+% 2014/5/8
+
+```{r, include=FALSE}
+require("qvalue")
+require("ashr")
+require("ggplot2")
+```
+
+```{r setup, include=FALSE}
+# set global chunk options
+opts_chunk$set(cache=TRUE,autodep=TRUE,warning=FALSE,dev='pdf')
+dep_auto()
+```
+
+# What you can expect from this talk
+
+- No experimental data!
+
+- No fancy heatmaps!
+
+- 100\% Money-back guarantee to half the False Discovery Rate (FDR) in your data!
+
+# The Canonical Genomics Experiment 
+
+- Measure lots of things, with error
+
+- Get estimates of effects $\beta_j$ ($\hat\beta_j$) and their standard errors $s_j$
+
+- Turn these into Z-scores, $z_j = \hat\beta_j/s_j$
+
+- Turn these into $p$ values, $p_j$
+
+- Apply `qvalue` 
+to identify findings ``significant" at a given FDR.
+
+- ...?
+
+
+
+```{r, echo=FALSE}
+  #simple simulated example
+  ncz = 100 # number of bins in z score histograms
+  set.seed(111)
+  hh.betahat = rnorm(1000,0,2)
+  hh.sebetahat = 1
+  hh.zscore = hh.betahat/hh.sebetahat
+  hh.pval = pchisq(hh.zscore^2,df=1,lower.tail=F)
+  hh.ash = ash(hh.betahat,hh.sebetahat, method="fdr")
+  hh.q = qvalue(hh.pval)
+```
+
+
+
+```{r, echo=FALSE}
+  plot_FDReg_hist = function(hh.pval,pi0,nc=40,nullcol="blue",altcol="cyan",type=4,title="Distribution of p values",...){
+    hh.hist=hist(hh.pval,freq=FALSE,xlab="p value",main=title,nclass=nc,col=altcol,...)
+    if(type>1){
+      abline(h=pi0,col=nullcol,lwd=2)
+    
+      hh.hist$density=rep(pi0,length(hh.hist$density))  
+      #hh.hist$counts=rep(hh.q$pi0*length(hh.pval)/nc,length(hh.hist$counts)) 
+      plot(hh.hist,add=TRUE,col=nullcol,freq=FALSE)
+    }
+    if(type>2){
+    abline(v=0.1,lwd=2,col=2)
+    }
+    if(type>3){
+      text(0.05,1.2,labels="A",col=2,cex=1.2)  
+      text(0.05,0.4,labels="B",col=2,cex=1.2)  
+      text(0.6,3,labels=paste0("FDR = B/(A+B) =  ",round(pi0*0.1*length(hh.pval)/sum(hh.pval<0.1),2)),cex=1.2)
+    }
+  }
+```
+
+# Example: FDR estimation
+
+```{r, echo=FALSE,fig.height=4,fig.cap=""}
+  plot_FDReg_hist(hh.pval,hh.q$pi0,type=1)                 
+```
+
+# Example: FDR estimation
+
+```{r, echo=FALSE,fig.height=4,fig.cap=""}
+  plot_FDReg_hist(hh.pval,hh.q$pi0,type=2)                 
+```
+
+# Example: FDR estimation
+
+```{r, echo=FALSE,fig.height=4,fig.cap=""}
+  plot_FDReg_hist(hh.pval,hh.q$pi0,type=3)                 
+```
+
+# Example: FDR estimation
+
+```{r, echo=FALSE,fig.height=4,fig.cap=""}
+  plot_FDReg_hist(hh.pval,hh.q$pi0,type=4)                 
+```
+
+
+# Problem 1: The Zero Assumption (ZA)
+
+- The standard `qvalue` 
+approach assumes that all the $p$ values near 1 are null.
+
+- Analogously, one can assume that all Z scores near 0 are null. Efron refers to this as the ``Zero Assumption".
+
+- Seems initially natural.
+
+
+```{r, echo=FALSE, include=FALSE}
+require(fdrtool)
+  hh.fdrtool = fdrtool(hh.pval,statistic="pvalue",plot=FALSE)
+require(locfdr)
+  hh.locfdr = locfdr(hh.zscore,nulltype=0,plot=0)
+require(mixfdr)
+  hh.mixfdr = mixFdr(hh.zscore,noiseSD=1,theonull=TRUE,plot=FALSE)
+```
+
+# Implied distribution of $p$ values under $H_1$
+
+```{r, echo=FALSE,fig.height=4,fig.cap=""}
+  plot_FDReg_hist(hh.pval,hh.q$pi0,type=4)                 
+```
+
+
+# Implied distribution of Z scores under alternative
+
+```{r, echo=FALSE,fig.height=4,fig.cap=""}
+#plot a histogram of z scores, highlighting the alternative distribution
+#of z scores that is implied by localfdr values lfdr.
+  nullalthist = function(z,lfdr,nullcol="blue",altcol="cyan",...){
+    h=hist(z, freq=FALSE,col=nullcol,nclass=ncz,...)
+    avlfdr = unlist(lapply(split(lfdr,cut(z,h$breaks),drop=FALSE),mean))
+    h$density = (1-avlfdr) * h$density
+    plot(h,add=TRUE,col=altcol,freq=FALSE)
+  }
+   
+  nullalthist(hh.zscore,hh.fdrtool$lfdr)  
+```
+
+
+
+# FDR problem 2: different measurement precision
+
+- In some cases the measurement precisions differ among units
+
+- Eg effect sizes of rare SNPs have larger standard error than those of common SNPs
+
+- Eg Expression levels of low-expressed genes have less precision than high-expressed genes
+
+- If some effects are measured less precisely than others, those tests ``lack power"
+and dilute signal, increasing FDR
+
+
+```{r, echo=FALSE}
+#install q value package
+#source("http://bioconductor.org/biocLite.R")
+#biocLite("qvalue")
+library("qvalue")
+library("lattice") #library for some of the plots
+
+#set up some data with mixture of values of s
+set.seed(100)
+s.good = 0.5
+s.poor = 10
+J.good= 500
+J.poor = 500
+J=J.good+J.poor
+beta = c(rnorm(J,0,1))
+s = c(rep(s.good,J.good),rep(s.poor,J.poor))
+betahat = beta + rnorm(J,0,s)
+#compute the usual zscore and corresponding p value
+zscore = betahat/s
+pval = pchisq(zscore^2,df=1,lower.tail=F)
+```
+
+# FDR problem 2: different measurement precision
+
+- Simulation: effects $\beta_j \sim N(0,1)$
+- 500 "good" observations with low standard error ($s_j=0.5$)
+- 500 "poor" observations with very high standard error ($s_j=10$)
+
+# FDR problem 2: different measurement precision
+
+```{r, echo=FALSE,fig.height=4,fig.cap=""}
+plot_FDReg_hist(pval[1:500],0,title="distribution of GOOD p values",type=1,ylim=c(0,15))
+```
+
+# FDR problem 2: different measurement precision
+
+```{r, echo=FALSE,fig.height=4,fig.cap=""}
+plot_FDReg_hist(pval[501:1000],0,title="distribution of POOR p values",type=1,ylim=c(0,15))
+```
+
+# FDR problem 2: different measurement precision
+
+```{r, echo=FALSE,fig.height=4,fig.cap=""}
+plot_FDReg_hist(pval[1:1000],0,title="distribution of ALL p values",type=1,ylim=c(0,15))
+```
+```{r, include=FALSE}
+qq.all = qvalue(pval)
+qq.good = qvalue(pval[1:500])
+```
+
+# FDR problem 2: different measurement precision
+
+```{r, echo=FALSE,fig.height=4,fig.cap=""}
+plot_FDReg_hist(pval[1:500],qq.good$pi0,title="GOOD p values",type=4,ylim=c(0,15))
+```
+
+# FDR problem 2: different measurement precision
+
+```{r, echo=FALSE,fig.height=4,fig.cap=""}
+plot_FDReg_hist(pval[1:1000],qq.all$pi0,title="ALL p values",type=4,ylim=c(0,15))
+```
+
+
+
+# Problems: Summary
+
+Standard tools are highly conservative. 
+    
+- The ZA, which implies actual effects have a (probably unrealistic) bimodal distribution; causes overestimate of $\pi_0$, losing power.
+
+- By focussing on $p$ values, low-precision measurements can dilute high-precision measurements.
+
+
+# FDR via Empirical Bayes
+
+- Following previous work (e.g. Newton, Efron, Muralidharan) we take an empirical Bayes approach to FDR.
+
+- Eg Efron assumes that the $Z$ scores come from a mixture of null, and alternative:
+$$Z_j \sim f_Z(.) = \pi_0 N(.;0,1) + (1-\pi_0) f_1(.)$$
+where $f_1, \pi_0$ are to be estimated from the data.
+
+- Once $f_1$ and $\pi_0$ estimated, FDR calculations are straightforward.
+
+# FDR: A New Deal
+
+- Instead of modelling $Z$ scores, model the effects $\beta$,
+$$\beta_j \sim \pi_0 \delta_0(.) + (1-\pi_0) g(.)$$
+
+- Constrain $g$ to be unimodal about 0; estimate $g$ from data.
+
+- *Incorporate precision* of each observation $\hat\beta$ into the likelihood.
+Specifically, approximate likelihood for $\beta_j$ by assuming 
+$$\hat\beta_j \sim N(\beta_j, s_j)$$
+
+
+
+# FDR - A New Deal
+
+- A convenient way to model $g$: mixture of 0-centered
+normal distributions: 
+$$g(\beta; \pi) = \sum_{k=1}^K \pi_k N(\beta; 0, \sigma^2_k)$$
+
+- Estimating $g$ comes down to estimating $\pi$. Joint estimation of $\pi_0,\pi$ easy by maximum likelihood (EM algorithm).
+
+- By allowing $K$ large, and $\sigma_k$ to span a dense grid of values,
+we get a flexible unimodal symmetric distribution.
+
+- Can approximate, arbitrarily closely, any scale mixture of normals.
+Includes almost all priors used for sparse regression problems (spike-and-slab, double exponential/Laplace/Bayesian Lasso, horseshoe). 
+
+# FDR - A New Deal
+
+- Alternatively, a mixture of uniforms, with 0 as one end-point of the range,
+provides still more flexibility, and in particular allows for asymmetry. 
+
+- If allow a very large number of uniforms this provides the non-parametric mle for $g$; cf Grenander 1953; Cordy + Thomas 1997.
+
+
+# Illustration: $g$ a mixture of 0-centered normals
+
+```{r, echo=FALSE,fig.height=4,fig.cap=""}
+x=seq(-4,4,length=100)
+plot(x, dnorm(x,0,1),type="l",ylim=c(0,2),ylab="density")
+lines(x, dnorm(x,0,0.1))
+lines(x, dnorm(x,0,0.5))
+```
+
+# Illustration: $g$ a mixture of 0-centered normals
+
+```{r, echo=FALSE,fig.height=4,fig.cap=""}
+x=seq(-4,4,length=100)
+plot(x, 0.5*dnorm(x,0,1)+0.5*dnorm(x,0,0.1),type="l",ylim=c(0,2),ylab="density")
+```
+
+
+# Illustration: $g$ a mixture of 0-anchored uniforms
+
+```{r, echo=FALSE,fig.height=4,fig.cap=""}
+x=seq(-4,4,length=100)
+plot(x, dunif(x,0,1),type="s",ylim=c(0,5),ylab="density")
+lines(x, dunif(x,0,0.2),type="s")
+lines(x, dunif(x,0,0.5),type="s")
+lines(x, dunif(x,-0.3,0),type="s",col=2)
+lines(x, dunif(x,-0.4,0),type="s",col=2)
+lines(x, dunif(x,-2,0),type="s",col=2)
+```
+
+# Illustration: $g$ a mixture of 0-anchored uniforms
+
+```{r, echo=FALSE,fig.height=4,fig.cap=""}
+x=seq(-4,4,length=100)
+plot(x, 0.1*dunif(x,0,3)+ 0.3*dunif(x,0,0.2) + 0.2*dunif(x,0,0.5) + 0.1* dunif(x,-0.3,0) + 0.1*dunif(x,-0.3,0)+0.2*dunif(x,-0.4,0),type="s",ylim=c(0,2),ylab="density")
+```
+
+
+# Recall Problem 1: distribution of alternative Z values multimodal
+```{r, echo=FALSE,fig.height=4,fig.cap=""}
+nullalthist(hh.zscore,hh.fdrtool$lfdr,main="qvalue")  
+```
+
+# Problem Fixed: distribution of alternative Z values unimodal
+```{r, echo=FALSE,fig.height=4,fig.cap=""}
+nullalthist(hh.zscore,hh.ash$lfdr,main="ash")
+```
+
+# Example: FDR estimation
+
+```{r, echo=FALSE,fig.height=4,fig.cap=""}
+  plot_FDReg_hist(hh.pval,hh.q$pi0,type=4,title="qvalue")                 
+```
+
+# Example: FDR estimation
+
+```{r, echo=FALSE,fig.height=4,fig.cap=""}
+  plot_FDReg_hist(hh.pval,get_pi0(hh.ash),type=4,title="ash")                 
+```
+
+
+```{r, include=FALSE}
+  beta.ash.good = ash(betahat[1:500],s[1:500],method="fdr")
+  beta.ash.all = ash(betahat,s,method="fdr")
+  print(c(sum(beta.ash.good$qvalue<0.05),sum(beta.ash.all$qvalue<0.05)))
+```
+
+# Recall Problem 2: poor measurements dilute good measurments
+
+Number of findings at (estimated) FDR=0.05:
+```{r, echo=FALSE}
+  res.tab = data.frame(qvalue = c(sum(qq.all$qvalues<0.05),sum(qq.good$qvalues<0.05)),
+                       ash =c(sum(beta.ash.all$qvalue<0.05),sum(beta.ash.good$qvalue<0.05)))
+  row.names(res.tab)=c("ALL","GOOD")
+  kable(res.tab,row.names=TRUE,format="pandoc")
+```
+
+
+
+
+# A new problem: an embarrassment of riches
+
+- If the null is mostly false, the new approach can  provide unsettling results
+
+- The FDR can be small for all observations, even those with $p \approx 1$!
+
+- In the illustrative example, the maximum $q$ value is `r round(max(hh.ash$qvalue),2)`
+
+
+# Perhaps we didn't really understand the question?
+
+- Problem arises only if we insist on asking question ``is $\beta_j=0$?"
+
+- Given enough signal, we become convinced that very few of the $\beta_j=0$
+
+- But for some $\beta_j$ we still may have little information about actual value
+
+- Suggests a change of focus: assume *none* of the $\beta_j$ are zero ("one group approach"), and ask for which $\beta_j$ are we confident about the sign (Gelman et al, 2012).
+
+# The False Sign Rate
+
+- Suggestion: replace FDR with local false sign rate (lfsr), the probability that if we say an effect is positive (negative), it is not.
+
+- Example: suppose we estimate that $\Pr(\beta_j<0)=0.975$ and $\Pr(\beta_j>0)=0.025$. Then we report $\beta_j$ as a ``(negative) discovery", and estimate its fsr as 0.025.
+
+
+# Even with many signals, large $p$ values have high lfsr
+
+```{r, echo=FALSE,fig.height=4,fig.cap="",warning=FALSE,message=FALSE}
+  res=data.frame(p=hh.pval, lfsr=hh.ash$lfsr, qvalue = hh.ash$qvalue)
+  res.melt = melt(res, id.vars=c("p"),variable.name="Measure")
+cbbPalette <- c("#000000", "#D55E00", "#CC79A7")
+ labels = c('qvalue','lfsr')
+  breaks = c("qvalue","lfsr")
+  
+  pp= ggplot(data=res.melt,aes(p,value,color=Measure)) +geom_point(shape=1) +
+      geom_abline(colour = "black") +
+        xlab("p-value") +
+        ylab("lfsr/qvalue")
+
+
+  print(pp +scale_y_continuous(limits=c(0,0.1)) +
+          scale_x_continuous(limits=c(0,0.1))  +
+           scale_colour_manual(values=cbbPalette,breaks=breaks,labels=labels) +
+          coord_equal(ratio=1))
+  
+
+```
+
+
+# Summary
+
+- ASH provides a generic approach to shrinkage estimation, as well as
+false discovery (sign) rates.
+
+- Unimodal assumption for effects reduces conservatism
+
+- But by using two numbers ($\hat\beta,s$) instead of one ($p$ values or $z$ scores) precision of different measurement is better accounted for.
+
+- In high-signal contexts, False Sign Rate is preferable to False Discovery Rate.
+
+
+# Reproducible Research?
+
+- Principle: when publishing results of computational procedures, we should
+publish the code that produced the results.
+- "publishing figures or results without the complete software environment could
+be compared to a mathematician publishing an announcement of a mathematical theorem without giving the proof" (Buckheit and Donohoe)
+- “an article about a computational result is advertising, not scholarship. The actual scholarship is the full software environment, code and data, that produced the result.” [Claerbout]
+
+# This talk is reproducible!
+
+- `http://www.github.com/stephens999/ash`
+
+
+# Why is reproducibility important?
+
+- Not only because people are forgetful, error-prone, or dishonest!
+- Reproducing work is also the first step to extending it.
+- Helps communications among researchers (eg student + advisor).
+
+
+# Thanks
+
+- to the developers of **R**, **knitr**, **Rstudio** and **Pandoc**.
+
+- to the several postdoctoral researchers and students
+who have worked with me on related topics.
+
+- Including Ester Pantaleo, Scott Powers, Mengyin Lu, Sen Tian, Wei Wang, Zhengrong Xing. 
+
+- NHGRI for funding.
+
+- `ashr` package: `http://www.github.com/stephens999/ash`
+
+# Pandoc Command used
+
+`pandoc -s -S -i --template=my.beamer -t beamer -V theme:CambridgeUS -V colortheme:beaver  slides.md -o slides.pdf`
+
+(alternative to produce html slides; but figures would need reworking)
+`pandoc -s -S -i -t dzslides --mathjax slides.md -o slides.html`
+
+Here is my session info:
+
+```{r session-info}
+print(sessionInfo(), locale=FALSE)
+```
+
+
+# Issue: you can't actually estimate $\pi_0$!
+
+- Data cannot distinguish between $\beta_j = 0$ and $\beta_j$ "very
+small"
+
+- As a result $\pi_0$ cannot be estimated: the data can never rule out $\pi_0=0$.
+
+- But the unimodal constraint bounds how big $\pi_0$ can be.
+
+- Use penalized likelihood to make $\pi_0$ ``as big as possible",
+subject to the unimodal constraint.
+
+
+
+# Approach remains conservative (if unimodal assumption holds)
+
+```{r,echo=FALSE,include=FALSE}
+load("../paper/Rcode/sim1.RData") #load simulation results
+source("../paper/Rcode/plot_pi0.R")
+```
+
+```{r, echo=FALSE,fig.height=4,fig.cap=""}
+plot_pi0_onlyqval(list(simres1a,simres2))
+```
+
+
+# Next steps?
+
+- Incorporate $t$ likelihood as well as normal.
+
+- Incorporate shrinkage of variances and not just means.
+
+- Extend to allow $g(\cdot;\pi)$ to depend on covariates $X$.
+
+- Extend to allow for correlations in the measured $\hat\beta_j$.
+
+
+
+# Is this an important problem? 
+
+- The original paper introducing FDR (Benjamini and Hochberg, 1995) has
+been cited 21,787 times according to Google Scholar.
+
+- That is three times a day for the last 19 years!
+
+# FDR and q values
+
+Although precise definitions vary, roughly
+
+- The FDR at a threshold $P$ is 
+$$\text{FDR}(P)=\Pr(\beta_j = 0 |  p_j<P).$$
+
+- The q value for observation $j$ is $q_j=\text{FDR}(p_j)$.
+
+
+# Estimation and Shrinkage
+
+- Besides allowing one to estimate fdr and fsr, 
+this approach also provides a posterior distribution for each $\beta_j$. 
+
+- So for example we can easily compute fdrs for discoveries other than ``non-zero" (eg compute $\Pr(\beta_j > 2 | \hat\beta_j)$).
+
+- And use it to obtain point estimates and credible intervals for each $\beta_j$, taking account of information from all the other $\beta_j$.
+
+- Because $f(\beta)$ is unimodal, the point estimates will tend to be ``shrunk" towards the overall mean (0).
+
+- Because $f(\beta)$ is estimated from the data, the amount
+of shrinkage is adaptive to the data. And because of the role of $s_j$, the amount of shrinkage adapts to the information on each gene.
+
+- So we call the approach ``Adaptive Shrinkage" (ASH).
+
+
+
