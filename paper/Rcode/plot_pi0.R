@@ -39,6 +39,37 @@ plot_pi0 = function(sims){
   
 }
 
+#compare only with qvalue (for BOG talk)
+#and include only scenarios 1 and 2
+plot_pi0_onlyqval = function(sims){
+  res=list()
+  for(i in 1:length(sims)){
+    pi0=sims[[i]]$pi0  
+    pi0_ash.n=unlist(lapply(sims[[i]]$betahat.ash.n,get_pi0))
+    pi0_qval = unlist(lapply(sims[[i]]$betahat.qval,"[[","pi0"))
+    
+    res[[i]] = data.frame(Scenario=i,pi0=pi0,qvalue=pi0_qval,ash=pi0_ash.n)
+  }
+  cbbPalette <- c("#000000", "#D55E00", "#CC79A7")
+  labels = c('qvalue','ash')
+  breaks = c("qvalue","ash")
+  
+  res.melt = melt(res, id.vars=c("pi0","Scenario"),variable.name="Method")
+  res.melt = res.melt[sample(1:nrow(res.melt)),]  
+  res.melt$Scenario = as.factor(res.melt$Scenario)
+  levels(res.melt$Scenario) = c("Scenario 1","Scenario 2")
+  p=ggplot(data=res.melt,aes(pi0,value,colour=Method)) +geom_point(shape=1) +
+    facet_grid(. ~ Scenario) +
+    geom_abline(colour = "black") +
+    xlab("True pi0") +
+    ylab("Estimated pi0")
+  print(p +scale_y_continuous(limits=c(0,1)) +
+          scale_x_continuous(limits=c(0,1)) +
+          scale_colour_manual(values=cbbPalette,breaks=breaks,labels=labels) +
+          coord_equal(ratio=1))
+  
+}
+
 plot_pi1 = function(sims){
   pi0=sims$pi0  
   pi0_ash.n=unlist(lapply(sims$betahat.ash.n,get_pi0))

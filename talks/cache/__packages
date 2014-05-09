@@ -1,22 +1,11 @@
 ashr
 base
-Biobase
-BiocGenerics
-DSS
 fdrtool
-<<<<<<< HEAD
 ggplot2
 knitr
+lattice
 locfdr
-mgcv
 mixfdr
-nlme
 qvalue
 reshape2
-=======
-knitr
-locfdr
-mixfdr
-qvalue
->>>>>>> 4db06c5d454e6557784c491eef7bf44a150130d6
 truncnorm
