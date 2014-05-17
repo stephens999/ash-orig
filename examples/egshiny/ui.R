@@ -1,3 +1,5 @@
+#Run this example using runApp("../examples/egshiny/")
+
 library(shiny)
 
 # Define UI for application that draws a histogram
