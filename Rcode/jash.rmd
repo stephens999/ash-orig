@@ -1,0 +1,555 @@
+```{r setup, include=FALSE}
+library(limma)
+library(qvalue)
+library(ashr)
+source('jash.R')
+set.seed(54321)
+```
+
+Simulations
+===========
+
+Simulate data: N genes, 2 conditions, nA/nB samples for each condition.
+Observations are normal distributed.
+```{r}
+simfull=function(N,Nnull,nA,nB,mean,betasd,diffmean,a,lambda,c){
+  null = c(rep(1, Nnull), rep(0, N - Nnull))
+  truetau=rgamma(N,shape=a,rate=a/lambda)
+  truebetaA=rnorm(N,mean=mean,sd=betasd)
+  truediff=c(rep(0,Nnull),rnorm(N-Nnull,mean=diffmean,sd=1/sqrt(c*truetau[Nnull+1:N]))) # true effect
+  truebetaB=truebetaA+truediff
+  YA=matrix(rnorm(N*nA,mean=rep(truebetaA,nA),sd=rep(1/sqrt(truetau),nA)),ncol=nA)
+  YB=matrix(rnorm(N*nB,mean=rep(truebetaB,nB),sd=rep(1/sqrt(truetau),nB)),ncol=nB)
+  return(list(YA=cbind(YA,YB),null=null,truetau=truetau,truebetaA=truebetaA,
+              truebetaB=truebetaB,truediff=truediff))
+}
+```
+
+Shrinkage
+=========
+
+An example of effects/variances shrinkage using jash & limma:
+
+```{r}
+# Simulate data
+d.test=simfull(N=10000,Nnull=7000,nA=2,nB=2,mean=5,betasd=0.5,diffmean=0,a=10,lambda=1,c=0.25)
+fac=factor(rep(c(1,2),each=2))
+design=model.matrix(~fac)
+```
+
+The histogram of true effects/variances of this simulated dataset:
+
+```{r,echo=FALSE}
+hist(d.test$truediff,prob=TRUE,breaks=seq(-10.5,10.5,by=1),xlab=expression(paste('true ',beta[g2])),main=expression(paste('Histogram of true ',beta[g2])))
+hist(d.test$truetau,breaks=40,xlab=expression(paste('true ',tau[g])),main=expression(paste('Histogram of true ',tau[g])))
+```
+
+Use jash and limma to shrink gene-specific variances:
+
+```{r}
+# jash
+jash.test=jash(d.test$Y,fac,usePointMass=TRUE)
+
+# limma
+fit.test <- lmFit(d.test$Y, design=design)
+fit.test <- eBayes(fit.test)
+```
+
+Compare the original $\hat{\beta}_g$'s and $1/\hat{\tau_g}$'s with their shrinkage estimates (posterior mean) by jash:
+
+```{r,echo=FALSE}
+betahat=fit.test$coefficients[,2]
+sebetahat=fit.test$sigma
+plot(betahat,jash.test$PosteriorMean,xlim=c(-10,10),ylim=c(-10,10),xlab=expression(paste(hat(beta)[g])),ylab=expression(paste('E(',beta[g],'|Y)')),main='(a)')
+abline(0,1,lty=2)
+plot(log(sebetahat^2),log(1/jash.test$PosteriorPrec),xlim=c(-6,6),ylim=c(-2,2),xlab=expression(paste('log(1/',hat(tau)[g],')')),ylab=expression(paste('log(1/E(',tau[g],'|Y))')),main='(b)')
+abline(0,1,lty=2)
+```
+
+Compare the true $\tau_g$'s with the estimated $\tau_g$'s by jash or limma:
+
+```{r, echo=FALSE}
+plot(fit.test$s2.post,1/jash.test$PosteriorPrec,xlim=c(0,3),ylim=c(0,3),xlab='limma',ylab='jash',
+     main='Estimated gene-specific variances by limma and jash')
+abline(0,1,lty=2)
+plot(log(1/d.test$truetau),log(1/jash.test$PosteriorPrec),xlim=c(-1,1),ylim=c(-1,1),xlab=expression(paste('-log(true ',tau,')')),ylab=expression(paste('-log(estimated ',tau,')')))
+points(log(1/d.test$truetau),log(fit.test$s2.post),col=2)
+abline(0,1,lty=2)
+legend('topleft',pch=c(1,1),col=c('black','red'),legend=c('jash','limma'))
+```
+
+```{r}
+# MSE of true tau and estimated tau (jash)
+mean((log(1/d.test$truetau)-log(1/jash.test$PosteriorPrec))^2)
+# MSE of true tau and estimated tau (limma)
+mean((log(1/d.test$truetau)-log(fit.test$s2.post))^2)
+```
+
+Estimate FDR
+============
+
+Compare the true/estimated FDR by jash and limma for 8 simulation scenarios:
+
+```{r,echo=FALSE}
+# For each case, simulate 20 times
+nsim=20
+
+# Case 1
+jash.e.FDR.1=matrix(rep(NA,nsim*10000),ncol=nsim)
+limma.e.FDR.1=matrix(rep(NA,nsim*10000),ncol=nsim)
+jash.FDR.1=matrix(rep(NA,nsim*10000),ncol=nsim)
+limma.FDR.1=matrix(rep(NA,nsim*10000),ncol=nsim)
+
+fac=factor(c(1,1,2,2))
+design=model.matrix(~fac)
+for (i in 1:nsim){
+  d.1=simfull(N=10000,Nnull=5000,nA=2,nB=2,mean=5,betasd=0.5,diffmean=0,a=10,lambda=1,c=1)
+  jash.1=jash(d.1$Y,fac,usePointMass=TRUE)
+  fit.1 <- lmFit(d.1$Y, design=design)
+  fit.1 <- eBayes(fit.1)
+  o.jash = order(jash.1$qvalue)
+  o.limma = order(fit.1$p.value[,2])
+  jash.FDR.1[,i]=cumsum(d.1$null[o.jash])/(1:10000)
+  limma.FDR.1[,i]=cumsum(d.1$null[o.limma])/(1:10000)
+  jash.e.FDR.1[,i]=sort(jash.1$qvalue)
+  limma.e.FDR.1[,i]=sort(qvalue(topTable(fit.1,coef='fac2',n=10000)$P.Value)$qval)
+}
+
+ng=150
+plot(apply(jash.FDR.1,1,mean)[1:ng],type='l',ylim=c(0,0.2),ylab='FDR' )
+lines(apply(limma.FDR.1,1,mean)[1:ng], col=2)
+lines(apply(jash.e.FDR.1,1,mean)[1:ng],lty=2)
+lines(apply(limma.e.FDR.1,1,mean)[1:ng],lty=2,col=2)
+title('Case 1')
+legend('topleft',col=c('red','red','black','black'),lty=c(1,2,1,2),
+       legend=c('true FDR (jash)','est FDR (jash)','true FDR (limma)','est FDR (limma)'))
+
+# Case 2
+jash.e.FDR.2=matrix(rep(NA,nsim*10000),ncol=nsim)
+limma.e.FDR.2=matrix(rep(NA,nsim*10000),ncol=nsim)
+jash.FDR.2=matrix(rep(NA,nsim*10000),ncol=nsim)
+limma.FDR.2=matrix(rep(NA,nsim*10000),ncol=nsim)
+ash.FDR.2=matrix(rep(NA,nsim*10000),ncol=nsim)
+ash.e.FDR.2=matrix(rep(NA,nsim*10000),ncol=nsim)
+
+fac=factor(c(1,1,2,2))
+design=model.matrix(~fac)
+for (i in 1:nsim){
+  d.2=simfull(N=10000,Nnull=5000,nA=2,nB=2,mean=5,betasd=0.5,diffmean=0,a=10,lambda=1,c=0.1)
+  jash.2=jash(d.2$Y,fac,usePointMass=TRUE)
+  fit.2 <- lmFit(d.2$Y, design=design)
+  fit.2 <- eBayes(fit.2)
+  o.jash = order(jash.2$qvalue)
+  o.limma = order(fit.2$p.value[,2])
+  
+  jash.FDR.2[,i]=cumsum(d.2$null[o.jash])/(1:10000)
+  limma.FDR.2[,i]=cumsum(d.2$null[o.limma])/(1:10000)
+  jash.e.FDR.2[,i]=sort(jash.2$qvalue)
+  limma.e.FDR.2[,i]=sort(qvalue(topTable(fit.2,coef='fac2',n=10000)$P.Value)$qval)
+  
+  ash.2 = ash(fit.2$coef[,2]/(sqrt(fit.2$s2.post)*fit.2$stdev.unscaled[,2]),1,method='fdr')
+  o.ash=order(ash.2$qvalue)
+  ash.FDR.2[,i]=cumsum(d.2$null[o.ash])/(1:10000)
+  ash.e.FDR.2[,i]=sort(ash.2$qvalue)
+}
+
+ng=2000
+plot(apply(limma.FDR.2,1,mean)[1:ng],col=2,type='l',ylim=c(0,0.05),ylab='FDR',xlab='Number of genes')
+lines(apply(jash.FDR.2,1,mean)[1:ng])
+lines(apply(jash.e.FDR.2,1,mean)[1:ng],lty=2)
+lines(apply(limma.e.FDR.2,1,mean)[1:ng],lty=2,col=2)
+title('Case 2')
+legend('topleft',col=c('red','red','black','black'),lty=c(1,2,1,2),
+       legend=c('true FDR (jash)','est FDR (jash)','true FDR (limma)','est FDR (limma)'))
+
+# Case 3
+jash.e.FDR.3=matrix(rep(NA,nsim*10000),ncol=nsim)
+limma.e.FDR.3=matrix(rep(NA,nsim*10000),ncol=nsim)
+jash.FDR.3=matrix(rep(NA,nsim*10000),ncol=nsim)
+limma.FDR.3=matrix(rep(NA,nsim*10000),ncol=nsim)
+jash.ef.FDR.3=matrix(rep(NA,nsim*10000),ncol=nsim)
+
+fac=factor(c(1,1,1,2,2,2))
+design=model.matrix(~fac)
+for (i in 1:nsim){
+  d.3=simfull(N=10000,Nnull=5000,nA=3,nB=3,mean=5,betasd=0.5,diffmean=0,a=10,lambda=1,c=0.25)
+  jash.3=jash(d.3$Y,fac,usePointMass=TRUE)
+  fit.3 <- lmFit(d.3$Y, design=design)
+  fit.3 <- eBayes(fit.3)
+  o.jash = order(jash.3$qvalue)
+  o.limma = order(fit.3$p.value[,2])
+  
+  jash.FDR.3[,i]=cumsum(d.3$null[o.jash])/(1:10000)
+  limma.FDR.3[,i]=cumsum(d.3$null[o.limma])/(1:10000)
+  jash.e.FDR.3[,i]=sort(jash.3$qvalue)
+  limma.e.FDR.3[,i]=sort(qvalue(topTable(fit.3,coef='fac2',n=10000)$P.Value)$qval)
+}
+
+ng=2500
+plot(apply(limma.FDR.3,1,mean)[1:ng],col=2,type='l',ylim=c(0,0.1),ylab='FDR' )
+lines(apply(jash.FDR.3,1,mean)[1:ng])
+lines(apply(jash.e.FDR.3,1,mean)[1:ng],lty=2)
+lines(apply(limma.e.FDR.3,1,mean)[1:ng],lty=2,col=2)
+title('Case 3')
+legend('topleft',col=c('red','red','black','black'),lty=c(1,2,1,2),
+       legend=c('true FDR (jash)','est FDR (jash)','true FDR (limma)','est FDR (limma)'))
+
+# Case 4
+jash.e.FDR.4=matrix(rep(NA,nsim*10000),ncol=nsim)
+limma.e.FDR.4=matrix(rep(NA,nsim*10000),ncol=nsim)
+jash.FDR.4=matrix(rep(NA,nsim*10000),ncol=nsim)
+limma.FDR.4=matrix(rep(NA,nsim*10000),ncol=nsim)
+
+fac=factor(rep(c(1,2),each=50))
+design=model.matrix(~fac)
+for (i in 1:nsim){
+  d.4=simfull(N=10000,Nnull=5000,nA=50,nB=50,mean=7,betasd=0.5,diffmean=0,a=1,lambda=1,c=0.25)
+  jash.4=jash(d.4$Y,fac,usePointMass=TRUE)
+  fit.4 <- lmFit(d.4$Y, design=design)
+  fit.4 <- eBayes(fit.4)
+  o.jash = order(jash.4$qvalue)
+  o.limma = order(fit.4$p.value[,2])
+  
+  jash.FDR.4[,i]=cumsum(d.4$null[o.jash])/(1:10000)
+  limma.FDR.4[,i]=cumsum(d.4$null[o.limma])/(1:10000)
+  jash.e.FDR.4[,i]=sort(jash.4$qvalue)
+  limma.e.FDR.4[,i]=sort(qvalue(topTable(fit.4,coef='fac2',n=10000)$P.Value)$qval)
+}
+
+ng=10000
+plot(apply(jash.FDR.4,1,mean)[1:ng],type='l',ylim=c(0,1),ylab='FDR' )
+lines(apply(limma.FDR.4,1,mean)[1:ng], col=2)
+lines(apply(jash.e.FDR.4,1,mean)[1:ng],lty=2)
+lines(apply(limma.e.FDR.4,1,mean)[1:ng],lty=2,col=2)
+title('Case 4')
+legend('topleft',col=c('red','red','black','black'),lty=c(1,2,1,2),
+       legend=c('true FDR (jash)','est FDR (jash)','true FDR (limma)','est FDR (limma)'))
+
+# Case 5
+jash.e.FDR.5=matrix(rep(NA,nsim*10000),ncol=nsim)
+limma.e.FDR.5=matrix(rep(NA,nsim*10000),ncol=nsim)
+jash.FDR.5=matrix(rep(NA,nsim*10000),ncol=nsim)
+limma.FDR.5=matrix(rep(NA,nsim*10000),ncol=nsim)
+
+fac=factor(rep(c(1,2),each=2))
+design=model.matrix(~fac)
+for (i in 1:nsim){
+  d.5=simfull(N=10000,Nnull=7000,nA=2,nB=2,mean=7,betasd=1,diffmean=0,a=5,lambda=1,c=0.25)
+  jash.5=jash(d.5$Y,fac,usePointMass=TRUE)
+  fit.5 <- lmFit(d.5$Y, design=design)
+  fit.5 <- eBayes(fit.5)
+  o.jash = order(jash.5$qvalue)
+  o.limma = order(fit.5$p.value[,2])
+  
+  jash.FDR.5[,i]=cumsum(d.5$null[o.jash])/(1:10000)
+  limma.FDR.5[,i]=cumsum(d.5$null[o.limma])/(1:10000)
+  jash.e.FDR.5[,i]=sort(jash.5$qvalue)
+  limma.e.FDR.5[,i]=sort(qvalue(topTable(fit.5,coef='fac2',n=10000)$P.Value)$qval)
+}
+
+ng=2000
+plot(apply(jash.FDR.5,1,mean)[1:ng],type='l',ylim=c(0,0.5),ylab='FDR' )
+lines(apply(limma.FDR.5,1,mean)[1:ng], col=2)
+lines(apply(jash.e.FDR.5,1,mean)[1:ng],lty=2)
+lines(apply(limma.e.FDR.5,1,mean)[1:ng],lty=2,col=2)
+title('Case 5')
+legend('topleft',col=c('red','red','black','black'),lty=c(1,2,1,2),
+       legend=c('true FDR (jash)','est FDR (jash)','true FDR (limma)','est FDR (limma)'))
+
+# Case 6
+jash.e.FDR.6=matrix(rep(NA,nsim*10000),ncol=nsim)
+limma.e.FDR.6=matrix(rep(NA,nsim*10000),ncol=nsim)
+jash.FDR.6=matrix(rep(NA,nsim*10000),ncol=nsim)
+limma.FDR.6=matrix(rep(NA,nsim*10000),ncol=nsim)
+
+fac=factor(rep(c(1,2),each=2))
+design=model.matrix(~fac)
+for (i in 1:nsim){
+  d.6=simfull(N=10000,Nnull=9000,nA=2,nB=2,mean=7,betasd=4,diffmean=0,a=10,lambda=1,c=0.1)
+  jash.6=jash(d.6$Y,fac,usePointMass=TRUE)
+  fit.6 <- lmFit(d.6$Y, design=design)
+  fit.6 <- eBayes(fit.6)
+  o.jash = order(jash.6$qvalue)
+  o.limma = order(fit.6$p.value[,2])
+  
+  jash.FDR.6[,i]=cumsum(d.6$null[o.jash])/(1:10000)
+  limma.FDR.6[,i]=cumsum(d.6$null[o.limma])/(1:10000)
+  jash.e.FDR.6[,i]=sort(jash.6$qvalue)
+  limma.e.FDR.6[,i]=sort(qvalue(topTable(fit.6,coef='fac2',n=10000)$P.Value)$qval)
+}
+
+ng=10000
+plot(apply(jash.FDR.6,1,mean)[1:ng],type='l',ylim=c(0,1),ylab='FDR' )
+lines(apply(limma.FDR.6,1,mean)[1:ng], col=2)
+lines(apply(jash.e.FDR.6,1,mean)[1:ng],lty=2)
+lines(apply(limma.e.FDR.6,1,mean)[1:ng],lty=2,col=2)
+title('Case 6')
+legend('topleft',col=c('red','red','black','black'),lty=c(1,2,1,2),
+       legend=c('true FDR (jash)','est FDR (jash)','true FDR (limma)','est FDR (limma)'))
+
+# Case 7
+jash.e.FDR.7=matrix(rep(NA,nsim*10000),ncol=nsim)
+limma.e.FDR.7=matrix(rep(NA,nsim*10000),ncol=nsim)
+jash.FDR.7=matrix(rep(NA,nsim*10000),ncol=nsim)
+limma.FDR.7=matrix(rep(NA,nsim*10000),ncol=nsim)
+
+fac=factor(rep(c(1,2),each=2))
+design=model.matrix(~fac)
+for (i in 1:nsim){
+  d.7=simfull(N=10000,Nnull=7000,nA=2,nB=2,mean=7,betasd=2,diffmean=0,a=1,lambda=0.25,c=0.1)
+  jash.7=jash(d.7$Y,fac,usePointMass=TRUE)
+  fit.7 <- lmFit(d.7$Y, design=design)
+  fit.7 <- eBayes(fit.7)
+  o.jash = order(jash.7$qvalue)
+  o.limma = order(fit.7$p.value[,2])
+  
+  jash.FDR.7[,i]=cumsum(d.7$null[o.jash])/(1:10000)
+  limma.FDR.7[,i]=cumsum(d.7$null[o.limma])/(1:10000)
+  jash.e.FDR.7[,i]=sort(jash.7$qvalue)
+  limma.e.FDR.7[,i]=sort(qvalue(topTable(fit.7,coef='fac2',n=10000)$P.Value)$qval)
+}
+
+ng=1000
+plot(apply(jash.FDR.7,1,mean)[1:ng],type='l',ylim=c(0,0.2),ylab='FDR' )
+lines(apply(limma.FDR.7,1,mean)[1:ng], col=2)
+lines(apply(jash.e.FDR.7,1,mean)[1:ng],lty=2)
+lines(apply(limma.e.FDR.7,1,mean)[1:ng],lty=2,col=2)
+title('Case 7')
+legend('topleft',col=c('red','red','black','black'),lty=c(1,2,1,2),
+       legend=c('true FDR (jash)','est FDR (jash)','true FDR (limma)','est FDR (limma)'))
+
+# Case 8
+jash.e.FDR.8=matrix(rep(NA,nsim*10000),ncol=nsim)
+limma.e.FDR.8=matrix(rep(NA,nsim*10000),ncol=nsim)
+jash.FDR.8=matrix(rep(NA,nsim*10000),ncol=nsim)
+limma.FDR.8=matrix(rep(NA,nsim*10000),ncol=nsim)
+
+fac=factor(rep(c(1,2),each=2))
+design=model.matrix(~fac)
+for (i in 1:nsim){
+  d.8=simfull(N=10000,Nnull=7000,nA=2,nB=2,mean=7,betasd=2,diffmean=0,a=1,lambda=4,c=0.25)
+  jash.8=jash(d.8$Y,fac,usePointMass=TRUE)
+  fit.8 <- lmFit(d.8$Y, design=design)
+  fit.8 <- eBayes(fit.8)
+  o.jash = order(jash.8$qvalue)
+  o.limma = order(fit.8$p.value[,2])
+  
+  jash.FDR.8[,i]=cumsum(d.8$null[o.jash])/(1:10000)
+  limma.FDR.8[,i]=cumsum(d.8$null[o.limma])/(1:10000)
+  jash.e.FDR.8[,i]=sort(jash.8$qvalue)
+  limma.e.FDR.8[,i]=sort(qvalue(topTable(fit.8,coef='fac2',n=10000)$P.Value)$qval)
+}
+
+ng=250
+plot(apply(jash.FDR.8,1,mean)[1:ng],type='l',ylim=c(0,0.2),ylab='FDR' )
+lines(apply(limma.FDR.8,1,mean)[1:ng], col=2)
+lines(apply(jash.e.FDR.8,1,mean)[1:ng],lty=2)
+lines(apply(limma.e.FDR.8,1,mean)[1:ng],lty=2,col=2)
+title('Case 8')
+legend('topleft',col=c('red','red','black','black'),lty=c(1,2,1,2),
+       legend=c('true FDR (jash)','est FDR (jash)','true FDR (limma)','est FDR (limma)'))
+```
+
+Compare with limma, jash, limma+ash (Case 2 for example):
+
+```{r,echo=FALSE}
+ng=2000
+plot(apply(limma.FDR.2,1,mean)[1:ng],col=2,type='l',ylim=c(0,0.05),ylab='FDR',xlab='Number of genes')
+lines(apply(jash.FDR.2,1,mean)[1:ng])
+lines(apply(ash.FDR.2,1,mean)[1:ng],col='blue')
+lines(apply(jash.e.FDR.2,1,mean)[1:ng],lty=2)
+lines(apply(limma.e.FDR.2,1,mean)[1:ng],lty=2,col=2)
+lines(apply(ash.e.FDR.2,1,mean)[1:ng], col='blue',lty=2)
+legend('topleft',col=c('red','black','blue','red','black','blue'),lty=c(2,2,2,1,1,1),legend=c('limma','jash','ash+limma','true FDR (jash)','true FDR (limma)','true FDR (ash+limma)'))
+```
+
+
+Robustness
+==========
+
+Simulate data from the following 3 alternative models:
+
+Case 1: $\beta_g \sim \pi_0\delta_0+\pi_1N(0, \sigma^2)$, $\tau_g \sim Gamma(a,a/\lambda)$, $\hat{\beta}_g\sim N(\beta_g,1/\tau_g)$.
+```{r}
+simrob=function(N,Nnull,nA,nB,mean,betasd,diffmean,diffsd,a,lambda){
+  null = c(rep(1, Nnull), rep(0, N - Nnull))
+  truetau=rgamma(N,shape=a,rate=a/lambda)
+  truebetaA=rnorm(N,mean=mean,sd=betasd)
+  truediff=c(rep(0,Nnull),rnorm(N-Nnull,mean=diffmean,sd=diffsd))
+  truebetaB=truebetaA+truediff
+  YA=matrix(rnorm(N*nA,mean=rep(truebetaA,nA),sd=rep(1/sqrt(truetau),nA)),ncol=nA)
+  YB=matrix(rnorm(N*nB,mean=rep(truebetaB,nB),sd=rep(1/sqrt(truetau),nB)),ncol=nB)
+  return(list(YA=cbind(YA,YB),null=null,truetau=truetau,truebetaA=truebetaA,
+              truebetaB=truebetaB,truediff=truediff))
+}
+```
+```{r,echo=FALSE}
+# Case 1
+jash.e.FDR.rob=matrix(rep(NA,nsim*10000),ncol=nsim)
+limma.e.FDR.rob=matrix(rep(NA,nsim*10000),ncol=nsim)
+jash.FDR.rob=matrix(rep(NA,nsim*10000),ncol=nsim)
+limma.FDR.rob=matrix(rep(NA,nsim*10000),ncol=nsim)
+
+fac=factor(rep(c(1,2),each=2))
+design=model.matrix(~fac)
+for (i in 1:nsim){
+  d.rob=simrob(N=10000,Nnull=5000,nA=2,nB=2,mean=5,betasd=0.5,diffmean=0,diffsd=1,a=5,lambda=2)
+  fac=factor(rep(c(1,2),each=2))
+  design=model.matrix(~fac)
+  
+  jash.rob=jash(d.rob$Y,fac,usePointMass=TRUE)
+  fit.rob <- lmFit(d.rob$Y, design=design)
+  fit.rob <- eBayes(fit.rob)
+  o.jash = order(jash.rob$qvalue)
+  o.limma = order(fit.rob$p.value[,2])
+  
+  jash.FDR.rob[,i]=cumsum(d.rob$null[o.jash])/(1:10000)
+  limma.FDR.rob[,i]=cumsum(d.rob$null[o.limma])/(1:10000)
+  jash.e.FDR.rob[,i]=sort(jash.rob$qvalue)
+  limma.e.FDR.rob[,i]=sort(qvalue(topTable(fit.rob,coef='fac2',n=10000)$P.Value)$qval)
+}
+
+ng=2000
+plot(apply(jash.FDR.rob,1,mean)[1:ng],type='l',ylim=c(0,0.3),ylab='FDR' )
+lines(apply(limma.FDR.rob,1,mean)[1:ng], col=2)
+lines(apply(jash.e.FDR.rob,1,mean)[1:ng],lty=2)
+lines(apply(limma.e.FDR.rob,1,mean)[1:ng],lty=2,col=2)
+title('Case 1')
+legend('topleft',col=c('red','red','black','black'),lty=c(1,2,1,2),
+       legend=c('true FDR (jash)','est FDR (jash)','true FDR (limma)','est FDR (limma)'))
+```
+
+Case 2: $\beta_g \sim \pi_0\delta_0+\pi_1N(0, 1/(c\tau_g))$, $\tau_g \sim N(\mu,\sigma^2)$, $\hat{\beta}_g\sim N(\beta_g,1/\tau_g)$.
+```{r,echo=FALSE}
+simrob2=function(N,Nnull,nA,nB,mean,betasd,diffmean,lambda,tausd,c){
+  null = c(rep(1, Nnull), rep(0, N - Nnull))
+  truetau=rnorm(N,mean=lambda,sd=tausd)
+  truebetaA=rnorm(N,mean=mean,sd=betasd)
+  truediff=c(rep(0,Nnull),rnorm(N-Nnull,mean=diffmean,sd=1/sqrt(c*truetau[Nnull+1:N])))
+  truebetaB=truebetaA+truediff
+  YA=matrix(rnorm(N*nA,mean=rep(truebetaA,nA),sd=rep(1/sqrt(truetau),nA)),ncol=nA)
+  YB=matrix(rnorm(N*nB,mean=rep(truebetaB,nB),sd=rep(1/sqrt(truetau),nB)),ncol=nB)
+  return(list(YA=cbind(YA,YB),null=null,truetau=truetau,truebetaA=truebetaA,
+              truebetaB=truebetaB,truediff=truediff))
+}
+```
+```{r,echo=FALSE}
+# Case 2
+jash.e.FDR.rob2=matrix(rep(NA,nsim*10000),ncol=nsim)
+limma.e.FDR.rob2=matrix(rep(NA,nsim*10000),ncol=nsim)
+jash.FDR.rob2=matrix(rep(NA,nsim*10000),ncol=nsim)
+limma.FDR.rob2=matrix(rep(NA,nsim*10000),ncol=nsim)
+
+fac=factor(rep(c(1,2),each=2))
+design=model.matrix(~fac)
+for (i in 1:nsim){
+  d.rob2=simrob2(N=10000,Nnull=5000,nA=2,nB=2,mean=5,betasd=0.5,diffmean=0,lambda=3,tausd=0.25,c=1)
+  fac=factor(rep(c(1,2),each=2))
+  design=model.matrix(~fac)
+  
+  jash.rob2=jash(d.rob2$Y,fac,usePointMass=TRUE)
+  fit.rob2 <- lmFit(d.rob2$Y, design=design)
+  fit.rob2 <- eBayes(fit.rob2)
+  o.jash = order(jash.rob2$qvalue)
+  o.limma = order(fit.rob2$p.value[,2])
+  
+  jash.FDR.rob2[,i]=cumsum(d.rob2$null[o.jash])/(1:10000)
+  limma.FDR.rob2[,i]=cumsum(d.rob2$null[o.limma])/(1:10000)
+  jash.e.FDR.rob2[,i]=sort(jash.rob2$qvalue)
+  limma.e.FDR.rob2[,i]=sort(qvalue(topTable(fit.rob2,coef='fac2',n=10000)$P.Value)$qval)
+  }
+
+ng=1000
+plot(apply(jash.FDR.rob2,1,mean)[1:ng],type='l',ylim=c(0,0.6),ylab='FDR' )
+lines(apply(limma.FDR.rob2,1,mean)[1:ng], col=2)
+lines(apply(jash.e.FDR.rob2,1,mean)[1:ng],lty=2)
+lines(apply(limma.e.FDR.rob2,1,mean)[1:ng],lty=2,col=2)
+title('Case 2')
+legend('topleft',col=c('red','red','black','black'),lty=c(1,2,1,2),
+       legend=c('true FDR (jash)','est FDR (jash)','true FDR (limma)','est FDR (limma)'))
+```
+
+Case 3: $\beta_g \sim \pi_0\delta_0+\pi_1N(0, 1/(c\tau_g))$, $log(\tau_g) \sim N(\mu,\sigma^2)$, $\hat{\beta}_g\sim N(\beta_g,1/\tau_g)$.
+```{r,echo=FALSE}
+simrob3=function(N,Nnull,nA,nB,mean,betasd,diffmean,lambda,logtausd,c){
+  null = c(rep(1, Nnull), rep(0, N - Nnull))
+  truetau=rlnorm(N,mean=log(lambda),sd=logtausd)
+  truebetaA=rnorm(N,mean=mean,sd=betasd)
+  truediff=c(rep(0,Nnull),rnorm(N-Nnull,mean=diffmean,sd=1/sqrt(c*truetau[Nnull+1:N])))
+  truebetaB=truebetaA+truediff
+  YA=matrix(rnorm(N*nA,mean=rep(truebetaA,nA),sd=rep(1/sqrt(truetau),nA)),ncol=nA)
+  YB=matrix(rnorm(N*nB,mean=rep(truebetaB,nB),sd=rep(1/sqrt(truetau),nB)),ncol=nB)
+  return(list(YA=cbind(YA,YB),null=null,truetau=truetau,truebetaA=truebetaA,
+              truebetaB=truebetaB,truediff=truediff))
+}
+```
+```{r,echo=FALSE}
+# Case 3
+jash.e.FDR.rob3=matrix(rep(NA,nsim*10000),ncol=nsim)
+limma.e.FDR.rob3=matrix(rep(NA,nsim*10000),ncol=nsim)
+jash.FDR.rob3=matrix(rep(NA,nsim*10000),ncol=nsim)
+limma.FDR.rob3=matrix(rep(NA,nsim*10000),ncol=nsim)
+
+fac=factor(rep(c(1,2),each=2))
+design=model.matrix(~fac)
+for (i in 1:nsim){
+  d.rob3=simrob3(N=10000,Nnull=5000,nA=2,nB=2,mean=5,betasd=0.5,diffmean=0,lambda=3,logtausd=1,c=1)
+  fac=factor(rep(c(1,2),each=2))
+  design=model.matrix(~fac)
+  
+  jash.rob3=jash(d.rob3$Y,fac,usePointMass=TRUE)
+  fit.rob3 <- lmFit(d.rob3$Y, design=design)
+  fit.rob3 <- eBayes(fit.rob3)
+  o.jash = order(jash.rob3$qvalue)
+  o.limma = order(fit.rob3$p.value[,2])
+  
+  jash.FDR.rob3[,i]=cumsum(d.rob3$null[o.jash])/(1:10000)
+  limma.FDR.rob3[,i]=cumsum(d.rob3$null[o.limma])/(1:10000)
+  jash.e.FDR.rob3[,i]=sort(jash.rob3$qvalue)
+  limma.e.FDR.rob3[,i]=sort(qvalue(topTable(fit.rob3,coef='fac2',n=10000)$P.Value)$qval)
+}
+
+ng=1000
+plot(apply(jash.FDR.rob3,1,mean)[1:ng],type='l',ylim=c(0,0.5),ylab='FDR' )
+lines(apply(limma.FDR.rob3,1,mean)[1:ng], col=2)
+lines(apply(jash.e.FDR.rob3,1,mean)[1:ng],lty=2)
+lines(apply(limma.e.FDR.rob3,1,mean)[1:ng],lty=2,col=2)
+title('Case 3')
+legend('topleft',col=c('red','red','black','black'),lty=c(1,2,1,2),
+       legend=c('true FDR (jash)','est FDR (jash)','true FDR (limma)','est FDR (limma)'))
+```
+
+Application
+===========
+
+BRCA dataset:
+```{r,echo=FALSE}
+hh = read.table("nejm_brca_release_edit.csv",sep=",",skip=3)
+subset = apply(hh, 1, max)<20
+hh = hh[subset,]
+
+labs = read.table("nejm_brca_release_edit.csv",sep=",",skip=1,nrows=1)
+labs = 1*(labs=="BRCA1") + 2 * (labs=="BRCA2") 
+
+hh.betahat = apply(hh[,labs==1],1,mean) - apply(hh[,labs==2],1,mean)
+n1 = sum(labs==1)
+n2 = sum(labs==2)
+hh.sebetahat = sqrt(apply(hh[,labs==1],1,var)/n1 + apply(hh[,labs==2],1,var)/n2)
+
+hh.jash=jasha(hh.betahat,hh.sebetahat,df=n1+n2-2)
+
+library(limma)
+hh.new=cbind(hh[,labs==1],hh[,labs==2])
+fac=factor(c(rep(1,n1),rep(2,n2)))
+design=model.matrix(~fac)
+fit <- lmFit(hh.new, design=design)
+fit <- eBayes(fit)
+```
+
+```{r}
+# Number of genes called significant (jash, FDR<0.05)
+sum(hh.jash$qvalue<0.05)
+
+# Number of genes called significant (limma, FDR<0.05)
+sum(qvalue(topTable(fit,coef='fac2',n=3169)$P.Val)$qval<0.05)
+```
