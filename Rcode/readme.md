@@ -20,8 +20,29 @@ and the first 500 observations have good precision, and the next 500 have poor p
 # install q value package source('http://bioconductor.org/biocLite.R')
 # biocLite('qvalue')
 setwd("~/Documents/git/ash/Rcode/")
+```
+
+```
+## Error: cannot change working directory
+```
+
+```r
 library("qvalue")
+```
+
+```
+## Loading Tcl/Tk interface ... done
+```
+
+```r
 library("lattice")  #library for some of the plots
+```
+
+```
+## Warning: package 'lattice' was built under R version 2.15.3
+```
+
+```r
 
 # set up some data with mixture of values of s
 set.seed(100)
@@ -100,6 +121,10 @@ library("ashr")
 ## Loading required package: truncnorm
 ```
 
+```
+## Warning: package 'truncnorm' was built under R version 2.15.3
+```
+
 ```r
 # source('../Rcode/ash.R') source('../Rcode/ash.oldfuncs.R')
 # source('../Rcode/mix.R')
@@ -131,7 +156,7 @@ print(getwd())
 ```
 
 ```
-## [1] "/Users/stephens/Documents/git/ash/Rcode"
+## [1] "/Users/stephens/Dropbox/Documents/git/ash/Rcode"
 ```
 
 ```r
@@ -312,22 +337,43 @@ require(locfdr)
 
 ```
 ## Loading required package: locfdr
-## Loading required package: splines
+```
+
+```
+## Warning: there is no package called 'locfdr'
 ```
 
 ```r
 hh.locfdr = locfdr(hh.zscore, nulltype = 0)
 ```
 
-![plot of chunk unnamed-chunk-12](figure/unnamed-chunk-121.png) 
+```
+## Error: could not find function "locfdr"
+```
 
 ```r
 weights = 1 - hh.locfdr$fdr
+```
+
+```
+## Error: object 'hh.locfdr' not found
+```
+
+```r
 altz = hh.zscore[runif(length(weights)) < weights]
+```
+
+```
+## Error: comparison (3) is possible only for atomic and list types
+```
+
+```r
 hist(altz)
 ```
 
-![plot of chunk unnamed-chunk-12](figure/unnamed-chunk-122.png) 
+```
+## Error: object 'altz' not found
+```
 
 
 Directly modelling the z scores, without taking account of their errors,
@@ -344,52 +390,50 @@ require("mixfdr")
 
 ```r
 source("~/Documents/git/ash/Rcode/mix.R")
+```
+
+```
+## Warning: cannot open file '/Users/stephens/Documents/git/ash/Rcode/mix.R':
+## No such file or directory
+```
+
+```
+## Error: cannot open the connection
+```
+
+```r
 altz.mixfdr = mixFdr(altz, noiseSD = 1, J = 100)
 ```
 
 ```
-## Warning: Using uncalibrated default penalization P,  which can give misleading results for empirical nulls. Consider rerunning with calibrate = TRUE and using the resulting penalization
-## 
-## Warning: Assuming known noise noiseSD =  1 . If needed rerun with noiseSD = NA to fit noiseSD.
-## Warning: Note that using known noiseSD constrains the null to have sd at least noiseSD. If underdispersion is suspected, rerun with noiseSD = NA.
-```
-
-```
-## Fitting preliminary model 
-## Fitting final model
-```
-
-```
-## Warning: Null proportion pi0 is small. Consider increasing penalization
-## and/or using an empirical null.
-```
-
-![plot of chunk unnamed-chunk-13](figure/unnamed-chunk-131.png) 
-
-```
-## 
-## Fitted Model: J = 100 groups
-## ----------------------------
-## null?		 TRUE	 TRUE	 TRUE	 TRUE	FALSE	FALSE	 TRUE	FALSE	FALSE	FALSE	 TRUE	 TRUE	 TRUE	FALSE	 TRUE	FALSE	 TRUE	 TRUE	 TRUE	 TRUE	FALSE	 TRUE	FALSE	FALSE	 TRUE	 TRUE	FALSE	FALSE	FALSE	FALSE	FALSE	 TRUE	FALSE	FALSE	 TRUE	 TRUE	 TRUE	 TRUE	 TRUE	 TRUE	FALSE	FALSE	FALSE	 TRUE	 TRUE	FALSE	FALSE	 TRUE	 TRUE	 TRUE	 TRUE	 TRUE	FALSE	FALSE	 TRUE	 TRUE	FALSE	 TRUE	 TRUE	FALSE	FALSE	 TRUE	FALSE	 TRUE	 TRUE	FALSE	 TRUE	FALSE	FALSE	 TRUE	FALSE	 TRUE	 TRUE	 TRUE	 TRUE	FALSE	 TRUE	FALSE	 TRUE	FALSE	FALSE	FALSE	 TRUE	 TRUE	FALSE	FALSE	FALSE	 TRUE	FALSE	FALSE	 TRUE	 TRUE	 TRUE	FALSE	FALSE	 TRUE	FALSE	 TRUE	 TRUE	 TRUE	
-## 
-## pi =		0.7766	0.0002	0.0002	0.0002	0.0084	0.0005	0.0002	0.0096	0.0005	0.0005	0.0002	0.0002	0.0002	0.0094	0.0002	0.0005	0.0002	0.0002	0.0002	0.0002	0.0030	0.0002	0.0091	0.0005	0.0002	0.0002	0.0080	0.0096	0.0062	0.0005	0.0011	0.0002	0.0026	0.0008	0.0002	0.0002	0.0002	0.0002	0.0002	0.0002	0.0004	0.0005	0.0093	0.0002	0.0002	0.0005	0.0095	0.0002	0.0002	0.0002	0.0002	0.0002	0.0096	0.0077	0.0002	0.0002	0.0006	0.0002	0.0002	0.0004	0.0005	0.0002	0.0079	0.0002	0.0002	0.0096	0.0002	0.0096	0.0005	0.0002	0.0090	0.0002	0.0002	0.0002	0.0002	0.0009	0.0002	0.0076	0.0002	0.0005	0.0095	0.0087	0.0002	0.0002	0.0005	0.0005	0.0005	0.0002	0.0076	0.0085	0.0002	0.0002	0.0002	0.0096	0.0094	0.0002	0.0005	0.0002	0.0002	0.0002	
-## 
-## mu = 		 2.191	 2.191	 2.192	 2.191	-2.480	 4.550	 2.191	-2.480	 4.550	 4.549	 2.191	 2.191	 2.191	-2.480	 2.191	 4.549	 2.191	 2.191	 2.191	 2.191	-2.480	 2.191	-2.480	 4.550	 2.191	 2.191	-2.480	-2.480	-2.480	 4.550	 6.973	 2.191	-5.092	 6.973	 2.191	 2.191	 2.191	 2.191	 2.191	 2.191	 4.437	 4.550	-2.480	 2.191	 2.191	 4.550	-2.480	 2.192	 2.191	 2.191	 2.191	 2.191	-2.480	-2.480	 2.191	 2.191	 6.971	 2.191	 2.191	 4.547	 4.550	 2.191	-2.480	 2.191	 2.191	-2.480	 2.191	-2.480	 4.550	 2.191	-2.480	 2.191	 2.191	 2.199	 2.191	 6.973	 2.191	-2.480	 2.191	 4.547	-2.480	-2.480	 2.191	 2.191	 4.550	 4.549	 4.550	 2.191	-2.480	-2.480	 2.191	 2.192	 2.191	-2.480	-2.480	 2.191	 4.550	 2.191	 2.191	 2.191	
-## 
-## sigma = 	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	
-## 
-## noiseSD = 	1	
+## Error: object 'altz' not found
 ```
 
 ```r
 g = normalmix(altz.mixfdr$pi, altz.mixfdr$mu, altz.mixfdr$sigma)
+```
+
+```
+## Error: object 'altz.mixfdr' not found
+```
+
+```r
 x = seq(-8, 8, length = 100)
 par(mfcol = c(1, 1))
 hist(altz, breaks = x, prob = TRUE)
+```
+
+```
+## Error: object 'altz' not found
+```
+
+```r
 lines(x, dens(g, x), col = 2)
 ```
 
-![plot of chunk unnamed-chunk-13](figure/unnamed-chunk-132.png) 
+```
+## Error: could not find function "dens"
+```
 
 
 Directly modelling the p values is maybe even worse?
@@ -402,7 +446,7 @@ hist(hh.pval, probability = TRUE, xlab = "p value", main = "Distribution of p va
     nclass = 40, col = 5)
 ```
 
-![plot of chunk unnamed-chunk-14](figure/unnamed-chunk-141.png) 
+![plot of chunk unnamed-chunk-14](figure/unnamed-chunk-14.png) 
 
 ```r
 require(fdrtool)
@@ -412,40 +456,65 @@ require(fdrtool)
 ## Loading required package: fdrtool
 ```
 
+```
+## Warning: there is no package called 'fdrtool'
+```
+
 ```r
 hh.fdrtool = fdrtool(hh.pval, statistic = "pvalue")
 ```
 
 ```
-## Step 1... determine cutoff point
-## Step 2... estimate parameters of null distribution and eta0
-## Step 3... compute p-values and estimate empirical PDF/CDF
-## Step 4... compute q-values and local fdr
-## Step 5... prepare for plotting
+## Error: could not find function "fdrtool"
 ```
-
-![plot of chunk unnamed-chunk-14](figure/unnamed-chunk-142.png) 
 
 ```r
 weights2 = 1 - hh.fdrtool$lfdr
+```
+
+```
+## Error: object 'hh.fdrtool' not found
+```
+
+```r
 altz2 = hh.zscore[runif(length(weights2)) < weights2]
+```
+
+```
+## Error: object 'weights2' not found
+```
+
+```r
 hist(altz2, nclass = 100)
 ```
 
-![plot of chunk unnamed-chunk-14](figure/unnamed-chunk-143.png) 
+```
+## Error: object 'altz2' not found
+```
 
 ```r
 hist(altz, nclass = 100)
 ```
 
-![plot of chunk unnamed-chunk-14](figure/unnamed-chunk-144.png) 
+```
+## Error: object 'altz' not found
+```
 
 ```r
 plot(hh.zscore, hh.locfdr$fdr)
+```
+
+```
+## Error: object 'hh.locfdr' not found
+```
+
+```r
 points(hh.zscore, hh.fdrtool$lfdr, col = 2)
 ```
 
-![plot of chunk unnamed-chunk-14](figure/unnamed-chunk-145.png) 
+```
+## Error: object 'hh.fdrtool' not found
+```
 
 
 ### Errors in sign, and true 0s
@@ -479,7 +548,7 @@ sum(errorinsign[zsim2.ash$qvalue < 0.05])/sum(zsim2.ash$qvalue < 0.05)
 ```
 
 ```
-## [1] 0.02901
+## [1] 0.03517
 ```
 
 
@@ -532,7 +601,7 @@ sum(dnorm(bhat2.test, mhat, sdhat, log = TRUE))
 ```
 
 ```
-## [1] -3063
+## [1] -3141
 ```
 
 ```r
@@ -592,7 +661,7 @@ cat(sum(test1.ash1$qval < 0.05), sum(test1.ash2$qval < 0.05))
 ```
 
 ```
-## 717 405
+## 897 464
 ```
 
 ```r
@@ -603,7 +672,7 @@ cat(sum(test2.ash1$qval < 0.05), sum(test2.ash2$qval < 0.05))
 ```
 
 ```
-## 174 564
+## 137 365
 ```
 
 ```r
@@ -798,8 +867,9 @@ table(err[qq$qvalues < 0.05])
 ```r
 
 
-# check whether ordering by q values does better or worse job than ordering
-# by confidence, in terms of identifying betas with the right sign
+# check whether ordering by q values does better or worse job than
+# ordering by confidence, in terms of identifying betas with the right
+# sign
 
 
 plot(cumsum(err[order(qq$qvalues)]), type = "l")
