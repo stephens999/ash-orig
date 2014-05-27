@@ -11,12 +11,12 @@ and the ``true" FDR is always 0, whatever threshold is used.
 
 
 ```r
+opts_chunk$set(fig.path = "figure/lfsr/")
 set.seed(100)
 library(ashr)
 ```
 
 ```
-## Loading required package: Rcpp
 ## Loading required package: truncnorm
 ```
 
@@ -30,6 +30,13 @@ betahat = beta + rnorm(n, 0, sebetahat)
 z = betahat/sebetahat
 p = pchisq(z^2, df = 1, lower.tail = FALSE)
 z.ash = ash(z, 1, method = "fdr")
+```
+
+```
+## [1] "normal likelihood"
+```
+
+```r
 z.qvalue = qvalue(p)
 ```
 
@@ -51,7 +58,7 @@ abline(h = get_pi0(z.ash), col = 2, lwd = 2)
 text(0.95, get_pi0(z.ash) + 0.06, "pi0 (ash)", col = 2)
 ```
 
-![plot of chunk unnamed-chunk-2](figure/unnamed-chunk-2.png) 
+![plot of chunk unnamed-chunk-2](figure/lfsr/unnamed-chunk-2.png) 
 
 
 Because of its very conservative estimate of $\pi_0$, qvalue also

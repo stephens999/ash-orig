@@ -10,6 +10,7 @@ and the ``true" FDR is always 0, whatever threshold is used.
 
 
 ```{r}
+opts_chunk$set(fig.path='figure/lfsr/')
 set.seed(100)
 library(ashr)
 library(qvalue)
@@ -32,7 +33,7 @@ even when $\beta_j \neq 0$. Of course, in this case both qvalue and ash provide 
 estimates of $\pi_0$, but the qvalue estimate is much more conservative. 
 
 
-```{r}
+```{r, }
   hist(p,prob=TRUE)
   abline(h=z.qvalue$pi0,lwd=2)
   text(0.95, z.qvalue$pi0+0.06, "pi0 (q value)")

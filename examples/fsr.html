@@ -193,12 +193,12 @@ So no \( \beta_j \) is exactly 0, and all the null hypotheses \( H_j: \beta_j=0 
 Since all the nulls are false, no discovery is a false discovery,
 and the &ldquo;true&rdquo; FDR is always 0, whatever threshold is used.</p>
 
-<pre><code class="r">set.seed(100)
+<pre><code class="r">opts_chunk$set(fig.path = &quot;figure/lfsr/&quot;)
+set.seed(100)
 library(ashr)
 </code></pre>
 
-<pre><code>## Loading required package: Rcpp
-## Loading required package: truncnorm
+<pre><code>## Loading required package: truncnorm
 </code></pre>
 
 <pre><code class="r">library(qvalue)
@@ -210,7 +210,12 @@ betahat = beta + rnorm(n, 0, sebetahat)
 z = betahat/sebetahat
 p = pchisq(z^2, df = 1, lower.tail = FALSE)
 z.ash = ash(z, 1, method = &quot;fdr&quot;)
-z.qvalue = qvalue(p)
+</code></pre>
+
+<pre><code>## [1] &quot;normal likelihood&quot;
+</code></pre>
+
+<pre><code class="r">z.qvalue = qvalue(p)
 </code></pre>
 
 <p>In this example all the nulls are false, so the actual proportion of true nulls, \( \pi_0 \), is equal to 0. However, the estimated value of \( \pi_0 \) can be very different from zero. From qvalue we get
