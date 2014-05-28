@@ -10,5 +10,6 @@ Rcpp.package.skeleton("ashr", path=".", code_files=c("ash.oldversion.R", "ash.R"
 
 #in the terminal
 #tar -pczf ashr.tar.gz ashr
+#sh create.ashr.no.cxx.sh
 #in R
 install.packages("~/Documents/git/ash/package/ashr/R/ashr.tar.gz",repos=NULL,type="source")
