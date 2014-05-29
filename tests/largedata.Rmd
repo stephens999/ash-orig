@@ -1,0 +1,11 @@
+# Test ash on large data
+
+```{r}
+  library(ashr)
+  set.seed(111)
+  z = rnorm(100000)
+  z.ash = ash(z,1)
+  z.ash2 = ash(z,1,method="fdr")
+```
+
+

@@ -1,0 +1,79 @@
+Test turboEM
+========================================================
+
+First we have to define a fixpoint function and an objective function
+for turboEM to work with
+```{r}
+normalize=function(x){return(x/sum(x))}
+
+fixpoint = function(pi, matrix_lik, prior){  
+  m  = t(pi * t(matrix_lik)) # matrix_lik is n by k; so this is also n by k
+  m.rowsum = rowSums(m)
+  classprob = m/m.rowsum #an n by k matrix
+  pinew = normalize(colSums(classprob) + prior-1)
+  return(pinew)
+}
+
+penloglik = function(pi, matrix_lik, prior){
+  m  = t(pi * t(matrix_lik)) # matrix_lik is n by k; so this is also n by k
+  m.rowsum = rowSums(m)
+  loglik = sum(log(m.rowsum))
+  priordens = sum((prior-1)*log(pi))
+  return(loglik+priordens)
+}
+
+#Note this doesn't impose the constraint that they have to sum to 1... might be a problem?
+pconstr <- function(par) {
+  return(all(0 <= par & par <= 1))
+}
+```
+
+Now simulate some test data
+```{r}
+  set.seed(100)
+  sampsize=10000
+  sd = c(1,1.1,1.2)
+  z = rnorm(sampsize,0,sample(sd,sampsize,replace=TRUE))
+  lik = t(vapply(z,dnorm,sd,sd=sd))
+  prior=c(1,1,1)
+  pi.init=c(0.3,0.2,0.5)
+```
+
+```{r}
+  library(turboEM)
+  res = turboem(par=pi.init, control.run=list(convtype = "objfn",tol=1e-5),fixptfn=fixpoint, objfn=penloglik, pconstr=pconstr,method=c("em", "squarem", "pem","decme","qn"), matrix_lik=lik,prior=prior)
+  options(digits=13)
+  res
+  library(devtools)
+  devtools::load_all("../package/ashr")
+  system.time(res2<-mixEM(lik, prior, pi.init))
+  length(res2$B)
+  res2$B[length(res2$B)]
+```
+
+The number of iterations for the ash implementation is `r length(res2$B)` and the objective achieved
+is `r res2$B[length(res2$B)]`.
+
+Now try a bigger sample, just comparing EM and squareEM
+```{r}
+  set.seed(100)
+  sampsize=500000
+  sd = c(1,1.1,1.2)
+  z = rnorm(sampsize,0,sample(sd,sampsize,replace=TRUE))
+  lik = t(vapply(z,dnorm,sd,sd=sd))
+  prior=c(1,1,1)
+  pi.init=c(0.3,0.2,0.5)
+  res = turboem(par=pi.init, control.run=list(convtype = "objfn",tol=1e-5),fixptfn=fixpoint, objfn=penloglik, pconstr=pconstr,method=c("em", "squarem"), matrix_lik=lik,prior=prior)
+  options(digits=13)
+  res
+```
+
+Now run the squarem package directly
+```{r}
+  library(SQUAREM)
+  system.time(res3<-squarem(par=pi.init,fixptfn=fixpoint, objfn=penloglik,matrix_lik=lik, prior=prior))
+```
+
+It seems from this limited assessment that i) the squareEM approach is the most effective,
+and ii) the SQUAREM package implementation is faster then the turboem implementation.
+

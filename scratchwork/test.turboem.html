@@ -5,7 +5,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
 <meta http-equiv="x-ua-compatible" content="IE=9" >
 
-<title></title>
+<title>Test turboEM</title>
 
 <style type="text/css">
 body, td {
@@ -174,147 +174,144 @@ hljs.initHighlightingOnLoad();
 </script>
 
 
-<!-- MathJax scripts -->
-<script type="text/javascript" src="https://c328740.ssl.cf1.rackcdn.com/mathjax/2.0-latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
-</script>
-
 
 
 </head>
 
 <body>
-<p>The following R code simulates some data where the effects are normally distributed, and the first 500 observations have good precision, and the next 500 have poor precision.</p>
+<h1>Test turboEM</h1>
 
-<pre><code class="r"># install q value package source(&#39;http://bioconductor.org/biocLite.R&#39;)
-# biocLite(&#39;qvalue&#39;)
-library(&quot;qvalue&quot;)
-library(&quot;lattice&quot;)  #library for some of the plots
+<p>First we have to define a fixpoint function and an objective function
+for turboEM to work with</p>
 
-# set up some data with mixture of values of s
-set.seed(100)
-s.good = 0.5
-s.poor = 10
-J.good = 500
-J.poor = 500
-J = J.good + J.poor
-beta = c(rnorm(J, 0, 1))
-s = c(rep(s.good, J.good), rep(s.poor, J.poor))
-betahat = beta + rnorm(J, 0, s)
-# compute the usual zscore and corresponding p value
-zscore = betahat/s
-pval = pchisq(zscore^2, df = 1, lower.tail = F)
+<pre><code class="r">normalize = function(x) {
+    return(x/sum(x))
+}
+
+fixpoint = function(pi, matrix_lik, prior) {
+    m = t(pi * t(matrix_lik))  # matrix_lik is n by k; so this is also n by k
+    m.rowsum = rowSums(m)
+    classprob = m/m.rowsum  #an n by k matrix
+    pinew = normalize(colSums(classprob) + prior - 1)
+    return(pinew)
+}
+
+penloglik = function(pi, matrix_lik, prior) {
+    m = t(pi * t(matrix_lik))  # matrix_lik is n by k; so this is also n by k
+    m.rowsum = rowSums(m)
+    loglik = sum(log(m.rowsum))
+    priordens = sum((prior - 1) * log(pi))
+    return(loglik + priordens)
+}
+
+# Note this doesn&#39;t impose the constraint that they have to sum to 1...
+# might be a problem?
+pconstr &lt;- function(par) {
+    return(all(0 &lt;= par &amp; par &lt;= 1))
+}
 </code></pre>
 
-<p>As expected the \( p \) values from the poor observations are approximately uniform, whereas those from the good observations  are enriched for small \( p \) values:</p>
+<p>Now simulate some test data</p>
 
-<pre><code class="r">p = data.frame(pval = pval, type = c(rep(&quot;GOOD&quot;, 500), rep(&quot;POOR&quot;, 500)))
-require(ggplot2)
+<pre><code class="r">set.seed(100)
+sampsize = 10000
+sd = c(1, 1.1, 1.2)
+z = rnorm(sampsize, 0, sample(sd, sampsize, replace = TRUE))
+lik = t(vapply(z, dnorm, sd, sd = sd))
+prior = c(1, 1, 1)
+pi.init = c(0.3, 0.2, 0.5)
 </code></pre>
 
-<pre><code>## Loading required package: ggplot2
+<pre><code class="r">library(turboEM)
+</code></pre>
+
+<pre><code>## Loading required package: numDeriv
+## Loading required package: quantreg
+## Loading required package: SparseM
 ## 
-## Attaching package: &#39;ggplot2&#39;
+## Attaching package: &#39;SparseM&#39;
 ## 
-## The following object is masked from &#39;package:qvalue&#39;:
+## The following object is masked from &#39;package:base&#39;:
 ## 
-##     qplot
+##     backsolve
+## 
+## Loading required package: foreach
+## 
+## Attaching package: &#39;turboEM&#39;
+## 
+## The following objects are masked from &#39;package:numDeriv&#39;:
+## 
+##     grad, hessian
 </code></pre>
 
-<pre><code class="r">pdf(&quot;figures/good_poor_hist.pdf&quot;, height = 3, width = 6)
-ggplot(p, aes(x = pval)) + facet_grid(. ~ type) + geom_histogram(aes(y = ..density..), 
-    binwidth = 0.05, colour = &quot;black&quot;, fill = &quot;white&quot;)
-
-# old version, using trellis
-# histogram(~pval|type,p,layout=c(1,2),xlim=c(0,1),breaks=seq(from=0,to=1,length=20),type=&#39;count&#39;)
-dev.off()
+<pre><code class="r">res = turboem(par = pi.init, control.run = list(convtype = &quot;objfn&quot;, tol = 1e-05), 
+    fixptfn = fixpoint, objfn = penloglik, pconstr = pconstr, method = c(&quot;em&quot;, 
+        &quot;squarem&quot;, &quot;pem&quot;, &quot;decme&quot;, &quot;qn&quot;), matrix_lik = lik, prior = prior)
+options(digits = 13)
+res
 </code></pre>
 
-<pre><code>## pdf 
-##   2
+<pre><code>##    method     value.objfn  itr fpeval objfeval convergence elapsed.time
+## 1      em -15161.96849170 1500   1500     1501       FALSE        4.634
+## 2 squarem -15161.69884713   22     43       25        TRUE        0.163
+## 3     pem -15161.90144876 1500   3010     3001       FALSE        9.081
+## 5      qn -15161.70968009  913    917     1827        TRUE        6.255
+## 
+## Acceleration scheme 4 (decme) failed
 </code></pre>
 
-<p>Now what happens if we apply FDR methods to the all the data is
-that the uniform \( p \) values from the poor observations
-add noise relative to looking at the good observations only. This impacts both the estimate of \( pi_0 \) from qvalue, and the number of findings that are significant at a given FDR.</p>
-
-<pre><code class="r">qq.all = qvalue(p$pval)
-qq.good = qvalue(p$pval[p$type == &quot;GOOD&quot;])
-print(c(qq.good$pi0, qq.all$pi0))
+<pre><code class="r">library(devtools)
+devtools::load_all(&quot;../package/ashr&quot;)
 </code></pre>
 
-<pre><code>## [1] 0.3368 0.6932
+<pre><code>## Loading ashr
+## Loading required namespace: truncnorm
+## Loading required namespace: Rcpp
+## Loading required package: truncnorm
+## Loading required package: Rcpp
 </code></pre>
 
-<pre><code class="r">print(c(sum(qq.good$qvalues &lt; 0.05), sum(qq.all$qvalues &lt; 0.05)))
+<pre><code class="r">system.time(res2 &lt;- mixEM(lik, prior, pi.init))
 </code></pre>
 
-<pre><code>## [1] 193 114
+<pre><code>##    user  system elapsed 
+##   0.657   0.016   0.676
 </code></pre>
 
-<p>In contrast, if you use adaptive shrinkage, it makes no difference whether you use all the observations or the just the good ones -
-the noise is ignored (as it should be!)</p>
-
-<pre><code class="r">library(&quot;ashr&quot;)
+<pre><code class="r">length(res2$B)
 </code></pre>
 
-<pre><code>## Loading required package: truncnorm
-## Loading required package: SQUAREM
+<pre><code>## [1] 320
 </code></pre>
 
-<pre><code class="r">library(&quot;locfdr&quot;)
+<pre><code class="r">res2$B[length(res2$B)]
 </code></pre>
 
-<pre><code>## Loading required package: splines
+<pre><code>## [1] -15162.041295
 </code></pre>
 
-<pre><code class="r">beta.ash.all = ash(betahat,s,method=&quot;fdr&quot;)
+<p>The number of iterations for the ash implementation is 320 and the objective achieved
+is -1.5162041295002 &times; 10<sup>4</sup>.</p>
+
+<p>Now try a bigger sample, just comparing EM and squareEM</p>
+
+<pre><code class="r">set.seed(100)
+sampsize = 5e+05
+sd = c(1, 1.1, 1.2)
+z = rnorm(sampsize, 0, sample(sd, sampsize, replace = TRUE))
+lik = t(vapply(z, dnorm, sd, sd = sd))
+prior = c(1, 1, 1)
+pi.init = c(0.3, 0.2, 0.5)
+res = turboem(par = pi.init, control.run = list(convtype = &quot;objfn&quot;, tol = 1e-05), 
+    fixptfn = fixpoint, objfn = penloglik, pconstr = pconstr, method = c(&quot;em&quot;, 
+        &quot;squarem&quot;), matrix_lik = lik, prior = prior)
+options(digits = 13)
+res
 </code></pre>
 
-<pre><code>## [1] &quot;normal likelihood&quot;
-</code></pre>
-
-<pre><code class="r">beta.ash.good = ash(betahat[p$type==&quot;GOOD&quot;],s[p$type==&quot;GOOD&quot;],method=&quot;fdr&quot;)
-</code></pre>
-
-<pre><code>## [1] &quot;normal likelihood&quot;
-</code></pre>
-
-<pre><code class="r">beta.ash.all.z = ash(betahat/s,1,method=&quot;fdr&quot;)
-</code></pre>
-
-<pre><code>## [1] &quot;normal likelihood&quot;
-</code></pre>
-
-<pre><code class="r">beta.ash.good.z = ash(betahat[p$type==&quot;GOOD&quot;]/s[p$type==&quot;GOOD&quot;],1,method=&quot;fdr&quot;)
-</code></pre>
-
-<pre><code>## [1] &quot;normal likelihood&quot;
-</code></pre>
-
-<pre><code class="r">beta.locfdr.all.z = locfdr(betahat/s,nulltype=0,plot=0)
-beta.locfdr.good.z = locfdr(betahat[p$type==&quot;GOOD&quot;]/s[p$type==&quot;GOOD&quot;],nulltype=0,plot=0)
-res = rbind(data.frame(x=beta.ash.good$lfsr,y=beta.ash.all$lfsr[p$type==&quot;GOOD&quot;],type=&quot;ash&quot;), 
-            #data.frame(x=beta.ash.good.z$lfsr,y=beta.ash.all.z$lfsr[p$type==&quot;GOOD&quot;],type=&#39;ash, z scores&#39;),
-            data.frame(x=beta.locfdr.good.z$fdr,y=beta.locfdr.all.z$fdr[p$type==&quot;GOOD&quot;],type=&#39;locfdr&#39;), 
-            data.frame(x= qq.good$qvalues, y = qq.all$qvalues[p$type==&quot;GOOD&quot;],type=&quot;qvalue&quot;) )
-
-pdf(&quot;figures/good_vs_all.pdf&quot;,height=3,width=6.5)
-  pp= ggplot(data=res,aes(x,y)) +geom_point(shape=1) +
-        facet_grid(. ~ type) +
-      geom_abline(colour = &quot;black&quot;) +
-        xlab(&quot;lfsr/lfdr/qvalue (Good data only)&quot;) +
-        ylab(&quot;lfsr/lfdr/qvalue (All data)&quot;)
-
-
-  print(pp +scale_y_continuous(limits=c(0,1)) +
-          scale_x_continuous(limits=c(0,1))  +
-          coord_equal(ratio=1))
-
-dev.off()
-</code></pre>
-
-<pre><code>## pdf 
-##   2
+<pre><code>##    method     value.objfn  itr fpeval objfeval convergence elapsed.time
+## 1      em -758092.1615915 1500   1500     1501       FALSE      309.421
+## 2 squarem -758092.0206264  116    231      195        TRUE       49.537
 </code></pre>
 
 </body>

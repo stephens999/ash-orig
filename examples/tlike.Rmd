@@ -1,0 +1,59 @@
+% ash with student-t likelihood
+% Sen Tian
+% 05/26/2014
+
+```{r, include=FALSE}
+library(ashr)
+```
+
+```{r setup, include=FALSE}
+# set global chunk options
+opts_chunk$set(warning=FALSE)
+dep_auto()
+```
+ 
+# Examples of using the student-t likelihood
+- If 'df' option is specified in function 'ash', the student-t likelihood is applied.
+- student-t likelihood with normal mixture is not yet implemented
+
+### Example1.1: density estimations with two different likelihoods
+```{r, echo=TRUE}
+  simdata = function(n, nnull, altmean, altsd, betasd, df) {
+    null = c(rep(1, nnull), rep(0, n - nnull))
+    beta = c(rep(0, nnull), rnorm(n - nnull, altmean, altsd))
+    betahat =  beta + betasd * rt(n,df)
+    return(list(null = null, beta = beta, betahat = betahat, betasd = betasd))
+  }
+  
+  ss = simdata(1000, 800, 0, 2, 1, 1.5)
+  beta.ash.u_n = ash(ss$betahat, ss$betasd, mixcompdist="uniform",method="shrink", cxx=FALSE)
+  beta.ash.u_t1 = ash(ss$betahat, ss$betasd, mixcompdist="uniform",method="shrink", cxx=FALSE,df=1.5)
+  beta.ash.u_t2 = ash(ss$betahat, ss$betasd, mixcompdist="uniform",method="shrink", cxx=FALSE,df=5)
+  beta.ash.u_t1n = ash(ss$betahat, ss$betasd, mixcompdist="uniform",method="fdr", cxx=FALSE,df=1.5)
+  
+  # plot the cdf
+  x = seq(-6, 6, length = 1000)
+  plot(ecdf(ss$beta), main="CDF, Uniform mixture",xlim=c(-6,6))
+  lines(x,cdf.ash(beta.ash.u_n,x)$y,col=2,lwd=2)
+  lines(x,cdf.ash(beta.ash.u_t1,x)$y,col=3,lwd=2)
+  lines(x,cdf.ash(beta.ash.u_t2,x)$y,col=4,lwd=2)
+  lines(x,cdf.ash(beta.ash.u_t1n,x)$y,col=5,lwd=2)
+  legend("topleft",legend = c("normal-lik","t-lik,df=1.5","t-lik, df=5","t-lik, df=1.5, fdr"), 
+         col = c(2,3,4,5), lwd = c(2,2,2,2))
+```
+
+### Example1.2: density estimation with student-t likelihood and normal likelihood with quasi df
+```{r, echo=TRUE}
+  effective.effect=function(betahat,se,df){
+    p = pt(betahat/se,df)
+    qnorm(p,sd=se)
+  }
+  ss$betahat = effective.effect(ss$betahat,ss$betasd,1.5)
+  beta.ash.u_n1 =  ash(ss$betahat, ss$betasd, mixcompdist="uniform",method="shrink", cxx=FALSE)
+  plot(ecdf(ss$beta), main="CDF, Uniform mixture",xlim=c(-6,6))
+  lines(x,cdf.ash(beta.ash.u_n1,x)$y,col=2,lwd=2)
+  lines(x,cdf.ash(beta.ash.u_t1,x)$y,col=3,lwd=2)
+  legend("topleft",legend = c("normal-lik with quasi df=1.5","t-lik,df=1.5"), 
+         col = c(2,3), lwd = c(2,2))
+```
+

@@ -1,0 +1,102 @@
+The aim here is to use the SQUAREM package to improve the speed of convergence of the EM algorithm.
+
+First here is our existing implementation.
+
+```{r}
+mixEM = function(matrix_lik, prior, pi.init = NULL,tol=0.0001, maxiter=5000){
+  n=nrow(matrix_lik)
+  k=ncol(matrix_lik)
+  B = rep(0,maxiter)
+  pi = pi.init
+  if(is.null(pi.init)){
+    pi = rep(1/k,k)# Use as starting point for pi
+  } 
+  pi = ifelse(pi<1e-5,1e-5,pi) #set any estimates that are too small to be just very small
+  pi = normalize(pi)
+  
+  loglik = rep(0,maxiter)
+  priordens= rep(0,maxiter)
+  m  = t(pi * t(matrix_lik)) # matrix_lik is n by k; so this is also n by k
+  m.rowsum = rowSums(m)
+  loglik[1] = sum(log(m.rowsum))
+  priordens[1] = sum((prior-1)*log(pi)) 
+  classprob = m/m.rowsum #an n by k matrix
+  i=1
+  if(maxiter >= 2){
+    for(i in 2:maxiter){  
+      pi = colSums(classprob) + prior-1
+      pi = ifelse(pi<1e-5,1e-5,pi) #set any estimates that are less than zero, which can happen with prior<1, to 0
+      pi = normalize(pi)
+        
+      #Now re-estimate pi
+      m  = t(pi * t(matrix_lik)) 
+      m.rowsum = rowSums(m)
+      loglik[i] = sum(log(m.rowsum))
+      priordens[i] = sum((prior-1)*log(pi)) 
+      classprob = m/m.rowsum
+    
+    
+      if(abs(loglik[i]+priordens[i]-loglik[i-1]-priordens[i-1])<tol) break;
+    }
+  }
+  converged=(abs(loglik[i]+priordens[i]-loglik[i-1]-priordens[i-1])<tol)
+  if(!converged){
+      warning("EM algorithm in function mixEM failed to converge. Results may be unreliable. Try increasing maxiter and rerunning.")
+  }
+  return(list(pihat = pi, B=loglik[1:i], 
+              niter = i, converged=converged))
+}
+```
+
+Now a new implementation based on SQUAREM
+```{r}
+normalize=function(x){return(x/sum(x))}
+library(SQUAREM)
+
+fixpoint = function(pi, matrix_lik, prior){  
+  m  = t(pi * t(matrix_lik)) # matrix_lik is n by k; so this is also n by k
+  m.rowsum = rowSums(m)
+  classprob = m/m.rowsum #an n by k matrix
+  pinew = normalize(colSums(classprob) + prior-1)
+  return(pinew)
+}
+
+penloglik = function(pi, matrix_lik, prior){
+  m  = t(pi * t(matrix_lik)) # matrix_lik is n by k; so this is also n by k
+  m.rowsum = rowSums(m)
+  loglik = sum(log(m.rowsum))
+  priordens = sum((prior-1)*log(pi))
+  return(loglik+priordens)
+}
+
+mixEM2 = function(matrix_lik, prior, pi.init = NULL,tol=1e-7, maxiter=5000){
+  if(is.null(pi.init)){
+    pi = rep(1/k,k)# Use as starting point for pi
+  } 
+  res = squarem(par=pi.init,fixptfn=fixpoint, objfn=penloglik,matrix_lik=matrix_lik, prior=prior, control=list(maxiter=maxiter,tol=tol))
+  return(list(pihat = res$par, B=res$value.objfn, 
+              niter = res$iter, converged=res$convergence))
+}
+
+```
+
+Now simulate some data
+```{r}
+set.seed(100)
+  sampsize=100000
+  sd = c(1,1.1,1.2)
+  z = rnorm(sampsize,0,sample(sd,sampsize,replace=TRUE))
+  lik = t(vapply(z,dnorm,sd,sd=sd))
+  prior=c(1,1,1)
+  pi.init=c(0.3,0.2,0.5)
+```
+
+```{r}
+  system.time(res1<-mixEM(lik,prior,pi.init))
+  system.time(res2<-mixEM2(lik, prior, pi.init))
+  options(digits=13)
+  res1
+  res2
+```
+
+

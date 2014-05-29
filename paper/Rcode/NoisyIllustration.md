@@ -89,6 +89,7 @@ library("ashr")
 
 ```
 ## Loading required package: truncnorm
+## Loading required package: SQUAREM
 ```
 
 ```r
@@ -101,9 +102,37 @@ library("locfdr")
 
 ```r
 beta.ash.all = ash(betahat,s,method="fdr")
+```
+
+```
+## [1] "normal likelihood"
+```
+
+```r
 beta.ash.good = ash(betahat[p$type=="GOOD"],s[p$type=="GOOD"],method="fdr")
+```
+
+```
+## [1] "normal likelihood"
+```
+
+```r
 beta.ash.all.z = ash(betahat/s,1,method="fdr")
+```
+
+```
+## [1] "normal likelihood"
+```
+
+```r
 beta.ash.good.z = ash(betahat[p$type=="GOOD"]/s[p$type=="GOOD"],1,method="fdr")
+```
+
+```
+## [1] "normal likelihood"
+```
+
+```r
 beta.locfdr.all.z = locfdr(betahat/s,nulltype=0,plot=0)
 beta.locfdr.good.z = locfdr(betahat[p$type=="GOOD"]/s[p$type=="GOOD"],nulltype=0,plot=0)
 res = rbind(data.frame(x=beta.ash.good$lfsr,y=beta.ash.all$lfsr[p$type=="GOOD"],type="ash"), 
