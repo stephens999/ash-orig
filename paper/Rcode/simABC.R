@@ -16,6 +16,9 @@ ashsim=function(mixmean,mixsd,mixpi,bsd=1,seedval = 100,nsamp=1000,niter=50){
   fit.ash.true = list()
   fit.mixfdr= list()
   fit.ash.fdr.n = list()
+  fit.ash.fdr.u = list()
+  fit.ash.fdr.hu = list()
+  
   
   fit.mixfdr.enull= list()
   fit.mixfdr.J10= list()
@@ -37,8 +40,8 @@ ashsim=function(mixmean,mixsd,mixpi,bsd=1,seedval = 100,nsamp=1000,niter=50){
     fit.mixfdr[[i]] = mixFdr(betahat[[i]]/betahatsd[[i]],noiseSD=1,theonull=TRUE,plot=FALSE)
     
     fit.ash.fdr.n[[i]] = ash(betahat[[i]],betahatsd[[i]],mixcompdist="normal",method="fdr")
-    #fit.ash.fdr.u[[i]] = ash(betahat[[i]],betahatsd[[i]],mixcompdist="uniform", method="fdr")
-    #fit.ash.fdr.hu[[i]] = ash(betahat[[i]],betahatsd[[i]],mixcompdist="halfuniform", method="fdr")
+    fit.ash.fdr.u[[i]] = ash(betahat[[i]],betahatsd[[i]],mixcompdist="uniform", method="fdr")
+    fit.ash.fdr.hu[[i]] = ash(betahat[[i]],betahatsd[[i]],mixcompdist="halfuniform", method="fdr")
     fit.mixfdr.enull[[i]] = mixFdr(betahat[[i]]/betahatsd[[i]],noiseSD=1,theonull=FALSE,plot=FALSE)
     fit.mixfdr.J10[[i]] = mixFdr(betahat[[i]]/betahatsd[[i]],noiseSD=1,theonull=TRUE,plot=FALSE,J=10)
     #fit.mixfdr.J100[[i]] = mixFdr(betahat[[i]]/betahatsd[[i]],noiseSD=1,theonull=TRUE,plot=FALSE,J=100)
@@ -63,7 +66,7 @@ ashsim=function(mixmean,mixsd,mixpi,bsd=1,seedval = 100,nsamp=1000,niter=50){
 } 
 
 set.seed(111)
-simA= ashsim(c(0,0,0),c(1,1,2),c(1/3,1/3,1/3),niter=20,nsamp=1000)
-simB= ashsim(c(-1.5,-1,-0.5,0,0.5,1,1.5),rep(0.5,7),rep(1/7,7),niter=20,nsamp=1000)
-simC= ashsim(c(-2,-1,0,1),c(2,1.5,1,1),c(1/4,1/4,1/3,1/6),niter=20,nsamp=1000)
+simA= ashsim(c(0,0,0),c(1,1,2),c(1/3,1/3,1/3),niter=100,nsamp=1000)
+simB= ashsim(c(-1.5,-1,-0.5,0,0.5,1,1.5),rep(0.5,7),rep(1/7,7),niter=100,nsamp=1000)
+simC= ashsim(c(-2,-1,0,1),c(2,1.5,1,1),c(1/4,1/4,1/3,1/6),niter=100,nsamp=1000)
 save.image(file="simABC.RData")

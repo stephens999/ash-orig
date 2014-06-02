@@ -17,6 +17,7 @@ basicsim=function(mixsd,mixpi_alt,bsd=1,minpi0=0,seedval = 100,nsamp=1000,niter=
   pval = list()
   betahat.ash.n = list()
   betahat.ash.u = list()
+  betahat.ash.ur = list()
   betahat.ash.npm = list()
   betahat.ash.true = list()
   betahat.qval = list()
@@ -35,6 +36,7 @@ basicsim=function(mixsd,mixpi_alt,bsd=1,minpi0=0,seedval = 100,nsamp=1000,niter=
     pval[[i]] = pchisq(zscore[[i]]^2,df=1,lower.tail=F)
     betahat.ash.n[[i]] = ash(betahat[[i]],betahatsd[[i]],pointmass=TRUE,prior="nullbiased",gridmult=2)
     betahat.ash.u[[i]] = ash(betahat[[i]],betahatsd[[i]],pointmass=TRUE,prior="uniform",gridmult=2)
+    betahat.ash.ur[[i]] = ash(betahat[[i]],betahatsd[[i]],pointmass=TRUE,prior="uniform",randomstart=TRUE,gridmult=2)
     betahat.ash.npm[[i]] = ash(betahat[[i]],betahatsd[[i]],pointmass=FALSE,prior="uniform",gridmult=2)
     betahat.ash.true[[i]] = ash(betahat[[i]],betahatsd[[i]],g=normalmix(mixpi,rep(0,length(mixpi)),mixsd))
     

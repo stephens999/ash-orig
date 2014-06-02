@@ -65,7 +65,8 @@ penloglik = function(pi, matrix_lik, prior){
   m  = t(pi * t(matrix_lik)) # matrix_lik is n by k; so this is also n by k
   m.rowsum = rowSums(m)
   loglik = sum(log(m.rowsum))
-  priordens = sum((prior-1)*log(pi))
+  subset = (prior-1) != 0
+  priordens = sum((prior-1)[subset]*log(pi[subset]))
   return(loglik+priordens)
 }
 
@@ -78,11 +79,27 @@ mixEM2 = function(matrix_lik, prior, pi.init = NULL,tol=1e-7, maxiter=5000){
               niter = res$iter, converged=res$convergence))
 }
 
+#as above but with initial iterations done with smaller sample sizes
+#and tolerance set according to sample size
+mixEM3 = function(matrix_lik, prior, pi.init = NULL,tol=1e-7, maxiter=5000){
+  if(is.null(pi.init)){
+    pi = rep(1/k,k)# Use as starting point for pi
+  } 
+  n = nrow(matrix_lik)
+  if(n>1000){       
+    res = squarem(par=pi.init,fixptfn=fixpoint, objfn=penloglik,matrix_lik=matrix_lik[1:1000,], prior=prior, control=list(maxiter=maxiter,tol=1e-3,trace=TRUE))
+    pi.init = res$par
+    print(pi.init)
+  }
+  res = squarem(par=pi.init,fixptfn=fixpoint, objfn=penloglik,matrix_lik=matrix_lik, prior=prior, control=list(maxiter=maxiter,tol=tol,trace=TRUE))
+  return(list(pihat = res$par, B=res$value.objfn, 
+              niter = res$iter, converged=res$convergence))
+}
 ```
 
 Now simulate some data
 ```{r}
-set.seed(100)
+  set.seed(100)
   sampsize=100000
   sd = c(1,1.1,1.2)
   z = rnorm(sampsize,0,sample(sd,sampsize,replace=TRUE))
@@ -94,9 +111,30 @@ set.seed(100)
 ```{r}
   system.time(res1<-mixEM(lik,prior,pi.init))
   system.time(res2<-mixEM2(lik, prior, pi.init))
+   system.time(res3<-mixEM3(lik, prior, pi.init))
   options(digits=13)
   res1
   res2
+  res3
 ```
 
+What we found: subsetting by initially running on only 1000 data points
+did not work so well - it converged to a value of pi that was pretty different from
+the mle for all 100,000 so didn't really save anything.
+
+
+This section just to run 100 times to see if any warnings results
+```{r}
+#   options(warn=2)
+#    for(i in 1:100){
+#      set.seed(i)
+#     z0 = rnorm(sampsize,0,1)
+#     sd=c(1,2,4,8,16,32)
+#     prior=c(1,1,1,1,1,1)
+#     pi.init=c(1,1,1,1,1,1)/6
+#     lik = t(vapply(z0,dnorm,sd,sd=sd))
+#     print(i)
+#     res2[[i]]<-mixEM2(lik, prior, pi.init)
+#     }
+```
 

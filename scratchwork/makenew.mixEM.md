@@ -72,13 +72,34 @@ penloglik = function(pi, matrix_lik, prior) {
     m = t(pi * t(matrix_lik))  # matrix_lik is n by k; so this is also n by k
     m.rowsum = rowSums(m)
     loglik = sum(log(m.rowsum))
-    priordens = sum((prior - 1) * log(pi))
+    subset = (prior - 1) != 0
+    priordens = sum((prior - 1)[subset] * log(pi[subset]))
     return(loglik + priordens)
 }
 
 mixEM2 = function(matrix_lik, prior, pi.init = NULL, tol = 1e-07, maxiter = 5000) {
     if (is.null(pi.init)) {
         pi = rep(1/k, k)  # Use as starting point for pi
+    }
+    res = squarem(par = pi.init, fixptfn = fixpoint, objfn = penloglik, matrix_lik = matrix_lik, 
+        prior = prior, control = list(maxiter = maxiter, tol = tol))
+    return(list(pihat = res$par, B = res$value.objfn, niter = res$iter, converged = res$convergence))
+}
+
+# as above but with initial iterations done with smaller sample sizes and
+# tolerance set according to sample size
+mixEM3 = function(matrix_lik, prior, pi.init = NULL, tol = 1e-07, maxiter = 5000) {
+    if (is.null(pi.init)) {
+        pi = rep(1/k, k)  # Use as starting point for pi
+    }
+    n = nrow(matrix_lik)
+    o = order(apply(matrix_lik, 1, max) - matrix_lik[, 1])  #order according to increasing evidence against 'null'
+    if (n > 1000) {
+        subset = trunc(seq(1, n, length = 1000))
+        res = squarem(par = pi.init, fixptfn = fixpoint, objfn = penloglik, 
+            matrix_lik = matrix_lik[o[subset], ], prior = prior, control = list(maxiter = maxiter, 
+                tol = 0.001))
+        pi.init = res$par
     }
     res = squarem(par = pi.init, fixptfn = fixpoint, objfn = penloglik, matrix_lik = matrix_lik, 
         prior = prior, control = list(maxiter = maxiter, tol = tol))
@@ -107,7 +128,7 @@ system.time(res1 <- mixEM(lik, prior, pi.init))
 
 ```
 ##    user  system elapsed 
-##   7.693   0.509   8.215
+##   8.392   0.499   9.020
 ```
 
 ```r
@@ -116,7 +137,16 @@ system.time(res2 <- mixEM2(lik, prior, pi.init))
 
 ```
 ##    user  system elapsed 
-##   4.486   0.540   5.035
+##   5.053   0.429   5.505
+```
+
+```r
+system.time(res2 <- mixEM3(lik, prior, pi.init))
+```
+
+```
+##    user  system elapsed 
+##   5.430   0.332   5.774
 ```
 
 ```r
@@ -238,17 +268,34 @@ res2
 
 ```
 ## $pihat
-## [1] 0.4216196639686 0.2065624547989 0.3718178812326
+## [1] 0.4222496842368 0.2053470775886 0.3724032381746
 ## 
 ## $B
-## [1] -151284.5697424
+## [1] -151284.5697135
 ## 
 ## $niter
-## [1] 59
+## [1] 60
 ## 
 ## $converged
 ## [1] TRUE
 ```
 
+```r
+res3
+```
+
+```
+## Error: object 'res3' not found
+```
+
+
+This section just to run 100 times to see if any warnings results
+
+```r
+# options(warn=2) for(i in 1:100){ set.seed(i) z0 = rnorm(sampsize,0,1)
+# sd=c(1,2,4,8,16,32) prior=c(1,1,1,1,1,1) pi.init=c(1,1,1,1,1,1)/6 lik =
+# t(vapply(z0,dnorm,sd,sd=sd)) print(i) res2[[i]]<-mixEM2(lik, prior,
+# pi.init) }
+```
 
 
