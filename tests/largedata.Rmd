@@ -4,7 +4,7 @@
   require(ashr)
   eg5 = matrix(scan("~/Dropbox/eg.j5.txt"), byrow=TRUE, nrow=2)
   temp1=ash(eg5[1,],eg5[2,],cxx=FALSE)
-  temp2=fast.ash(eg5[1,],eg5[2,],prior="nullbiased",pointmass=TRUE,gridmult=2,cxx=FALSE)
+  #temp2=fast.ash(eg5[1,],eg5[2,],prior="nullbiased",pointmass=TRUE,gridmult=2,cxx=FALSE)
 
 
 ```
@@ -12,7 +12,7 @@
 ```{r}
   eg9 = matrix(scan("~/Dropbox/eg.j9.txt"), byrow=TRUE, nrow=2)
   temp1=ash(eg9[1,],eg9[2,],cxx=FALSE)
-  temp2=fast.ash(eg9[1,],eg9[2,],prior="nullbiased",pointmass=TRUE,gridmult=2,cxx=FALSE)
+  #temp2=fast.ash(eg9[1,],eg9[2,],prior="nullbiased",pointmass=TRUE,gridmult=2,cxx=FALSE)
 
 ```
 
@@ -22,6 +22,8 @@
   z = rnorm(100000)
   z.ash = ash(z,1,cxx=FALSE,method="fdr")
   z.ash2 = ash(z,1,method="fdr")
+  z.ash$fitted.g
+  z.ash2$fitted.g
 ```
 
 
