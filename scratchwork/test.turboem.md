@@ -17,12 +17,12 @@ fixpoint = function(pi, matrix_lik, prior) {
     return(pinew)
 }
 
-penloglik = function(pi, matrix_lik, prior) {
+negpenloglik = function(pi, matrix_lik, prior) {
     m = t(pi * t(matrix_lik))  # matrix_lik is n by k; so this is also n by k
     m.rowsum = rowSums(m)
     loglik = sum(log(m.rowsum))
     priordens = sum((prior - 1) * log(pi))
-    return(loglik + priordens)
+    return(-(loglik + priordens))
 }
 
 # Note this doesn't impose the constraint that they have to sum to 1...
@@ -73,18 +73,27 @@ library(turboEM)
 
 ```r
 res = turboem(par = pi.init, control.run = list(convtype = "objfn", tol = 1e-05), 
-    fixptfn = fixpoint, objfn = penloglik, pconstr = pconstr, method = c("em", 
+    fixptfn = fixpoint, objfn = negpenloglik, pconstr = pconstr, method = c("em", 
         "squarem", "pem", "decme", "qn"), matrix_lik = lik, prior = prior)
+```
+
+```
+## Warning: NaNs produced
+## Warning: NaNs produced
+## Warning: NaNs produced
+```
+
+```r
 options(digits = 13)
 res
 ```
 
 ```
-##    method     value.objfn  itr fpeval objfeval convergence elapsed.time
-## 1      em -15161.96849170 1500   1500     1501       FALSE        4.634
-## 2 squarem -15161.69884713   22     43       25        TRUE        0.163
-## 3     pem -15161.90144876 1500   3010     3001       FALSE        9.081
-## 5      qn -15161.70968009  913    917     1827        TRUE        6.255
+##    method    value.objfn  itr fpeval objfeval convergence elapsed.time
+## 1      em 15161.96849170 1500   1500     1501       FALSE        3.107
+## 2 squarem 15161.69882417   18     35       19        TRUE        0.070
+## 3     pem 15161.70092168   13     36      102        TRUE        0.168
+## 5      qn 15161.70340886    8     12       16        TRUE        0.215
 ## 
 ## Acceleration scheme 4 (decme) failed
 ```
@@ -97,8 +106,10 @@ devtools::load_all("../package/ashr")
 ```
 ## Loading ashr
 ## Loading required namespace: truncnorm
+## Loading required namespace: SQUAREM
 ## Loading required namespace: Rcpp
 ## Loading required package: truncnorm
+## Loading required package: SQUAREM
 ## Loading required package: Rcpp
 ```
 
@@ -108,7 +119,7 @@ system.time(res2 <- mixEM(lik, prior, pi.init))
 
 ```
 ##    user  system elapsed 
-##   0.657   0.016   0.676
+##   0.053   0.003   0.145
 ```
 
 ```r
@@ -116,7 +127,7 @@ length(res2$B)
 ```
 
 ```
-## [1] 320
+## [1] 1
 ```
 
 ```r
@@ -124,12 +135,12 @@ res2$B[length(res2$B)]
 ```
 
 ```
-## [1] -15162.041295
+## [1] 15161.69882417
 ```
 
 
-The number of iterations for the ash implementation is 320 and the objective achieved
-is -1.5162041295002 &times; 10<sup>4</sup>.
+The number of iterations for the ash implementation is 1 and the objective achieved
+is 1.5161698824165 &times; 10<sup>4</sup>.
 
 Now try a bigger sample, just comparing EM and squareEM
 
@@ -149,9 +160,26 @@ res
 ```
 
 ```
-##    method     value.objfn  itr fpeval objfeval convergence elapsed.time
-## 1      em -758092.1615915 1500   1500     1501       FALSE      309.421
-## 2 squarem -758092.0206264  116    231      195        TRUE       49.537
+##    method    value.objfn  itr fpeval objfeval convergence elapsed.time
+## 1      em 758092.1615915 1500   1500     1501       FALSE      240.405
+## 2 squarem 758092.0206260   23     45       24        TRUE        7.383
 ```
 
+
+Now run the squarem package directly
+
+```r
+library(SQUAREM)
+system.time(res3 <- squarem(par = pi.init, fixptfn = fixpoint, objfn = penloglik, 
+    matrix_lik = lik, prior = prior))
+```
+
+```
+##    user  system elapsed 
+##   6.331   0.702   7.058
+```
+
+
+It seems from this limited assessment that i) the squareEM approach is the most effective,
+and ii) the SQUAREM package implementation is faster then the turboem implementation.
 

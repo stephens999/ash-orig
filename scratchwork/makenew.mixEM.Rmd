@@ -61,20 +61,20 @@ fixpoint = function(pi, matrix_lik, prior){
   return(pinew)
 }
 
-penloglik = function(pi, matrix_lik, prior){
+negpenloglik = function(pi, matrix_lik, prior){
   m  = t(pi * t(matrix_lik)) # matrix_lik is n by k; so this is also n by k
   m.rowsum = rowSums(m)
   loglik = sum(log(m.rowsum))
   subset = (prior-1) != 0
   priordens = sum((prior-1)[subset]*log(pi[subset]))
-  return(loglik+priordens)
+  return(-(loglik+priordens))
 }
 
 mixEM2 = function(matrix_lik, prior, pi.init = NULL,tol=1e-7, maxiter=5000){
   if(is.null(pi.init)){
     pi = rep(1/k,k)# Use as starting point for pi
   } 
-  res = squarem(par=pi.init,fixptfn=fixpoint, objfn=penloglik,matrix_lik=matrix_lik, prior=prior, control=list(maxiter=maxiter,tol=tol))
+  res = squarem(par=pi.init,fixptfn=fixpoint, objfn=negpenloglik,matrix_lik=matrix_lik, prior=prior, control=list(maxiter=maxiter,tol=tol))
   return(list(pihat = res$par, B=res$value.objfn, 
               niter = res$iter, converged=res$convergence))
 }
@@ -87,11 +87,11 @@ mixEM3 = function(matrix_lik, prior, pi.init = NULL,tol=1e-7, maxiter=5000){
   } 
   n = nrow(matrix_lik)
   if(n>1000){       
-    res = squarem(par=pi.init,fixptfn=fixpoint, objfn=penloglik,matrix_lik=matrix_lik[1:1000,], prior=prior, control=list(maxiter=maxiter,tol=1e-3,trace=TRUE))
+    res = squarem(par=pi.init,fixptfn=fixpoint, objfn=negpenloglik,matrix_lik=matrix_lik[1:1000,], prior=prior, control=list(maxiter=maxiter,tol=1e-3,trace=TRUE))
     pi.init = res$par
     print(pi.init)
   }
-  res = squarem(par=pi.init,fixptfn=fixpoint, objfn=penloglik,matrix_lik=matrix_lik, prior=prior, control=list(maxiter=maxiter,tol=tol,trace=TRUE))
+  res = squarem(par=pi.init,fixptfn=fixpoint, objfn=negpenloglik,matrix_lik=matrix_lik, prior=prior, control=list(maxiter=maxiter,tol=tol,trace=TRUE))
   return(list(pihat = res$par, B=res$value.objfn, 
               niter = res$iter, converged=res$convergence))
 }

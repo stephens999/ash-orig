@@ -14,12 +14,12 @@ fixpoint = function(pi, matrix_lik, prior){
   return(pinew)
 }
 
-penloglik = function(pi, matrix_lik, prior){
+negpenloglik = function(pi, matrix_lik, prior){
   m  = t(pi * t(matrix_lik)) # matrix_lik is n by k; so this is also n by k
   m.rowsum = rowSums(m)
   loglik = sum(log(m.rowsum))
   priordens = sum((prior-1)*log(pi))
-  return(loglik+priordens)
+  return(-(loglik+priordens))
 }
 
 #Note this doesn't impose the constraint that they have to sum to 1... might be a problem?
@@ -41,7 +41,7 @@ Now simulate some test data
 
 ```{r}
   library(turboEM)
-  res = turboem(par=pi.init, control.run=list(convtype = "objfn",tol=1e-5),fixptfn=fixpoint, objfn=penloglik, pconstr=pconstr,method=c("em", "squarem", "pem","decme","qn"), matrix_lik=lik,prior=prior)
+  res = turboem(par=pi.init, control.run=list(convtype = "objfn",tol=1e-5),fixptfn=fixpoint, objfn=negpenloglik, pconstr=pconstr,method=c("em", "squarem", "pem","decme","qn"), matrix_lik=lik,prior=prior)
   options(digits=13)
   res
   library(devtools)
