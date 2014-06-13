@@ -63,7 +63,7 @@ Now try a bigger sample, just comparing EM and squareEM
   lik = t(vapply(z,dnorm,sd,sd=sd))
   prior=c(1,1,1)
   pi.init=c(0.3,0.2,0.5)
-  res = turboem(par=pi.init, control.run=list(convtype = "objfn",tol=1e-5),fixptfn=fixpoint, objfn=penloglik, pconstr=pconstr,method=c("em", "squarem"), matrix_lik=lik,prior=prior)
+  res = turboem(par=pi.init, control.run=list(convtype = "objfn",tol=1e-5),fixptfn=fixpoint, objfn=negpenloglik, pconstr=pconstr,method=c("em", "squarem"), matrix_lik=lik,prior=prior)
   options(digits=13)
   res
 ```
@@ -71,7 +71,7 @@ Now try a bigger sample, just comparing EM and squareEM
 Now run the squarem package directly
 ```{r}
   library(SQUAREM)
-  system.time(res3<-squarem(par=pi.init,fixptfn=fixpoint, objfn=penloglik,matrix_lik=lik, prior=prior))
+  system.time(res3<-squarem(par=pi.init,fixptfn=fixpoint, objfn=negpenloglik,matrix_lik=lik, prior=prior))
 ```
 
 It seems from this limited assessment that i) the squareEM approach is the most effective,

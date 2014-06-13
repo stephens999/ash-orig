@@ -90,10 +90,10 @@ res
 
 ```
 ##    method    value.objfn  itr fpeval objfeval convergence elapsed.time
-## 1      em 15161.96849170 1500   1500     1501       FALSE        3.107
-## 2 squarem 15161.69882417   18     35       19        TRUE        0.070
-## 3     pem 15161.70092168   13     36      102        TRUE        0.168
-## 5      qn 15161.70340886    8     12       16        TRUE        0.215
+## 1      em 15161.96849170 1500   1500     1501       FALSE        4.118
+## 2 squarem 15161.69882417   18     35       19        TRUE        0.119
+## 3     pem 15161.70092168   13     36      102        TRUE        0.204
+## 5      qn 15161.70340886    8     12       16        TRUE        0.044
 ## 
 ## Acceleration scheme 4 (decme) failed
 ```
@@ -119,7 +119,7 @@ system.time(res2 <- mixEM(lik, prior, pi.init))
 
 ```
 ##    user  system elapsed 
-##   0.053   0.003   0.145
+##   0.080   0.003   0.085
 ```
 
 ```r
@@ -153,7 +153,7 @@ lik = t(vapply(z, dnorm, sd, sd = sd))
 prior = c(1, 1, 1)
 pi.init = c(0.3, 0.2, 0.5)
 res = turboem(par = pi.init, control.run = list(convtype = "objfn", tol = 1e-05), 
-    fixptfn = fixpoint, objfn = penloglik, pconstr = pconstr, method = c("em", 
+    fixptfn = fixpoint, objfn = negpenloglik, pconstr = pconstr, method = c("em", 
         "squarem"), matrix_lik = lik, prior = prior)
 options(digits = 13)
 res
@@ -161,8 +161,8 @@ res
 
 ```
 ##    method    value.objfn  itr fpeval objfeval convergence elapsed.time
-## 1      em 758092.1615915 1500   1500     1501       FALSE      240.405
-## 2 squarem 758092.0206260   23     45       24        TRUE        7.383
+## 1      em 758092.1615915 1500   1500     1501       FALSE      292.048
+## 2 squarem 758092.0206260   23     45       24        TRUE        8.711
 ```
 
 
@@ -170,13 +170,13 @@ Now run the squarem package directly
 
 ```r
 library(SQUAREM)
-system.time(res3 <- squarem(par = pi.init, fixptfn = fixpoint, objfn = penloglik, 
+system.time(res3 <- squarem(par = pi.init, fixptfn = fixpoint, objfn = negpenloglik, 
     matrix_lik = lik, prior = prior))
 ```
 
 ```
 ##    user  system elapsed 
-##   6.331   0.702   7.058
+##   7.494   0.949   8.459
 ```
 
 
