@@ -6,9 +6,12 @@
 
 
 ```{r}
-  z = c(rnorm(1000,0,1),rnorm(1000,0,2))
-  z.ash= ash(z,1,mixcompdist="uniform",method="fdr")
-  z.ash$fit$g
+  z = c(rt(1000,df=10),4*rt(1000,df=10))
+  z.ash.u= ash(z,1,mixcompdist="uniform",method="fdr",df=10)
+  z.ash.hu = ash(z,1,mixcompdist="halfuniform",method="fdr",df=10)
+  z.ash.u$fit$g
+  z.ash.hu$fit$g
+  z.ash.u$lfsr
 ```
 
 ```{r}
