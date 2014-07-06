@@ -3,9 +3,11 @@ base
 fdrtool
 ggplot2
 knitr
-lattice
 locfdr
+mgcv
 mixfdr
+nlme
 qvalue
 reshape2
+SQUAREM
 truncnorm

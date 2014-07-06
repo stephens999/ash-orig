@@ -3,7 +3,7 @@ library(shiny)
 #plot a histogram of z scores, highlighting the alternative distribution
 #of z scores that is implied by pi0
 nullalthist_z = function(z,pi0,nullcol="blue",altcol="cyan",...){
-  h=hist(z, freq=FALSE,col=nullcol,nclass=ncz,ylim=c(-0.5,0.5),...)
+  h=hist(z, freq=FALSE,col=nullcol,nclass=40,ylim=c(-0.5,0.5),...)
   nb = length(h$breaks)
   nullexp = pi0 * (pnorm(h$breaks)[-1] - pnorm(h$breaks[-nb]))/(h$breaks[-1]-h$breaks[-nb])
   h$density = h$density - nullexp

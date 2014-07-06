@@ -7,33 +7,42 @@ unnamed-chunk-7	$	hh.pval	hh.q	plot_FDReg_hist
 unnamed-chunk-8	fdrtool	hh.pval	hh.zscore	locfdr	mixFdr	require
 unnamed-chunk-9	$	hh.pval	hh.q	plot_FDReg_hist
 unnamed-chunk-10	$	$<-	cut	hh.fdrtool	hh.zscore	hist	lapply	mean	ncz	plot	split	unlist
-unnamed-chunk-11	^	c	F	library	pchisq	rep	rnorm	set.seed
-unnamed-chunk-12	c	plot_FDReg_hist	pval
-unnamed-chunk-13	c	plot_FDReg_hist	pval
-unnamed-chunk-14	c	plot_FDReg_hist	pval
-unnamed-chunk-15	pval	qvalue
-unnamed-chunk-16	$	c	plot_FDReg_hist	pval	qq.good
-unnamed-chunk-17	$	c	plot_FDReg_hist	pval	qq.all
-unnamed-chunk-18	c	dnorm	lines	plot	seq
-unnamed-chunk-19	c	dnorm	plot	seq
-unnamed-chunk-2	^	ash	F	pchisq	qvalue	rnorm	set.seed
-unnamed-chunk-2	^	ash	F	pchisq	qvalue	rnorm	set.seed
-unnamed-chunk-2	^	ash	F	pchisq	qvalue	rnorm	set.seed
-unnamed-chunk-2	^	ash	F	pchisq	qvalue	rnorm	set.seed
-unnamed-chunk-2	^	ash	F	pchisq	qvalue	rnorm	set.seed
-unnamed-chunk-2	^	ash	F	pchisq	qvalue	rnorm	set.seed
-unnamed-chunk-2	^	ash	F	pchisq	qvalue	rnorm	set.seed
-unnamed-chunk-2	^	ash	F	pchisq	qvalue	rnorm	set.seed
-unnamed-chunk-2	^	ash	F	pchisq	qvalue	rnorm	set.seed
+unnamed-chunk-11	>	paste0	read.table	rowSums
+unnamed-chunk-12	head	x
+unnamed-chunk-13	<	>	ash	ifelse	load	pt	qvalue	return	T	xx	zdat
+unnamed-chunk-14	$	plot_FDReg_hist	pval	qvalue
+unnamed-chunk-15	hist	log10	xx
+unnamed-chunk-16	!	$	highxp	plot_FDReg_hist	pval	qvalue
+unnamed-chunk-17	$	plot_FDReg_hist	pval.high	qval.high
+unnamed-chunk-18	$	abline	c	highxp	plot	qval	qval.high
+unnamed-chunk-19	c	dnorm	lines	plot	seq
+unnamed-chunk-20	c	dnorm	plot	seq
+unnamed-chunk-21	c	dunif	lines	plot	seq
+unnamed-chunk-22	c	dunif	plot	seq
+unnamed-chunk-23	$	hh.fdrtool	hh.zscore	nullalthist
+unnamed-chunk-24	$	hh.ash	hh.zscore	nullalthist
+unnamed-chunk-25	$	hh.pval	hh.q	plot_FDReg_hist
+unnamed-chunk-26	get_pi0	hh.ash	hh.pval	plot_FDReg_hist
+unnamed-chunk-27	$	abline	c	highxp	plot	qval	qval.high
+unnamed-chunk-28	$	abline	c	highxp	plot	zdat.ash	zdat.ash.high
+unnamed-chunk-29	$	aes	c	coord_equal	data.frame	geom_abline	geom_point	ggplot	Measure	melt	p	print	pval	scale_colour_manual	scale_x_continuous	scale_y_continuous	value	xlab	ylab	zdat.ash
+unnamed-chunk-30	load	source
+unnamed-chunk-31	list	plot_pi0	simres1a
+unnamed-chunk-32	list	plot_lfsr	simres1a	source
+unnamed-chunk-33	list	plot_lfsr	simres1a
+unnamed-chunk-34	c	hist	T	zdat
+unnamed-chunk-35	c	density	hist	lines	seq	T	zdat	zdat.ash
+unnamed-chunk-36	$	abline	c	plot	T	zdat	zdat.ash
+unnamed-chunk-37	dd	order	plot	tail	zdat
+unnamed-chunk-38	
+unnamed-chunk-39	
 session-info	print	sessionInfo
-unnamed-chunk-20	c	dunif	lines	plot	seq
-unnamed-chunk-21	c	dunif	plot	seq
-unnamed-chunk-22	$	hh.fdrtool	hh.zscore	nullalthist
-unnamed-chunk-23	$	hh.ash	hh.zscore	nullalthist
-unnamed-chunk-24	$	hh.pval	hh.q	plot_FDReg_hist
-unnamed-chunk-25	get_pi0	hh.ash	hh.pval	plot_FDReg_hist
-unnamed-chunk-26	<	$	ash	betahat	c	print	s	sum
-unnamed-chunk-27	<	$	beta.ash.all	beta.ash.good	c	data.frame	kable	qq.all	qq.good	row.names<-	sum
-unnamed-chunk-28	$	aes	c	coord_equal	data.frame	geom_abline	geom_point	ggplot	hh.ash	hh.pval	Measure	melt	p	print	scale_colour_manual	scale_x_continuous	scale_y_continuous	value	xlab	ylab
-unnamed-chunk-29	load	source
-unnamed-chunk-30	list	plot_pi0_onlyqval	simres1a	simres2
+unnamed-chunk-40	$	plot	pval	zdat.ash
+unnamed-chunk-41	$	plot	points	pval	zdat.ash
+unnamed-chunk-42	>	$	c	cbind	paste0	pval	read.table	rowSums	zdat.ash
+unnamed-chunk-43	>	$	abline	c	plot	qval	qval.high	xx
+unnamed-chunk-44	>	$	abline	plot	xx	zdat.ash	zdat.ash.high
+unnamed-chunk-45	$	cdf.ash	hh.ash.fdr	hh.ash.shrink	lines	plot	seq
+unnamed-chunk-46	$	cdf.ash	hh.ash.fdr	hh.ash.shrink	lines	plot	seq
+unnamed-chunk-47	>	$	abline	plot	xx	zdat.ash	zdat.ash.high
+unnamed-chunk-48	$	cdf.ash	hh.ash.fdr	hh.ash.shrink	lines	plot	seq

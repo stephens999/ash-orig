@@ -6,8 +6,6 @@
 
 
 
-
-
 # Before we get started: Getting Organized
 
 - Over ~10 years of working with graduate students + postdocs,
@@ -97,14 +95,11 @@ FDR because it involves density estimation rather than tail-area estimation.
 
 
 
-
 ![](figure/unnamed-chunk-3.png) 
-
 
 # Example:  FDR estimation
 
 ![](figure/unnamed-chunk-4.png) 
-
 
 Data from Hedenfalk et al, comparing BRCA1 vs BRCA2 expression.
 
@@ -114,21 +109,17 @@ Data from Hedenfalk et al, comparing BRCA1 vs BRCA2 expression.
 
 
 
-
 # Example: fdr estimation
 
 ![](figure/unnamed-chunk-6.png) 
-
 
 # Example: fdr estimation
 
 ![](figure/unnamed-chunk-7.png) 
 
-
 # Example: fdr estimation
 
 ![](figure/unnamed-chunk-8.png) 
-
 
 # FDR problem 1: different measurement precision
 
@@ -145,7 +136,6 @@ the FDR for other tests
 
 
 
-
 ```
 ##      gene  lv1  lv2   rv1   rv2 genelength
 ## 1   Itm2a 2236 2174  9484 10883       1626
@@ -156,39 +146,153 @@ the FDR for other tests
 ## 8  Eif2b2  736  762  3081  3601       1565
 ```
 
-
 - Data on 150 mouse hearts, dissected into left and right ventricle
 (courtesy Scott Schmemo, Marcelo Nobrega)
 
 
 
+```
+## Error: Error: normal mixture for student-t likelihood is not yet
+## implemented
+```
 
+```
+## Error: object 'cc.assoc' not found
+```
+
+```
+## Error: object 'cc.assoc' not found
+```
+
+```
+## Error: object 'zdat' not found
+```
+
+```
+## Error: object 'tscore' not found
+```
+
+```
+## Error: object 'pval' not found
+```
+
+```
+## Error: object 'pval' not found
+```
+
+```
+## Error: object 'pval.high' not found
+```
+
+```
+## Error: Error: normal mixture for student-t likelihood is not yet
+## implemented
+```
+
+```
+## Error: object 'cc.assoc.high' not found
+```
+
+```
+## Error: object 'cc.assoc.high' not found
+```
 
 # Example: Mouse Heart Data
 
 
-![](figure/unnamed-chunk-12.png) 
 
+```
+## Error: object 'pval' not found
+```
+
+```
+## Error: object 'qval' not found
+```
+
+```
+## Error: object 'qval' not found
+```
+
+```
+## Error: object 'h' not found
+```
+
+```
+## Error: plot.new has not been called yet
+```
+
+```
+## Error: object 'qval' not found
+```
 
 # Mouse Data: Counts vary considerably across genes
 
 ![](figure/unnamed-chunk-13.png) 
 
 
-
 # Lower count genes, less power
 
-![](figure/unnamed-chunk-14.png) 
 
+```
+## Error: object 'pval' not found
+```
+
+```
+## Error: object 'pval' not found
+```
+
+```
+## Error: object 'pval' not found
+```
+
+```
+## Error: object 'qval.low' not found
+```
+
+```
+## Error: object 'qval.low' not found
+```
+
+```
+## Error: object 'h' not found
+```
+
+```
+## Error: plot.new has not been called yet
+```
 
 
 # Higher count genes, more power
-![](figure/unnamed-chunk-15.png) 
 
+```
+## Error: object 'pval.high' not found
+```
+
+```
+## Error: object 'qval.high' not found
+```
+
+```
+## Error: object 'qval.high' not found
+```
+
+```
+## Error: object 'h' not found
+```
+
+```
+## Error: plot.new has not been called yet
+```
 
 # FDR problem 1: low count genes add noise, increase q values
-![](figure/unnamed-chunk-16.png) 
 
+```
+## Error: object 'qval.high' not found
+```
+
+```
+## Error: plot.new has not been called yet
+```
 
 # FDR problem 1: Summary
 
@@ -215,22 +319,18 @@ approach assumes that all the $p$ values near 1 are null.
 
 
 
-
 # Implied distribution of $p$ values under $H_1$
 
 ![](figure/unnamed-chunk-18.png) 
-
 
 
 # Implied distribution of Z scores under alternative (fdrtool)
 
 ![](figure/unnamed-chunk-19.png) 
 
-
 # Implied distribution of Z scores under alternative (locfdr)
 
 ![](figure/unnamed-chunk-20.png) 
-
 
 # Implied distribution of Z scores under alternative (mixfdr)
 
@@ -240,7 +340,6 @@ approach assumes that all the $p$ values near 1 are null.
 ## null device 
 ##           1
 ```
-
 
 # Problems: Summary
 
@@ -306,22 +405,18 @@ provides still more flexibility, and in particular allows for asymmetry.
 
 ![](figure/unnamed-chunk-22.png) 
 
-
 # Illustration: $g$ a mixture of 0-centered normals
 
 ![](figure/unnamed-chunk-23.png) 
-
 
 
 # Illustration: $g$ a mixture of 0-anchored uniforms
 
 ![](figure/unnamed-chunk-24.png) 
 
-
 # Illustration: $g$ a mixture of 0-anchored uniforms
 
 ![](figure/unnamed-chunk-25.png) 
-
 
 # Issue: identifiability of $\pi_0$
 
@@ -362,10 +457,8 @@ more conservative than under ZA.
 
 
 
-![](figure/unnamed-chunk-27.png) 
 
 
-# Example: BRCA data
 
 
 
@@ -374,248 +467,37 @@ more conservative than under ZA.
 
 
 
-# Recall Problem: distribution of alternative Z values multimodal
-![](figure/unnamed-chunk-30.png) 
 
 
-# Problem Fixed: distribution of alternative Z values unimodal
-![](figure/unnamed-chunk-31.png) 
 
 
 
-# BRCA1: Compare $\pi_0$ estimates
 
-```r
-round(c(hh.fdrtool$param[3], hh.locfdr$fp0[1, 3], hh.mixfdr$pi[1], hh.ashz$fitted.g$pi[1]), 
-    2)
-```
 
-```
-## [1] 0.64 0.74 0.80 0.21
-```
 
 
-# BRCA1: Compare number significant at fdr<0.05
 
 
-```r
-c(sum(hh.fdrtool$lfdr < 0.05), sum(hh.locfdr$fdr < 0.05), sum(hh.mixfdr$fdr < 
-    0.05), sum(hh.ashz$ZeroProb < 0.05))
-```
 
-```
-## [1] 154 171 162 341
-```
 
 
 
-# Identifiability of $\pi_0$ and the False Sign Rate
 
-- Identifiability of $\pi_0$ is primarily an issue if we insist on asking question is $\beta_j=0$?
 
-- How about we change focus: assume *none* of the $\beta_j$ are zero ("one group approach"), and ask for which $\beta_j$ are we confident about the sign (Gelman et al, 2012).
 
-- Positive and negative effects are often treated differently in practice anyway.
 
-- That is we replace fdr with False Sign Rate (fsr), the probability that if we say an effect is positive (negative), it is not.
 
-- Example: suppose we estimate that $\Pr(\beta_j<0)=0.975$ and $\Pr(\beta_j>0)=0.025$. Then we report $\beta_j$ as a ``(negative) discovery", and estimate its fsr as 0.025.
 
 
-# The fsr is more robust than fdr
 
-![](figure/unnamed-chunk-34.png) 
 
 
-# The fsr is more robust than fdr
 
-![](figure/unnamed-chunk-35.png) 
 
 
-# Estimation and Shrinkage
 
-- Besides allowing one to estimate fdr and fsr, 
-this approach also provides a full posterior distribution for each $\beta_j$. 
 
-- So for example we can easily compute fdrs for discoveries other than ``non-zero" (eg compute $\Pr(\beta_j > 2 | \hat\beta_j)$).
 
-- And use it to obtain point estimates and credible intervals for each $\beta_j$, taking account of information from all the other $\beta_j$.
 
-- Because $f(\beta)$ is unimodal, the point estimates will tend to be ``shrunk" towards the overall mean (0).
 
-- Because $f(\beta)$ is estimated from the data, the amount
-of shrinkage is adaptive to the data. And because of the role of $s_j$, the amount of shrinkage adapts to the information on each gene.
-
-- So we call the approach ``Adaptive Shrinkage" (ASH).
-
-
-# Example: ASH applied to mouse data
-
-![](figure/unnamed-chunk-36.png) 
-
-
-# Example: ASH applied to mouse data
-
-![](figure/unnamed-chunk-37.png) 
-
-
-# Example: ASH applied to mouse data
-
-![](figure/unnamed-chunk-38.png) 
-
-
-# Example: ASH applied to mouse data
-
-![](figure/unnamed-chunk-39.png) 
-
-
-# Summary
-
-- ASH provides a generic approach to shrinkage estimation, as well as
-false discovery (sign) rates.
-
-- But by using two numbers ($\hat\beta,s$) instead of one ($p$ values or $z$ scores) precision of different measurementscan be better accounted for.
-
-- Unimodal assumption for effects reduces conservatism
-
-- False Sign Rate is more robust to assumptions, and perhaps
-therefore preferable, than False Discovery Rate.
-
-# Other Applications
-
-- Widely applicable: requiring only an estimated
-effect size and standard error for each object.
-
-- Currently applying it to wavelet shrinkage applications.
-
-# Guarantees?
-
-- ``I think you have some nice ideas. How will you convince
-people to use them?" (C Morris)
-
-- Theory anyone?
-
-# Next steps?
-
-- Incorporate $t$ likelihood as well as normal.
-
-- Incorporate shrinkage of variances and not just means.
-
-- Extend to allow $g(\cdot;\pi)$ to depend on covariates $X$.
-
-- Extend to allow for correlations in the measured $\hat\beta_j$.
-
-
-# Thanks
-
-- to the several postdoctoral researchers and students
-who have worked with me on related topics.
-- Including Scott Powers, Mengyin Lu, Tian Sen, Wei Wang, Zhengrong Xing. 
-
-# Reproducible research
-
-- This document is produced with **knitr**, **Rstudio** and **Pandoc**.
-
-- For more details see my `stephens999/ash` repository at `http://www.github.com/stephens999/ash`
-
-- Website: `http://stephenslab.uchicago.edu`
-
-# Pandoc Command used
-
-`pandoc -s -S -i --template=my.beamer -t beamer -V theme:CambridgeUS -V colortheme:beaver  slides.md -o slides.pdf`
-
-(alternative to produce html slides; but figures would need reworking)
-`pandoc -s -S -i -t dzslides --mathjax slides.md -o slides.html`
-
-Here is my session info:
-
-
-```r
-print(sessionInfo(), locale = FALSE)
-```
-
-```
-## R version 3.0.2 (2013-09-25)
-## Platform: x86_64-apple-darwin10.8.0 (64-bit)
-## 
-## attached base packages:
-## [1] splines   parallel  stats     graphics  grDevices utils     datasets 
-## [8] methods   base     
-## 
-## other attached packages:
-##  [1] reshape2_1.2.2     mixfdr_1.0         fdrtool_1.2.11    
-##  [4] DSS_1.4.0          locfdr_1.1-7       Biobase_2.20.1    
-##  [7] BiocGenerics_0.6.0 ggplot2_0.9.3.1    ashr_0.1          
-## [10] truncnorm_1.0-6    qvalue_1.34.0      knitr_1.5         
-## 
-## loaded via a namespace (and not attached):
-##  [1] codetools_0.2-8    colorspace_1.2-4   dichromat_2.0-0   
-##  [4] digest_0.6.3       evaluate_0.5.1     formatR_0.9       
-##  [7] grid_3.0.2         gtable_0.1.2       inline_0.3.13     
-## [10] labeling_0.2       MASS_7.3-29        munsell_0.4.2     
-## [13] plyr_1.8           proto_0.3-10       RColorBrewer_1.0-5
-## [16] Rcpp_0.10.5        scales_0.2.3       stringr_0.6.2     
-## [19] tcltk_3.0.2        tools_3.0.2
-```
-
-
-
-
-
-# Some odd things in the data
-
-![plot of chunk unnamed-chunk-40](figure/unnamed-chunk-40.png) 
-
-```
-## Error: object 'dd' not found
-```
-
-
-# A technicality
-
-- Suppose you estimate $\Pr(\beta_j<0)=0.98$,  $\Pr(\beta_j>0)=0.01$, $\Pr(\beta_j=0) = 0.01$. 
-- Should you declare an fdr of 0.01 or 0.02?
-- Maybe fsr makes more sense anyway?
-
-
-# Shrinkage is adaptive to information
-
-Need to fix counts.associate to use fdr method in ash
-
-
-
-
-
-
-
-
-![](figure/unnamed-chunk-43.png) 
-
-
-# Shrinkage is adaptive to information
-
-![](figure/unnamed-chunk-44.png) 
-
-
-# Shrinkage is adaptive to information
-
-
-```
-##         gene  lv1  lv2  rv1  rv2    pval zdat.ash$lfdr
-## 19422 Mgat5b    7   10  320  452 0.03795             0
-## 20432  Sec63 1042 1034 5496 6649 0.04908             0
-```
-
-
-# Recall FDR problem 1: q values increased by low count genes
-![](figure/unnamed-chunk-46.png) 
-
-
-# ASH q values more robust to inclusion of low count genes
-
-![](figure/unnamed-chunk-47.png) 
-
-
-Compare fitted $f(\beta)$, both estimating $\pi_0$ and fixing $\pi_0=0$.
-![](figure/unnamed-chunk-48.png) 
 
