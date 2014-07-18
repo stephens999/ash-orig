@@ -127,7 +127,7 @@
 % Title must be 150 characters or less
 \begin{flushleft}
 {\Large
-\textbf{Adaptive shrinkage and the false sign rate}
+\textbf{False Discovery Rates: A New Deal}
 }
 % Insert Author names, affiliations and corresponding author email.
 \\
@@ -148,39 +148,44 @@ $\ast$ E-mail: Corresponding mstephens@uchicago.edu
 
 \section*{Introduction}
 
-It is common in statistics that you measure many ``similar" things imperfectly, and wish to estimate their values. The situation arises commonly in the kinds of genomics applications I am often involved in, but also in other areas of statistics.
-In genomics, for example, a very common goal
-is to compare the mean
-expression (activity) level of many genes in two conditions.
-Let $\mu^0_j$ and $\mu^1_j$ denote the mean expression 
-of gene $j$ ($j=1,\dots,J$) in the two conditions, and define $\beta_j:= \mu^0_j - \mu^1_j$ to be the difference. Typically expression
-measurements are made on only a small number of
-samples in each condition - sometimes as few as one
-sample in each condition. Thus the error in estimates
-of $\mu^0_j$ and $\mu^1_j$ is appreciable, and the error
-in estimates of $\beta_j$ still greater.
+Since its introduction in 19xx by Benjamini and Hochberg 
+\cite{bh:xx}, the ``False Discovery Rate" (FDR) has quickly established itself
+as a key concept in modern statistics. 
+%, and the primary tool by which most practitioners handle large-scale multiple testing.
+Here we consider one setting in which FDR-based methods are widely used:
+an experimenter has measured a large numbers of ``effects", each with an associated
+measurement precision (standard error), 
+and the goal is to identify which of the effects we can declare to be non-zero (with some prescribed level of confidence).
+This setting arises commonly in many areas of statistics, and particularly in genomics applications.
+For example, in genomics
+a common goal is to identify ``differentially-expressed genes" -- that is, genes
+whose mean expression (activity) level differs in two conditions. 
 
-A fundamental idea is
-that the measurements of $\beta_j$ for each gene can be used to improve inference for the values of $\beta$ for other genes.
 
-Suppose that we measure, with error, a series of ``effects", $\beta_1,\dots,\beta_J$. To take just one concrete 
-example, $\beta_j$ could be 
-the difference in the mean (log) expression levels of gene $j$ ($j=1,\dots,J$) between 2 conditions. In this case, a measurement of
-the effect might be the difference in sample means obtained in the two conditions. We will let $\hat\beta_j$ denote the measured value of $\beta_j$, and assume that
-each measurement comes with an associated standard error, 
-$s_j$. A key aim here will be to take proper account of the fact that some measurements may be more precise than others: that is, to take proper account of variation in $s_j$ across $j$.
+%Let $\mu^0_j$ and $\mu^1_j$ denote the mean expression 
+%of gene $j$ ($j=1,\dots,J$) in the two conditions, and define $\beta_j:= \mu^0_j - \mu^1_j$ to be the difference. Typically expression
+%measurements are made on only a small number of
+%samples in each condition - sometimes as few as one
+%sample in each condition. Thus the error in estimates
+%of $\mu^0_j$ and $\mu^1_j$ is appreciable, and the error
+%in estimates of $\beta_j$ still greater.
+%
 
-A common goal, particularly in genomic studies, is to identify which $\beta_j$ differ from zero. This is commonly tackled
-by first computing an effect size estimate ($\hat\beta_j$) and its standard error ($s_j$), converting this to a $Z$ score ($Z_j=\hat\beta_j/s_j$)
-and a corresponding $p$ value ($p_j$), testing $H_j:\beta_j=0$.  Then standard methods (e.g. the qvalue package) can be used
-to estimate False Discovery Rates at any given threshold. 
+Many tools have been developed for this problem \cite{}, and several are widely used.
+Here we argue that these existing tools have sub-optimal features that can be improved on, at least in some circumstances.
+In particular we argue that existing tools i) fail to take proper account of variations in the measurement precision of different effects;
+ii) make, implicitly, unrealistic assumptions about the distribution of the non-zero effects. We provide methods
+to address these problems, implemented in an R package {\tt ashr} (short for ``Adaptive Shrinkage") and demonstrate that these methods can lead to a substantial reduction in estimated FDRs (or, equivalently,
+a substantial increase in the number of discoveries at a given FDR).  
 
-There are two issues with this approach that I would like to address here. The first is that it really does not take proper account of the measurement errors. To see this, consider an example where half the measurements are quite precise, and the other half are really, really, poor. Intuitively, the poor measurements tell us nothing, and any sane analysis should effectively ignore them. However, in a standard FDR-type analysis, these poor measurements add ``noise" and affect estimated FDRs. This is because the $p$ values from the poor measurements will be effectively uniformly distributed, and some will be significant at any given threshold. 
+Although we motivate our tools by FDR, we are providing generic tools for shrinkage, and
+these could be useful in settings such as wavelets.
+The potential for shrinkage-based estimation to
+address the multiple comparisons problems tackled by the FDR
+has been highlighted
+previously, including Greenland and Robins (1991),
+Efron (2008) and Gelman et al (2012). [Note, check also Louis, JASA, 1984] 
 
-The second issue is that directly modeling the p values, say via non-parametric methods, without taking account of their precision, 
-can lead to unrealistic distributions being fitted. Put another way, because z scores are the result of adding noise to some
-distribution, the range of distributions they can take is limited Using entirely non-parametric methods loses this information.
-The solution is to model beta hat as a convolution of some distribution g and an error component.
 
 The initial goal of the ASH (Adaptive SHrinkage) project is to provide simple, generic, and flexible methods to derive ``shrinkage-based" estimates and credible intervals for unknown quantities $\beta=(\beta_1,\dots,\beta_J)$, given only estimates of those quantities ($\hat\beta=(\hat\beta_1,\dots, \hat\beta_J)$) and their corresponding estimated standard errors ($s=(s_1,\dots,s_J)$). 
 
@@ -205,23 +210,50 @@ generic methods that work directly with two numbers for each
 measurement $(\hat\beta_j,s_j$), rather than a single number (e.g.~ the $p$ value, or $t$ statistic). Working with these two numbers has two important benefits: first, it permits estimation and not only testing; second, the 
 uncertainty in each measurement $\hat\beta_j$ can be more fully accounted for, reducing the impact of ``high-noise" measurements (large $s_j$) that can reduce the effectiveness of a standard FDR analysis. 
 
-The potential for shrinkage-based estimation to
-address the multiple comparisons setting 
-has been highlighted
-previously, including Greenland and Robins (1991),
-Efron (2008) and Gelman et al (2012). [Note, check also Louis, JASA, 1984] 
 
 
  \section*{Methods}
  
- Suppose that we are interested in the values of $n$ ``effects" $\beta_j$ ($j=1,\dots,n$). In some contexts our interest may focus on which of the $\beta_j$ are ``significantly" different from zero, whereas in other contexts our interest may focus on estimating their values; the methods described here are suited to both these contexts.
- We assume that we have obtained data $D_1,\dots,D_n$ that provide independent estimates $\hat\beta_1,\dots,\hat\beta_n$ of these effects,
- with corresponding (estimated) standard errors $s_1,\dots,s_n$. For our purposes, these estimates and standard errors could be obtained from the data
+ \subsection*{Notation, and existing methods}
+ 
+Suppose that we are interested in the values of $J$ ``effects" $\beta_j$ ($j=1,\dots,J$). In some contexts our interest may focus on which of the $\beta_j$ are ``significantly" different from zero, whereas in other contexts our interest may focus on estimating their values; the methods described here are suited to both these contexts.
+ We assume that we have obtained data $D_1,\dots,D_J$ that provide independent estimates $\hat\beta_1,\dots,\hat\beta_J$ of these effects,
+ with corresponding (estimated) standard errors $s_1,\dots,s_J$. For our purposes, these estimates and standard errors could be obtained from the data
  using any method, provided they (approximately) satisfy 
  \begin{equation} \label{eqn:betahat}
  \hat\beta_j | \beta_j, s_j \sim N(\beta_j, s_j).
  \end{equation}
  [In some settings a $t$ distribution assumption for $\hat\beta_j | s_j, \beta_j$ may be more appropriate, and could also be incorporated into our methods; see Discussion.]
+ 
+A standard genomics analysis pipeline would first convert these numbers to a $Z$ score ($Z_j=\hat\beta_j/s_j$)
+and a corresponding $p$ value ($p_j$), testing $H_j:\beta_j=0$.  
+
+Definition of FDR and lfdr (Bayesian); connection to frequentist definitions (Storey).
+
+Then standard methods (e.g. the qvalue package) can be used
+to estimate False Discovery Rates at any given threshold. 
+
+
+
+\subsection*{Problems with existing methods}
+
+ There are two issues with this approach that I would like to address here. The first is that it really does not take proper account of the measurement errors. To see this, consider an example where half the measurements are quite precise, and the other half are really, really, poor. Intuitively, the poor measurements tell us nothing, and any sane analysis should effectively ignore them. However, in a standard FDR-type analysis, these poor measurements add ``noise" and affect estimated FDRs. This is because the $p$ values from the poor measurements will be effectively uniformly distributed, and some will be significant at any given threshold. 
+ 
+Illustration (Figure).
+
+Note that the problem could be reduced by discarding measurements that are too noisy. However,
+note limitation of this.
+
+The second issue is that directly modeling the p values, or z scores, say via non-parametric methods, without taking account of their precision, 
+can lead to unrealistic distributions being fitted. Put another way, because z scores are the result of adding noise to some
+distribution, the range of distributions they can take is limited Using entirely non-parametric methods loses this information.
+The solution is to model beta hat as a convolution of some distribution g and an error component.
+
+Illustration (Figure).
+
+
+ 
+ 
  %(See Discussion for ideas on how our methods may be applicable more generally; for example if, in place of $s_j$, we have a $p$ value testing $\beta_j=0$.)
  
  In outline, we use a hierarchical model to combine information across measurements, with the aim of improving both accuracy and precision of estimates. 
@@ -696,13 +728,13 @@ Efron (2008) states the Zero Assumption as the assumption that ``most of the z-v
 His main aim in making this assumption is to estimate an empirical null though (not assume N(0,1) for the null)
 rather than to impose identifiability.
 
-By modeling the z scores directly under the alternative, rather than the z scores as being the truth plus noise,
-maybe that is what is most problematic? Because the resulting distribution of z scores is just not possible.
-
 Note that \cite{muralidharan:2012} models $z$ scores as something plus noise under both $H_0$ and $H_1$, which
 avoids this problem. (DOes the same maybe apply to modeling beta, rather than z scores, when the errors vary?)
 
 Rice and Spiegelhalter - BRCA data?
+
+A fundamental idea is
+that the measurements of $\beta_j$ for each gene can be used to improve inference for the values of $\beta$ for other genes.
 
 
 % Do NOT remove this, even if you are not including acknowledgments
