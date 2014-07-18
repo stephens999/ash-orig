@@ -5,11 +5,13 @@ This repository contains ongoing work on Bayesian FDR and Adaptive Shrinkage.
 The (in development) ashr package is in the `package` subdirectory.
 
 There are two versions of the package, one which uses some C++ via RCpp, and one that does not.
-The C++ version is faster, but even the regular R package is reasonably quick and
-the extra speed is likely only required if using ash 
-many times on large data sets. Since installing the C++ version requires more
-dependencies (e.g. you need to have a C++ compiler installed etc) you might want to start with 
-the non C++ version.
+The current recommendation is to use the *non C++* version. We now only
+include instructions for 
+the C++ version for completeness, and it may be removed at any point.
+(During development there were times when we wanted a faster version,
+but the non-C++ version now exploits the SQUAREM package to improve convergence,
+whereas the C++ version does not - as a result the non-C++ version can
+actually be faster than the C++ version.) 
 
 ## Non C++ version
 
@@ -29,9 +31,8 @@ Here `/path/to/` indicates where on your computer you have saved the file.
 
 ## C++ version
 
-We also have a faster version of the package, which exploits the very helpful Rcpp package
-to interface R with C++.
-
+As noted above, we don't recommend using the C++ version: instructions
+are included only for completeness, and may be removed at any time.
 To install the C++ version, first download `package/ashr.tar.gz`.
 You can download this either by cloning the whole repo, or by, for example, going to
 [https://github.com/stephens999/ash/blob/master/package/ashr.tar.gz](https://github.com/stephens999/ash/blob/master/package/ashr.tar.gz) and click "View Raw".
