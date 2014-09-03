@@ -1,0 +1,74 @@
+---
+title: "Nonzero Mean ASH"
+author: "Chaoxing Dai"
+date: "2014-Sep-03"
+output: pdf_document
+---
+
+
+#Likelihood
+
+By assuming a unimodal distribution, we have the hierarchical model being the following:  
+$$\beta _{j}\sim g(.) \sim \sum_{k=1}^{K} \pi _{k}f_{k}(.) \sim\sum_{k=1}^{K} \pi _{k}N(\cdot ;\mu,\sigma_{k}^{2})$$
+
+$$\widehat{\beta}_{j}\mid \beta_{j},s_{j}^{2} \sim N(\cdot ;\beta_{j},s_{j}^{2})$$
+
+Then we would have the likelihood for $\pi$ and $\mu$ being (Here we assume iid or exchangable data)
+
+$$L(\pi,\mu)=\prod_{j=1}^{n} p(D_{j}\mid \pi,\mu)=\prod_{j=1}^{n} \int p(\widehat{\beta}_{j} \mid s_{j},\pi,\mu,\beta_{j}) p(\beta_{j} \mid \pi, \mu) d\beta_{j}$$
+
+$$=\prod_{j=1}^{n} \int 
+\frac{1}{\sqrt{2 \pi s_{j}^{2}}} exp\left \{ -\frac{1}{2s_{j}^{2}}\left ( \widehat{\beta}_{j}-\beta_{j} \right )^{2} \right \}
+\sum_{k=1}^{K} \pi_{k}
+\frac{1}{\sqrt{2 \pi \sigma _{k}^{2}}} exp\left \{ -\frac{1}{2\sigma_{k}^{2}}\left ( \beta_{j}-\mu \right )^{2} \right \}
+d\beta_{j}$$
+
+$$=\prod_{j=1}^{n} \sum_{k=1}^{K} \pi_{k}\int 
+\frac{1}{\sqrt{2 \pi s_{j}^{2}\times 2 \pi \sigma _{k}^{2}}}
+exp\left \{ -\frac{1}{2s_{j}^{2}}\left ( \widehat{\beta}_{j}-\beta_{j} \right )^{2}  -\frac{1}{2\sigma_{k}^{2}}\left ( \beta_{j}-\mu \right )^{2} \right \}
+d\beta_{j}$$
+
+$$=\prod_{j=1}^{n} \sum_{k=1}^{K} \pi_{k}
+\frac{1}{\sqrt{2 \pi \left ( s_{j}^{2}+\sigma_{k}^{2} \right )}}
+exp\left [ 
+-\frac{\left ( \widehat{\beta}_{j}-\mu \right )^{2}}
+{2\left ( s_{j}^{2}+\sigma_{k}^{2}  \right )}
+\right ]$$
+
+Where the term after $\pi_{k}$ is the density of $N(\cdot ;\mu,s_{j}^{2}+\sigma_{k}^{2})$ at $\widehat{\beta}_{j}$ , i.e.
+
+$$L(\pi,\mu)=\prod_{j=1}^{n} \sum_{k=1}^{K} \pi_{k} N(\widehat{\beta}_{j} ;\mu,s_{j}^{2}+\sigma_{k}^{2})$$
+
+#EM Algorithm
+
+For convenience we denote $x_{j}\equiv \widehat{\beta}_{j}$, and introduce a latent variable $z_{j}$ specifying the mixture component that $x_{j}$ belongs to. We then have 
+
+$$p(x_{j},z_{j} \mid \mu,\pi )=\prod_{k=1}^{K} [\pi_{k} N(x_{j};\mu,s_{j}^{2}+\sigma_{k}^{2})]^{I_{z_{j}}=k}$$
+
+
+$$log\,p(x_{j},z_{j} \mid \mu,\pi )=\sum_{k=1}^{K} [I_{z_{j}}=k]
+ [log(\pi_{k}) - \frac{1}{2}log(2\pi)- \frac{1}{2}log(s_{j}^{2}+\sigma_{k}^{2})-\frac{\left ( x_{j}-\mu \right )^{2}}
+{2\left ( s_{j}^{2}+\sigma_{k}^{2}  \right )}]$$
+
+$$log\,p(X,Z \mid \mu,\pi )=\sum_{j=1}^{n}\sum_{k=1}^{K} [I_{z_{j}}=k]
+ [log(\pi_{k}) - \frac{1}{2}log(2\pi)- \frac{1}{2}log(s_{j}^{2}+\sigma_{k}^{2})-\frac{\left ( x_{j}-\mu \right )^{2}}
+{2\left ( s_{j}^{2}+\sigma_{k}^{2}  \right )}]$$
+
+Then we will have the E-step, given the estimate of $\pi$ and $mu$, we calculate the responsibiity of j-th data point to the k-th mixture component.
+
+$$\omega_{jk}=p(z_{j}=k \mid x_{j},\pi,\mu)=\frac{\pi_{k}N(x_{j} ;\mu,s_{j}^{2}+\sigma_{k}^{2})}{\sum_{l=1}^{K}\pi_{l}N(x_{j} ;\mu,s_{j}^{2}+\sigma_{l}^{2})}$$
+
+For the M-step, we take $\omega_{jk}$ in the previous step, and maximize the expected loglikelihood over the latent variable $Z$. 
+
+$$Q=E_{Z\mid X,\mu, \pi}[log\,p(X,Z \mid \mu,\pi )]=\sum_{j=1}^{n}\sum_{k=1}^{K} [\omega_{jk}]
+ [log(\pi_{k}) - \frac{1}{2}log(2\pi)- \frac{1}{2}log(s_{j}^{2}+\sigma_{k}^{2})-\frac{\left ( x_{j}-\mu \right )^{2}}
+{2\left ( s_{j}^{2}+\sigma_{k}^{2}  \right )}]$$
+
+We take partial derivatives of Q with respect to $\pi$ and $\mu$ and set them to be 0 to get the next estimates of our parameters, subject to the constraint that $\sum_{k=1}^{K} \pi_{k}=1$. Then we have 
+
+$$\widehat{\mu}=\frac{\sum_{j=1}^{n}\sum_{k=1}^{K}\frac{\omega_{jk}x_{j}}{s_{j}^{2}+\sigma_{k}^{2}}}
+{\sum_{j=1}^{n}\sum_{k=1}^{K}\frac{\omega_{jk}}{s_{j}^{2}+\sigma_{k}^{2}}}$$
+
+$$\widehat{\pi_{k}}=\frac{1}{n}\sum_{j=1}^{n}\omega_{jk}$$
+
+Then we go back to the E-step and repeat with the new estimate, until we get a convergence.
