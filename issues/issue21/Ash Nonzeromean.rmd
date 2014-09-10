@@ -1,12 +1,15 @@
 ---
 title: "Nonzero Mean ASH"
 author: "Chaoxing Dai"
-date: "2014-Sep-03"
+date: "2014-Sep-10"
 output: pdf_document
 ---
 
-
-#Likelihood
+#Normal mixture with normal likelihood
+```
+df=NULL,mixcompdist="normal"
+```
+##Likelihood
 
 By assuming a unimodal distribution, we have the hierarchical model being the following:  
 $$\beta _{j}\sim g(.) \sim \sum_{k=1}^{K} \pi _{k}f_{k}(.) \sim\sum_{k=1}^{K} \pi _{k}N(\cdot ;\mu,\sigma_{k}^{2})$$
@@ -39,7 +42,7 @@ Where the term after $\pi_{k}$ is the density of $N(\cdot ;\mu,s_{j}^{2}+\sigma_
 
 $$L(\pi,\mu)=\prod_{j=1}^{n} \sum_{k=1}^{K} \pi_{k} N(\widehat{\beta}_{j} ;\mu,s_{j}^{2}+\sigma_{k}^{2})$$
 
-#EM Algorithm
+##EM Algorithm
 
 For convenience we denote $x_{j}\equiv \widehat{\beta}_{j}$, and introduce a latent variable $z_{j}$ specifying the mixture component that $x_{j}$ belongs to. We then have 
 
@@ -72,3 +75,71 @@ $$\widehat{\mu}=\frac{\sum_{j=1}^{n}\sum_{k=1}^{K}\frac{\omega_{jk}x_{j}}{s_{j}^
 $$\widehat{\pi_{k}}=\frac{1}{n}\sum_{j=1}^{n}\omega_{jk}$$
 
 Then we go back to the E-step and repeat with the new estimate, until we get a convergence.
+
+
+
+#Uniform mixture with Normal likelihood
+```
+df=NULL,mixcompdist="uniform"
+```
+##Likelihood
+We know that the convolution of a uniform distribution and a normal would be of the following form  
+$f(x)\sim N(x;\mu,\sigma^{2})$  
+$g(y) \sim U(y;a,b)$  
+$(f*g)(z)=\frac{1}{b-a}[\Psi_{0}(\frac{z-a-\mu}{\sigma})-\Psi_{0}(\frac{z-b-\mu}{\sigma})]$  
+Where $\Psi_{0}(\cdot)$ is the cdf for standard normal distribution.
+
+By assuming a unimodal distribution, we have the hierarchical model being the following:  
+$$\beta _{j}\sim g(.) \sim \sum_{k=1}^{K} \pi _{k}f_{k}(.) \sim\sum_{k=1}^{K} \pi _{k} U(\cdot ;-\sigma_{k}+\mu,\sigma_{k}+\mu)$$
+
+$$\widehat{\beta}_{j}\mid \beta_{j},s_{j}^{2} \sim N(\cdot ;\beta_{j},s_{j}^{2})$$
+
+Then we would have the likelihood for $\pi$ and $\mu$ being (Here we assume iid or exchangable data)
+
+$$L(\pi,\mu)=\prod_{j=1}^{n} p(D_{j}\mid \pi,\mu)=\prod_{j=1}^{n} \int p(\widehat{\beta}_{j} \mid s_{j},\pi,\mu,\beta_{j}) p(\beta_{j} \mid \pi, \mu) d\beta_{j}$$
+
+$$=\prod_{j=1}^{n} \sum_{k=1}^{K} \pi_{k}
+\frac{1}{2\sigma_{k}}[\Psi_{0}(\frac{\widehat{\beta}_{j}+\sigma_{k}-\mu}{s_{j}})-\Psi_{0}(\frac{\widehat{\beta}_{j}-\sigma_{k}-\mu}{s_{j}})]$$
+
+
+##EM Algorithm
+
+For convenience we denote $x_{j}\equiv \widehat{\beta}_{j}$, and introduce a latent variable $z_{j}$ specifying the mixture component that $x_{j}$ belongs to. We then have 
+
+$$p(x_{j},z_{j} \mid \mu,\pi )=\prod_{k=1}^{K} [\pi_{k} \frac{1}{2\sigma_{k}}[\Psi_{0}(\frac{\widehat{\beta}_{j}+\sigma_{k}-\mu}{s_{j}})-\Psi_{0}(\frac{\widehat{\beta}_{j}-\sigma_{k}-\mu}{s_{j}})]]^{I_{z_{j}}=k}$$
+
+
+
+$$log p(x_{j},z_{j} \mid \mu,\pi )=\sum_{k=1}^{K} [I_{z_{j}}=k] log [\pi_{k} \frac{1}{2\sigma_{k}}[\Psi_{0}(\frac{\widehat{\beta}_{j}+\sigma_{k}-\mu}{s_{j}})-\Psi_{0}(\frac{\widehat{\beta}_{j}-\sigma_{k}-\mu}{s_{j}})]]$$
+
+$$=\sum_{k=1}^{K} [I_{z_{j}}=k] [log \pi_{k}-log(2\sigma_{k}) +log [\Psi_{0}(\frac{\widehat{\beta}_{j}+\sigma_{k}-\mu}{s_{j}})-\Psi_{0}(\frac{\widehat{\beta}_{j}-\sigma_{k}-\mu}{s_{j}})]] $$
+
+Then we will have the E-step, given the estimate of $\pi$ and $mu$, we calculate the responsibiity of j-th data point to the k-th mixture component.
+
+$$\omega_{jk}=p(z_{j}=k \mid x_{j},\pi,\mu)=\frac{\frac{1}{2\sigma_{k}}[\Psi_{0}(\frac{\widehat{\beta}_{j}+\sigma_{k}-\mu}{s_{j}})-\Psi_{0}(\frac{\widehat{\beta}_{j}-\sigma_{k}-\mu}{s_{j}})]}
+{\sum_{l=1}^{K}\frac{1}{2\sigma_{l}}[\Psi_{0}(\frac{\widehat{\beta}_{j}+\sigma_{l}-\mu}{s_{j}})-\Psi_{0}(\frac{\widehat{\beta}_{j}-\sigma_{l}-\mu}{s_{j}})]}$$
+
+
+
+For the M-step, we take $\omega_{jk}$ in the previous step, and maximize the expected loglikelihood over the latent variable $Z$. 
+
+$$Q=E_{Z\mid X,\mu, \pi}[log\,p(X,Z \mid \mu,\pi )]=\sum_{j=1}^{n}\sum_{k=1}^{K} [\omega_{jk}]
+ [log \pi_{k}-log(2\sigma_{k}) +log [\Psi_{0}(\frac{\widehat{\beta}_{j}+\sigma_{k}-\mu}{s_{j}})-\Psi_{0}(\frac{\widehat{\beta}_{j}-\sigma_{k}-\mu}{s_{j}})]] $$
+ 
+The maximization over $\mu$ no longer has a closed form, and we will use the one-dimensional R optimization function $optim()$ to perform the M step. 
+
+For $\pi$, we have the same expression as before.
+
+$$\widehat{\pi_{k}}=\frac{1}{n}\sum_{j=1}^{n}\omega_{jk}$$
+
+Then we go back to the E-step and repeat with the new estimate, until we get a convergence.
+
+#Other cases
+```
+df=NULL,mixcompdist="halfuniform"
+df=scalar,mixcompdist="normal"
+df=scalar,mixcompdist="uniform"
+df=scalar,mixcompdist="halfuniform"
+```
+
+Similar to the second one, as we do not have closed form solution for $\mu$ in the M step of EM algorithm, would use optimization function with SQUAREM, and a lot of functions in EMest will be re-used.
