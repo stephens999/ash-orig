@@ -109,10 +109,14 @@ plot_rmse_boxplot_nonzero = function(sims,scenarioid,inczero=FALSE,incbetahat=FA
     err.ash.nonzero= mapply(get_rmse.ash,sims[[i]]$betahat.ash.nonzero,sims[[i]]$beta)
     err.ash.zero = mapply(get_rmse.ash,sims[[i]]$betahat.ash.zero,sims[[i]]$beta)
     err.betahat = mapply(rmse,sims[[i]]$betahat,sims[[i]]$beta)
-    err.zero = unlist(lapply(sims[[i]]$beta,rmse,y=0))        
+    err.zero = unlist(lapply(sims[[i]]$beta,rmse,y=0)) 
+    cc=!(err.bayes==0)
+	a=log(err.ash.nonzero[cc]/err.bayes[cc])/log(2)
+	b=log(err.ash.zero[cc]/err.bayes[cc])/log(2)
+	   
     res[[i]] = data.frame(Scenario= scenarioid[i],
-                          ash.nonzero=log(err.ash.nonzero/err.bayes)/log(2),
-                          ash.zero= log(err.ash.zero/err.bayes)/log(2)
+                          ash.nonzero=a,
+                          ash.zero= b
     )
     if(inczero){
       res[[i]]=data.frame(res[[i]],zero=err.zero/err.bayes)
@@ -122,9 +126,8 @@ plot_rmse_boxplot_nonzero = function(sims,scenarioid,inczero=FALSE,incbetahat=FA
     }
   }
   res.melt = melt(res, id.vars=c("Scenario"),variable.name="Method")    
-  ggplot(res.melt,aes(Method,value,color=Method)) + coord_flip() + geom_boxplot() + facet_grid(.~Scenario)+labs(y="log2(RMSE), with 0 meaning RMSE being the same as the full Bayesian result")
+  ggplot(res.melt,aes(Method,value,color=Method)) + coord_flip() + geom_boxplot() + facet_grid(.~Scenario)+labs(y="log2(RMSE/RMSE_BAYES)")
 }
-
 
 
 plot_loglik_boxplot_nonzero= function(sims, scenarioid){
@@ -139,8 +142,10 @@ plot_loglik_boxplot_nonzero= function(sims, scenarioid){
   }
   require(reshape2)
   res.melt = melt(res, id.vars=c("Scenario"),variable.name="Method")    
-  ggplot(res.melt,aes(Method,value,color=Method)) + geom_boxplot() + facet_grid(.~Scenario)
+  ggplot(res.melt,aes(Method,value,color=Method)) + coord_flip() +geom_boxplot() + facet_grid(.~Scenario)+labs(y="loglikelihood(ash)-loglikelihood(Full Bayesian)")
 }
+
+
 
 
 ##Actual simulation
@@ -209,67 +214,107 @@ save.image(file="simn789temp.RData")
 load("simn123temp.RData")
 load("simn456temp.RData")
 load("simn789temp.RData")
-load("simn10temp.RData")
+library(ggplot2)
+library(reshape2)
 
 
 scenarioid=c("mean=0","mean=0.05","mean=0.1","mean=0.15","mean=0.2")
-pdf("sim1_normal.pdf",width=10,height=4)
-plot_rmse_boxplot_nonzero(sim1, scenarioid)+ggtitle("Normal mixture")
+pdf("sim1_normal.pdf",width=20,height=8)
+plot_rmse_boxplot_nonzero(sim1, scenarioid)+ggtitle("Normal mixture data fitted using Normal mixture")
 dev.off()
-pdf("sim2_uniform.pdf",width=10,height=4)
-plot_rmse_boxplot_nonzero(sim2,scenarioid)+ggtitle("Uniform mixture")
+pdf("sim2_uniform.pdf",width=20,height=8)
+plot_rmse_boxplot_nonzero(sim2,scenarioid)+ggtitle("Normal mixture data fitted using Uniform mixture")
 dev.off()
-pdf("sim3_halfuniform.pdf",width=10,height=4)
-plot_rmse_boxplot_nonzero(sim3,scenarioid)+ggtitle("Halfuniform mixture")
+pdf("sim3_halfuniform.pdf",width=20,height=8)
+plot_rmse_boxplot_nonzero(sim3,scenarioid)+ggtitle("Normal mixture data fitted using Halfuniform mixture")
 dev.off()
-pdf("sim1_normal_loglik.pdf",width=10,height=4)
-plot_loglik_boxplot_nonzero(sim1,scenarioid)+ggtitle("Normal mixture")
-dev.off()
-pdf("sim2_uniform_loglik.pdf",width=10,height=4)
-plot_loglik_boxplot_nonzero(sim2,scenarioid)+ggtitle("Uniform mixture")
-dev.off()
-pdf("sim3_halfuniform_loglik.pdf",width=10,height=4)
-plot_loglik_boxplot_nonzero(sim3,scenarioid)+ggtitle("Halfuniform mixture")
-dev.off()
-
 
 scenarioid=c("mean=0","mean=0.01","mean=0.02","mean=0.03","mean=0.04")
-pdf("sim4_normal.pdf",width=10,height=4)
-plot_rmse_boxplot_nonzero(sim4,scenarioid)+ggtitle("Normal mixture")
+pdf("sim4_normal.pdf",width=20,height=8)
+plot_rmse_boxplot_nonzero(sim4,scenarioid)+ggtitle("Uniform mixture data fitted using Normal mixture")
 dev.off()
-pdf("sim5_uniform.pdf",width=10,height=4)
-plot_rmse_boxplot_nonzero(sim5,scenarioid)+ggtitle("Uniform mixture")
+pdf("sim5_uniform.pdf",width=20,height=8)
+plot_rmse_boxplot_nonzero(sim5,scenarioid)+ggtitle("Uniform mixture data fitted using Uniform mixture")
 dev.off()
-pdf("sim6_halfuniform.pdf",width=10,height=4)
-plot_rmse_boxplot_nonzero(sim6,scenarioid)+ggtitle("Halfuniform mixture")
+pdf("sim6_halfuniform.pdf",width=20,height=8)
+plot_rmse_boxplot_nonzero(sim6,scenarioid)+ggtitle("Uniform mixture data fitted using Halfuniform mixture")
 dev.off()
-pdf("sim4_normal_loglik.pdf",width=10,height=4)
-plot_loglik_boxplot_nonzero(sim4,scenarioid)+ggtitle("Normal mixture")
-dev.off()
-pdf("sim5_uniform_loglik.pdf",width=10,height=4)
-plot_loglik_boxplot_nonzero(sim5,scenarioid)+ggtitle("Uniform mixture")
-dev.off()
-pdf("sim6_halfuniform_loglik.pdf",width=10,height=4)
-plot_loglik_boxplot_nonzero(sim6,scenarioid)+ggtitle("Halfuniform mixture")
-dev.off()
-
 
 scenarioid=c("mean=0","mean=0.001","mean=0.002","mean=0.003","mean=0.004")
-pdf("sim7_normal.pdf",width=10,height=4)
-plot_rmse_boxplot_nonzero(sim7,scenarioid)+ggtitle("Normal mixture")
+pdf("sim7_normal.pdf",width=20,height=8)
+plot_rmse_boxplot_nonzero(sim7,scenarioid)+ggtitle("Halfuniform mixture data fitted using Normal mixture")
 dev.off()
-pdf("sim8_uniform.pdf",width=10,height=4)
-plot_rmse_boxplot_nonzero(sim8,scenarioid)+ggtitle("Uniform mixture")
+pdf("sim8_uniform.pdf",width=20,height=8)
+plot_rmse_boxplot_nonzero(sim8,scenarioid)+ggtitle("Halfuniform mixture data fitted using Uniform mixture")
 dev.off()
-pdf("sim9_halfuniform.pdf",width=10,height=4)
-plot_rmse_boxplot_nonzero(sim9,scenarioid)+ggtitle("Halfuniform mixture")
+pdf("sim9_halfuniform.pdf",width=20,height=8)
+plot_rmse_boxplot_nonzero(sim9,scenarioid)+ggtitle("Halfuniform mixture data fitted using Halfuniform mixture")
 dev.off()
-pdf("sim7_normal_loglik.pdf",width=10,height=4)
-plot_loglik_boxplot_nonzero(sim7,scenarioid)+ggtitle("Normal mixture")
+
+scenarioid=c("mean=0","mean=0.05","mean=0.1","mean=0.15","mean=0.2")
+pdf("sim1_normal_loglik.pdf",width=20,height=8)
+plot_loglik_boxplot_nonzero(sim1,scenarioid)+ggtitle("Normal mixture data fitted using Normal mixture")
 dev.off()
-pdf("sim8_uniform_loglik.pdf",width=10,height=4)
-plot_loglik_boxplot_nonzero(sim8,scenarioid)+ggtitle("Uniform mixture")
+pdf("sim2_uniform_loglik.pdf",width=20,height=8)
+plot_loglik_boxplot_nonzero(sim2,scenarioid)+ggtitle("Normal mixture data fitted using Uniform mixture")
 dev.off()
-pdf("sim9_halfuniform_loglik.pdf",width=10,height=4)
-plot_loglik_boxplot_nonzero(sim9,scenarioid)+ggtitle("Halfuniform mixture")
+pdf("sim3_halfuniform_loglik.pdf",width=20,height=8)
+plot_loglik_boxplot_nonzero(sim3,scenarioid)+ggtitle("Normal mixture data fitted using Halfuniform mixture")
 dev.off()
+
+scenarioid=c("mean=0","mean=0.01","mean=0.02","mean=0.03","mean=0.04")
+pdf("sim4_normal_loglik.pdf",width=20,height=8)
+plot_loglik_boxplot_nonzero(sim4,scenarioid)+ggtitle("Uniform mixture data fitted using Normal mixture")
+dev.off()
+pdf("sim5_uniform_loglik.pdf",width=20,height=8)
+plot_loglik_boxplot_nonzero(sim5,scenarioid)+ggtitle("Uniform mixture data fitted using Uniform mixture")
+dev.off()
+pdf("sim6_halfuniform_loglik.pdf",width=20,height=8)
+plot_loglik_boxplot_nonzero(sim6,scenarioid)+ggtitle("Uniform mixture data fitted using Halfuniform mixture")
+dev.off()
+
+scenarioid=c("mean=0","mean=0.001","mean=0.002","mean=0.003","mean=0.004")
+pdf("sim7_normal_loglik.pdf",width=20,height=8)
+plot_loglik_boxplot_nonzero(sim7,scenarioid)+ggtitle("Halfuniform mixture data fitted using Normal mixture")
+dev.off()
+pdf("sim8_uniform_loglik.pdf",width=20,height=8)
+plot_loglik_boxplot_nonzero(sim8,scenarioid)+ggtitle("Halfuniform mixture data fitted using Uniform mixture")
+dev.off()
+pdf("sim9_halfuniform_loglik.pdf",width=20,height=8)
+plot_loglik_boxplot_nonzero(sim9,scenarioid)+ggtitle("Halfuniform mixture data fitted using Halfuniform mixture")
+dev.off()
+
+
+
+sims=list(sim1,sim2,sim3,sim4,sim5,sim6,sim7,sim8,sim9)
+
+rmsetable=function(sims, betamean){
+  res=matrix(NA,nrow=length(sims),ncol=length(betamean))
+  for(i in 1:length(sims)){
+    err.bayes = mapply(get_rmse.ash,sims[[i]]$betahat.ash.true,sims[[i]]$beta)
+    err.ash.nonzero= mapply(get_rmse.ash,sims[[i]]$betahat.ash.nonzero,sims[[i]]$beta)
+    err.ash.zero = mapply(get_rmse.ash,sims[[i]]$betahat.ash.zero,sims[[i]]$beta)
+    cc=!(err.bayes==0)
+	a=log(err.ash.nonzero[cc]/err.bayes[cc])/log(2)
+	b=log(err.ash.zero[cc]/err.bayes[cc])/log(2)
+    res[i,1:length(betamean)] = c(betamean[i],mean(a),sd(a)/length(a),mean(b),sd(b)/length(b))
+  }
+  return(res)
+}
+
+##Generating Tables summarizing the result in markdown format
+for(i in 1:9){
+	if(i<4){
+		betamean=c(0,0.05,0.1,0.15,0.2)
+	}
+	else if(i<7){
+		betamean=c(0,0.01,0.02,0.03,0.04)
+	}
+	else{
+		betamean=c(0,0.001,0.002,0.003,0.004)
+	}
+	a=rmsetable(sims[[i]],betamean)
+	colnames(a)=c("True Mean","log2(RMSE_nonzero/RMSE_BAYES)","SE","log2(RMSE_zero/RMSE_BAYES)","SE")
+	kable(a,format="markdown",digits=4,align='c')
+}
+
