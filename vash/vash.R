@@ -1,459 +1,688 @@
-qval.from.lfdr = function(lfdr){
-  o = order(lfdr)
-  qvalue=rep(NA,length(lfdr))
-  qvalue[o] = (cumsum(sort(lfdr))/(1:sum(!is.na(lfdr))))
-  return(qvalue)
-}
+#library(SQUAREM)
+#library(gaussquad)
+source('added.R')
 
-normalize = function(x){return(x/sum(x))}
-
-# try to select a default range for the sigmaa values
-# that should be used, based on the values of betahat and sebetahat
-# mult is the multiplier by which the sds differ across the grid
-autoselect.mixsd = function(betahat,sebetahat,mult){
-  sigmaamin = min(sebetahat)/10 #so that the minimum is small compared with measurement precision
-  if(all(betahat^2<sebetahat^2)){
-    sigmaamax = 8*sigmaamin #to deal with the occassional odd case where this could happen; 8 is arbitrary
-  } else {
-    sigmaamax = 2*sqrt(max(betahat^2-sebetahat^2)) #this computes a rough largest value you'd want to use, based on idea that sigmaamax^2 + sebetahat^2 should be at least betahat^2   
+# If x is a n-column vector, turn it into n by 1 matrix
+# If x is a matrix, keep it
+tomatrix = function(x){
+  if(is.vector(x)){
+    x = as.matrix(x)
   }
-  if(mult==0){
-    return(c(0,sigmaamax/2))
-  }else{
-    npoint = ceiling(log2(sigmaamax/sigmaamin)/log2(mult))
-    return(mult^((-npoint):0) * sigmaamax)
+  return(x)
+}
+
+
+
+#estimate mixture proportions of beta's prior by EM algorithm
+#prior gives the parameter of a Dirichlet prior on pi
+#(prior is used to encourage results towards smallest value of sigma when
+#likelihood is flat)
+#nullcheck indicates whether to check whether the loglike exceeds the null
+#(may not want to use if prior is used)
+#VB provides an approach to estimate the approximate posterior distribution
+#of mixture proportions of sigmaa by variational Bayes method
+#(use Dirichlet prior and approximate Dirichlet posterior)
+EMest_mean = function(betahat,sebetahat,pilik,g,prior,null.comp=1,nullcheck=TRUE, maxiter=5000, df){ 
+  
+  pi.init = g$pi
+  k = ncomp(g)
+  n = length(betahat)
+  l = dim(sebetahat)[2]
+  group=rep(1:k,l)
+  tol = min(0.1/n,1e-4) # set convergence criteria to be more stringent for larger samples
+  
+  matrix_lik_raw = t(compdens_conv_mixlik(g,betahat,sebetahat,df,pilik))
+  matrix_lik = t(rowsum(t(matrix_lik_raw),group))
+  
+  EMfit = mixEM(matrix_lik,prior,pi.init,tol, maxiter)
+  
+  pi = EMfit$pihat     
+  loglik = EMfit$B # actually return log lower bound not log-likelihood! 
+  converged = EMfit$converged
+  niter = EMfit$niter
+  loglik.final = EMfit$B[length(EMfit$B)]
+  
+  null.loglik = sum(log(matrix_lik[,null.comp]))  
+  
+  if(nullcheck==TRUE){ 
+    if(null.loglik > loglik.final){ #check whether exceeded "null" likelihood where everything is null
+      pi=rep(0,k)
+      pi[null.comp]=1
+      m  = t(pi * t(matrix_lik)) 
+      m.rowsum = rowSums(m)
+      loglik = sum(log(m.rowsum))
+    }
   }
-}
-
-# prior.se of se: se|pi,alpha.vec,c ~ pi*IG(alpha_k,c*(alpha_k-1))
-# Likelihood: varhat|se ~ sj*Gamma(n/2,n/2)
-# pi, alpha.vec, c: known
-# Posterior weight of P(se|varhat) (IG mixture distn)
-post_pi = function(n,varhat,alpha.vec,modalpha.vec,c,pi){
-  N = length(varhat)
-  K = length(alpha.vec)
-  post.pi.mat = exp(outer(rep(1,N),log(pi))+n/2*log(n/2)-lgamma(n/2)
-                  +(n/2-1)*outer(log(varhat),rep(1,K))
-                  +outer(rep(1,N),alpha.vec*log(c*modalpha.vec)-lgamma(alpha.vec)+lgamma(alpha.vec+n/2))
-                  -outer(rep(1,N),alpha.vec+n/2)*log(outer(rep(1,N),c*modalpha.vec)+outer(n/2*varhat,rep(1,K))))
-  return(pimat=post.pi.mat)
-}
-
-# Normalize pi to make sum(pi)=1
-normalized_pi = function(pi.mat){
-  n = dim(pi.mat)[2]
-  pi.normalized = pi.mat/outer(rowSums(pi.mat),rep(1,n))  
-  return(pi.normalized)
-}
-
-# Posterior distn P(se|varhat)
-# alpha.vec, c, pi: known
-# varhat: observed (standard errors)^2
-post_distn_se = function(n,varhat,alpha.vec,modalpha.vec,c,pi){ 
-  N = length(varhat)
-  K = length(alpha.vec)
-  post.pi = normalized_pi(post_pi(n,varhat,alpha.vec,modalpha.vec,c,pi))
   
-  post.IG.parama = outer(rep(1,N),alpha.vec+n/2)
-  post.IG.paramb = outer(rep(1,N),c*modalpha.vec)+outer(n/2*varhat,rep(1,K))
+  g$pi=pi
   
-  # Posterior mean: E(var|varhat)
-  post.mixmean = post.IG.paramb/(post.IG.parama-1)
-  post.mean = apply(post.pi*post.mixmean,1,sum)
-  
-  return(list(pi=post.pi,mean=post.mean,gammaa=post.IG.parama,gammab=post.IG.paramb))
+  return(list(loglik=loglik.final,null.loglik=null.loglik,
+              matrix_lik=matrix_lik,converged=converged,g=g))
 }
 
-# Log-likelihood: L(varhat|c,pi,alpha.vec)
-loglike = function(logc,N,K,alpha.vec,n,varhat,pi,unimodal){
+
+#estimate mixture proportions of se's prior by EM algorithm
+#prior gives the parameter of a Dirichlet prior on pi
+#(prior is used to encourage results towards smallest value of sigma when
+#likelihood is flat)
+EMest_se = function(betahat,sebetahat,g,prior.se,maxiter=5000, v,unimodal, SGD, singlecomp){ 
+  
+  pi.init = g$pi
+  k = ncomp(g)
+  n = length(betahat)
+  tol = min(0.1/n,1e-4) # set convergence criteria to be more stringent for larger samples
+  
+  if(unimodal=='variance'){
+    c.init=g$beta[1]/(g$alpha[1]+1)
+  }else if(unimodal=='precision'){
+    c.init=g$beta[1]/(g$alpha[1]-1)
+  }
+  
+  EMfit = IGmixEM(sebetahat, v, c.init, g$alpha, pi.init, prior.se, unimodal, SGD, singlecomp, tol, maxiter)
+  
+  loglik = EMfit$B # actually return log lower bound not log-likelihood! 
+  converged = EMfit$converged
+  niter = EMfit$niter
+  loglik.final = EMfit$B[length(EMfit$B)]
+  
+  g$pi=EMfit$pihat 
+  g$c=EMfit$chat 
+  if(singlecomp==TRUE){
+    g$alpha=EMfit$alphahat
+  }
+  if(unimodal=='variance'){
+    g$beta=g$c*(g$alpha+1)
+  }else if(unimodal=='precision'){
+    g$beta=g$c*(g$alpha-1)
+  }
+  
+  return(list(loglik=loglik.final,converged=converged,g=g))
+}
+
+
+IGmixEM = function(sebetahat, v, c.init, alpha.vec, pi.init, prior.se, unimodal, SGD, singlecomp, tol, maxiter){
+  q = length(pi.init)
+  n = length(sebetahat)
+  
   if(unimodal=='variance'){
     modalpha.vec=alpha.vec+1
   }else if(unimodal=='precision'){
     modalpha.vec=alpha.vec-1
   }
   
+  if(singlecomp==FALSE){
+    params.init=c(log(c.init),pi.init,0)
+    res = squarem(par=params.init,fixptfn=fixpoint_se, objfn=penloglik_se, 
+                  n=n,k=q,alpha.vec=alpha.vec,modalpha.vec=modalpha.vec,v=v,sebetahat=sebetahat,prior.se=prior.se,SGD=SGD,
+                  control=list(maxiter=maxiter,tol=tol))
+    return(list(chat = exp(res$par[1]), pihat=res$par[2:(length(res$par)-1)], B=-res$value.objfn, 
+                niter = res$iter, converged=res$convergence))
+  }else{
+    params.init=c(log(c.init),log(alpha.vec),0)
+    res = squarem(par=params.init,fixptfn=fixpoint_se_estalpha, objfn=penloglik_se_estalpha, 
+                  n=n,k=q,v=v,sebetahat=sebetahat,unimodal=unimodal,prior.se=prior.se,SGD=SGD,
+                  control=list(maxiter=maxiter,tol=tol))
+    return(list(chat = exp(res$par[1]), pihat=1, B=-res$value.objfn, 
+                niter = res$iter, converged=res$convergence,
+                alphahat=exp(res$par[2])))
+  }
+  
+}
+
+
+# Estimate the single inv-gamma prior distn params (moments matching)
+# Prior: s^2~IG(a,b)
+# sebetahat^2~s^2*Gamma(df/2,df/2)
+momentm = function(sebetahat,df){
+  n = length(sebetahat)
+  e = 2*log(sebetahat)-digamma(df/2)+log(df/2)
+  ehat = mean(e)
+  a = solve_trigamma(mean((e-ehat)^2*n/(n-1)-trigamma(df/2)))
+  b = a*exp(ehat+digamma(df/2)-log(df/2))
+  return(list(a=a,b=b))
+}
+
+# Solve trigamma(y)=x
+solve_trigamma = function(x){
+  if(x > 1e7){
+    y.new = 1/sqrt(x)
+  }else if (x < 1e-6){
+    y.new = 1/x
+  }else{    
+    y.old = 0.5+1/x
+    delta = trigamma(y.old)*(1-trigamma(y.old)/x)/psigamma(y.old,deriv=2)
+    y.new = y.old+delta
+    while(-delta/y.new <= 1e-8){
+      y.old = y.new
+      delta = trigamma(y.old)*(1-trigamma(y.old)/x)/psigamma(y.old,deriv=2)
+      y.new = y.old+delta
+    }
+  }
+  return(y.new)
+}
+
+# prior.se of se: se|pi,alpha.vec,c ~ pi*IG(alpha_i,c*(alpha_i-1))
+# Likelihood: sebetahat^2|se^2 ~ sj*Gamma(v/2,v/2)
+# pi, alpha.vec, c: known
+# Posterior weight of P(se|sebetahat) (IG mixture distn)
+post_pi_vash = function(v,sebetahat,alpha.vec,modalpha.vec,c,pi){
+  n = length(sebetahat)
+  k = length(alpha.vec)
+  post.pi.mat = outer(rep(1,n),pi)*exp(v/2*log(v/2)-lgamma(v/2)
+                                       +(v/2-1)*outer(2*log(sebetahat),rep(1,k))
+                                       +outer(rep(1,n),alpha.vec*log(c*modalpha.vec)-lgamma(alpha.vec)+lgamma(alpha.vec+v/2))
+                                       -outer(rep(1,n),alpha.vec+v/2)*log(outer(v/2*sebetahat^2,c*modalpha.vec,FUN="+")))
+  return(pimat=post.pi.mat)
+}
+
+fixpoint_se = function(params,n,k,alpha.vec,modalpha.vec,v,sebetahat,prior.se,SGD){
+  logc=params[1]
+  pi=params[2:(length(params)-1)]
+  iter=params[length(params)]
+  
+  iter=iter+1
+  mm = post_pi_vash(v,sebetahat,alpha.vec,modalpha.vec,exp(logc),pi)
+  m.rowsum = rowSums(mm)
+  classprob = mm/m.rowsum
+  newpi = colSums(classprob)+prior.se-1
+  newpi = ifelse(newpi<1e-5,1e-5,newpi)
+  newpi = newpi/sum(newpi);
+  if (SGD==FALSE){
+    est=nlminb(logc,loglike.se,gradloglike.se,n=n,k=k,alpha.vec=alpha.vec,modalpha.vec=modalpha.vec,v=v,sebetahat=sebetahat,pi=newpi)
+    newc=exp(est$par[1])
+    newlogc=est$par[1]
+  }else{
+    newlogc=logc-1/n/sqrt(iter)*gradloglike.se(logc,n,k,alpha.vec,modalpha.vec,v,sebetahat,newpi)  
+  }
+  params = c(newlogc,newpi,iter)
+  return(params)
+}
+
+fixpoint_se_estalpha = function(params,n,k,v,sebetahat,unimodal,prior.se,SGD){ 
+  logc=params[1]
+  alpha.vec=exp(params[2])
+  iter=params[3]
+  pi=1
+  
+  iter=iter+1
+  
+  if (SGD==FALSE){
+    if(unimodal=='variance'){
+      modalpha=alpha.vec+1
+    }else if(unimodal=='precision'){
+      modalpha=alpha.vec-1
+    }
+    estc=nlminb(logc,loglike.se,gradloglike.se,n=n,k=k,alpha.vec=alpha.vec,modalpha.vec=modalpha,v=v,sebetahat=sebetahat,pi=pi)
+    newlogc=estc$par[1]
+    estalpha=nlminb(log(alpha.vec),loglike.se.a,gradloglike.se.a,c=exp(newlogc),n=n,k=k,v=v,sebetahat=sebetahat,pi=pi,unimodal=unimodal)
+    newlogalpha=estalpha$par[1]
+  }else{
+    newlogalpha=max(log(1),log(alpha.vec)-1/n/sqrt(iter)*gradloglike.se.a(log(alpha.vec),exp(logc),n,k,v,sebetahat,pi,unimodal))
+    newalpha=exp(newlogalpha)
+    if(unimodal=='variance'){
+      newmodalpha=newalpha+1
+    }else if(unimodal=='precision'){
+      newmodalpha=newalpha-1
+    }
+    newlogc=logc-1/n/sqrt(iter)*gradloglike.se(logc,n,k,newalpha,newmodalpha,v,sebetahat,pi) 
+  }
+  
+  params = c(newlogc,newlogalpha,iter)
+  return(params)
+}
+
+penloglik_se = function(params,n,k,alpha.vec,modalpha.vec,v,sebetahat,prior.se,SGD){
+  c=exp(params[1])
+  pi=params[2:(length(params)-1)]
+  iter=params[length(params)]
+  priordens = sum((prior.se-1)*log(pi))
+  mm = post_pi_vash(v,sebetahat,alpha.vec,modalpha.vec,c,pi)
+  m.rowsum = rowSums(mm)
+  loglik = sum(log(m.rowsum))
+  return(-(loglik+priordens))
+}
+
+penloglik_se_estalpha = function(params,n,k,v,sebetahat,unimodal,prior.se,SGD){
+  c=exp(params[1])
+  alpha.vec=exp(params[2])
+  pi=1
+  iter=params[3]
+  
+  if(unimodal=='variance'){
+    modalpha.vec=alpha.vec+1
+  }else if(unimodal=='precision'){
+    modalpha.vec=alpha.vec-1
+  }
+  
+  priordens = sum((prior.se-1)*log(pi))
+  mm = post_pi_vash(v,sebetahat,alpha.vec,modalpha.vec,c,pi)
+  m.rowsum = rowSums(mm)
+  loglik = sum(log(m.rowsum))
+  return(-(loglik+priordens))
+}
+
+# Log-likelihood: L(sebetahat^2|c,pi,alpha.vec)
+loglike.se = function(logc,n,k,alpha.vec,modalpha.vec,v,sebetahat,pi){  
   c=exp(logc)
-  pimat = exp(outer(rep(1,N),log(pi))+n/2*log(n/2)-lgamma(n/2)
-                  +(n/2-1)*outer(log(varhat),rep(1,K))
-                  +outer(rep(1,N),alpha.vec*log(c*modalpha.vec)-lgamma(alpha.vec)+lgamma(alpha.vec+n/2))
-                  -outer(rep(1,N),alpha.vec+n/2)*log(outer(rep(1,N),c*modalpha.vec)+outer(n/2*varhat,rep(1,K))))
+  pimat = outer(rep(1,n),pi)*exp(v/2*log(v/2)-lgamma(v/2)
+                                 +(v/2-1)*outer(2*log(sebetahat),rep(1,k))
+                                 +outer(rep(1,n),alpha.vec*log(c*modalpha.vec)-lgamma(alpha.vec)+lgamma(alpha.vec+v/2))
+                                 -outer(rep(1,n),alpha.vec+v/2)*log(outer(v/2*sebetahat^2,c*modalpha.vec,FUN="+")))
   #classprob=pimat/rowSums(pimat)
   logl = sum(log(rowSums(pimat)))
   return(-logl)
 }
 
-# Gradient of funtion loglike (w.r.t logc)
-gradloglik = function(logc,N,K,alpha.vec,n,varhat,pi,unimodal){
+# Gradient of funtion loglike.se (w.r.t logc)
+gradloglike.se = function(logc,n,k,alpha.vec,modalpha.vec,v,sebetahat,pi){
   c=exp(logc)
-  if(unimodal=='variance'){
-    modalpha.vec=alpha.vec+1
-  }else if(unimodal=='precision'){
-    modalpha.vec=alpha.vec-1
-  }
-  pimat = exp(outer(rep(1,N),log(pi))+n/2*log(n/2)-lgamma(n/2)
-            +(n/2-1)*outer(log(varhat),rep(1,K))
-            +outer(rep(1,N),alpha.vec*log(c*modalpha.vec)-lgamma(alpha.vec)+lgamma(alpha.vec+n/2))
-            -outer(rep(1,N),alpha.vec+n/2)*log(outer(rep(1,N),c*modalpha.vec)+outer(n/2*varhat,rep(1,K))))
+  
+  pimat = outer(rep(1,n),pi)*exp(v/2*log(v/2)-lgamma(v/2)
+                                 +(v/2-1)*outer(2*log(sebetahat),rep(1,k))
+                                 +outer(rep(1,n),alpha.vec*log(c*modalpha.vec)-lgamma(alpha.vec)+lgamma(alpha.vec+v/2))
+                                 -outer(rep(1,n),alpha.vec+v/2)*log(outer(v/2*sebetahat^2,c*modalpha.vec,FUN="+")))
   classprob = pimat/rowSums(pimat)
-  gradmat = c*classprob*(outer(rep(1,N),alpha.vec/c)
-                     -outer(rep(1,N),(alpha.vec+n/2)*modalpha.vec)/
-    (outer(rep(1,N),c*modalpha.vec)+outer(n/2*varhat,rep(1,K))))
+  gradmat = c*classprob*(outer(rep(1,n),alpha.vec/c)
+                         -outer(rep(1,n),(alpha.vec+v/2)*modalpha.vec)/
+                           (outer(v/2*sebetahat^2,c*modalpha.vec,FUN='+')))
   grad = sum(-gradmat)
   return(grad)
 }
 
-# Gradient of funtion loglike for single component prior.se (w.r.t logalpha)
-gradloglik.a = function(logc,N,K,logalpha.vec,n,varhat,pi,unimodal){
+# Log-likelihood: L(sebetahat|c,pi,alpha.vec)
+loglike.se.a = function(logalpha.vec,c,n,k,v,sebetahat,pi,unimodal){  
   alpha.vec=exp(logalpha.vec)
   if(unimodal=='variance'){
     modalpha.vec=alpha.vec+1
   }else if(unimodal=='precision'){
     modalpha.vec=alpha.vec-1
   }
-  c=exp(logc)
-  grad=-alpha.vec*sum(logc+log(modalpha.vec)+alpha.vec/modalpha.vec-digamma(alpha.vec)+digamma(alpha.vec+n/2)
-           -c*(alpha.vec+n/2)/(c*modalpha.vec+n/2*varhat)-log(c*modalpha.vec+n/2*varhat))
-  return(grad)
+  pimat = outer(rep(1,n),pi)*exp(v/2*log(v/2)-lgamma(v/2)
+                                 +(v/2-1)*outer(2*log(sebetahat),rep(1,k))
+                                 +outer(rep(1,n),alpha.vec*log(c*modalpha.vec)-lgamma(alpha.vec)+lgamma(alpha.vec+v/2))
+                                 -outer(rep(1,n),alpha.vec+v/2)*log(outer(v/2*sebetahat^2,c*modalpha.vec,FUN="+")))
+  #classprob=pimat/rowSums(pimat)
+  logl = sum(log(rowSums(pimat)))
+  return(-logl)
 }
 
-
-# EM algorithm to estimate pi.se (mixture proportion for varhat's prior),
-# c, and alpha(only when singlecomp==TRUE)
-# prior.se: nullbiased: add weight to the null component at each iteration; (NEED TESTING!)
-#        uniform: uniform weight
-# ltol: tolerance of convergence
-# maxiter: max number of iterations
-EMest_semix = function(varhat,n,c,alpha.vec,pi,prior.se='uniform', ltol=0.0001, maxiter=5000, unimodal, SGD, singlecomp){
-  K = length(pi)
-  N = length(varhat)
-  nullcomp = which.max(alpha.vec)
-  if(is.null(c)){
-    est.c = TRUE
-    c=mean(varhat)
-  }else{
-    est.c = FALSE
-  }
+# Gradient of funtion loglike.se for single component prior.se (w.r.t logalpha)
+gradloglike.se.a = function(logalpha.vec,c,n,k,v,sebetahat,pi,unimodal){
+  alpha.vec=exp(logalpha.vec)
   if(unimodal=='variance'){
     modalpha.vec=alpha.vec+1
   }else if(unimodal=='precision'){
     modalpha.vec=alpha.vec-1
   }
-    
-  if(prior.se=="nullbiased"){ 
-    prior.se = rep(1,K)
-    prior.se[nullcomp] = 10
-  }else if(prior.se=="uniform"){
-    prior.se = rep(1,K)
-  }else if(prior.se=='unipenalty'){
-    prior.se=rep(10,K)
+  grad=-alpha.vec*sum(log(c)+log(modalpha.vec)+alpha.vec/modalpha.vec-digamma(alpha.vec)+digamma(alpha.vec+v/2)
+                      -c*(alpha.vec+v/2)/(c*modalpha.vec+v/2*sebetahat^2)-log(c*modalpha.vec+v/2*sebetahat^2))
+  return(grad)
+}
+
+# Approximate non-standard mixture t-likelihood by normal-mixture
+# component i: ~(sqrt(beta[i]/alpha[i]))*T(2*alpha[i]), w.p. pi[i]
+approxlik_gq=function(params,q,appsigma,appweight){
+  alpha = params[1:q] 
+  beta = params[(q+1):(2*q)]
+  pi = params[(2*q+1):(3*q)]
+  
+  fi=numeric(0)
+  sigma=numeric(0)
+  for (i in 1:q){
+    fi = c(fi,pi[i]*appweight[i,])
+    sigma = c(sigma, sqrt(beta[i]/alpha[i])*appsigma[i,])
   }
-  loglik = rep(NA,maxiter)
+  fi=fi[order(sigma)]
+  sigma=sort(sigma)
+  return(c(fi,sigma))
+}
+
+# Approximate t-distribution (of df) by r-components normal mixture
+approxt = function(df, r){
+  alpha=df/2-1
+  rules=glaguerre.quadrature.rules(r,alpha,normalized=TRUE)
+  sigma=sqrt(df/(2*rules[[r]]$x))
+  weight=rules[[r]]$w/sum(rules[[r]]$w)
+  return(list(sigma=sigma,weight=weight))
+}
+
+# Approximate mixture t likelihood (with l components) 
+# by mixture normal (with q components)
+# pi, alpha, beta are n by l matrices
+# component i: ~(sqrt(beta[n,i]/alpha[n,i]))*T(2*alpha[n,i]), w.p. pi[n,i]
+mixlik_sd=function(pi,alpha,beta){
+  q=dim(pi)[2]
+  post.se.params = cbind(alpha, beta, pi)
+  ll=max(5,floor(20/q))
   
-  mm = post_pi(n,varhat,alpha.vec,modalpha.vec,c,pi)
-  m.rowsum = rowSums(mm)
-  loglik[1] = sum(log(m.rowsum))
-  classprob = mm/m.rowsum
+  appweight=matrix(rep(0,ll*q),nrow=q)
+  appsigma=matrix(rep(0,ll*q),nrow=q)
+  for (i in 1:q){
+    app = approxt(df=2*t(alpha)[i],r=ll) # l components for approximating each t-distribution
+    appweight[i,]=app$weight
+    appsigma[i,]=app$sigma
+  }
   
-  logc=log(c)
-  for(i in 2:maxiter){    
-    if (est.c==TRUE & SGD==FALSE){
-      est=nlminb(logc,loglike,gradloglik,N=N,K=K,alpha.vec=alpha.vec,n=n,varhat=varhat,pi=pi,unimodal=unimodal)
-      c=exp(est$par[1])  
-    }else if (est.c==TRUE & SGD==TRUE){
-      logc=log(c)-0.001/sqrt(i)*gradloglik(log(c),N,K,alpha.vec,n,varhat,pi,unimodal)
-      c=exp(logc)
-    } 
-    if (singlecomp==TRUE){
-      logalpha.vec=max(log(2),log(alpha.vec)-0.001/(i^0.25)*gradloglik.a(log(c),N,K,log(alpha.vec),n,varhat,pi,unimodal))
-      alpha.vec=exp(logalpha.vec)
-      if(unimodal=='variance'){
-        modalpha.vec=alpha.vec+1
-      }else if(unimodal=='precision'){
-        modalpha.vec=alpha.vec-1
+  results = t(apply(post.se.params,1,approxlik_gq,q=q,appsigma=appsigma,appweight=appweight))
+  pilik=results[,1:(dim(results)[2]/2)]
+  selik=results[,(dim(results)[2]/2+1):dim(results)[2]]
+  return(list(pilik=pilik,selik=selik))
+}
+
+
+
+
+
+#' @useDynLib vash
+#todo
+#
+#' @title Main Adaptive SHrinkage function
+#'
+#' @description Takes vectors of estimates (betahat) and their standard errors (sebetahat), and applies
+#' shrinkage to them, using Empirical Bayes methods, to compute shrunk estimates for beta.
+#'
+#' @details See readme for more details
+#' 
+#' @param betahat, a p vector of estimates 
+#' @param sebetahat, a p vector of corresponding standard errors
+#' @param method: specifies how ash is to be run. Can be "shrinkage" (if main aim is shrinkage) or "fdr" (if main aim is to assess fdr or fsr)
+#' This is simply a convenient way to specify certain combinations of parameters: "shrinkage" sets pointmass=FALSE and prior="uniform";
+#' "fdr" sets pointmass=TRUE and prior="nullbiased".
+#' @param mixcompdist: distribution of components in mixture ("normal", "uniform" or "halfuniform")
+#'
+#' @param lambda1: multiplicative "inflation factor" for standard errors (like Genomic Control)
+#' @param lambda2: additive "inflation factor" for standard errors (like Genomic Control)
+#' @param nullcheck: whether to check that any fitted model exceeds the "null" likelihood
+#' in which all weight is on the first component
+#' @param df: appropriate degrees of freedom for (t) distribution of betahat/sebetahat
+#' @param randomstart: bool, indicating whether to initialize EM randomly. If FALSE, then initializes to prior mean (for EM algorithm) or prior (for VBEM)
+#' @param pointmass: bool, indicating whether to use a point mass at zero as one of components for a mixture distribution
+#' @param onlylogLR: bool, indicating whether to use this function to get logLR. Skip posterior prob, posterior mean, lfdr...
+#' @param singlecomp: bool, indicating whether to use a single inverse-gamma distribution as the prior distribution of the variances
+#' @param SGD: bool, indicating whether to use the stochastic gradient descent method to fit the prior distribution of the variances
+#' @param unimodal: unimodal constraint for the prior distribution of the variances ("variance") or the precisions ("precision")
+#' @param prior: string, or numeric vector indicating Dirichlet prior on mixture proportions (defaults to "uniform", or 1,1...,1; also can be "nullbiased" 1,1/k-1,...,1/k-1 to put more weight on first component)
+#' @param mixsd: vector of sds for underlying mixture components 
+#' @param gridmult: the multiplier by which the default grid values for mixsd differ by one another. (Smaller values produce finer grids)
+#' @param minimal_output: if TRUE, just outputs the fitted g and the lfsr (useful for very big data sets where memory is an issue) 
+#' @param g: the prior distribution for beta (usually estimated from the data; this is used primarily in simulated data to do computations with the "true" g)
+#' @param maxiter: maximum number of iterations of the EM algorithm
+#' 
+#'
+#' @return a list with elements fitted.g is fitted mixture
+#' logLR : logP(D|mle(pi)) - logP(D|null)
+#' 
+#' @export
+#' 
+#' @examples 
+#' beta = c(rep(0,100),rnorm(100))
+#' sebetahat = abs(rnorm(200,0,1))
+#' betahat = rnorm(200,beta,sebetahat)
+#' beta.ash = ash(betahat, sebetahat)
+#' summary(beta.ash)
+#' plot(betahat,beta.ash$PosteriorMean,xlim=c(-4,4),ylim=c(-4,4))
+vash = function(betahat,sebetahat,df,method = c("shrink","fdr"), 
+                mixcompdist = c("normal","uniform","halfuniform"),
+                lambda1=1,lambda2=0,nullcheck=TRUE,randomstart=FALSE, 
+                pointmass = FALSE, 
+                onlylogLR = FALSE, 
+                singlecomp = FALSE,
+                SGD = TRUE,
+                unimodal = c("variance","precision"),
+                prior.mean=c("uniform","nullbiased"), 
+                prior.se=NULL,
+                mixsd=NULL,gridmult=sqrt(2),
+                minimaloutput=FALSE,
+                g.se=NULL,
+                g.mean=NULL,
+                maxiter.mean = 5000,
+                maxiter.se = 5000){
+  
+  #method provides a convenient interface to set a particular combinations of parameters for prior an
+  #If method is supplied, use it to set up specific values for these parameters; provide warning if values
+  #are also specified by user
+  #If method is not supplied use the user-supplied values (or defaults if user does not specify them)
+  
+  if(!missing(method)){
+    method = match.arg(method) 
+    if(method=="shrink"){
+      if(missing(prior.mean)){
+        prior.mean = "uniform"
+      } else {
+        warning("Specification of prior overrides default for method shrink")
+      }
+      if(missing(pointmass)){
+        pointmass=FALSE
+      } else {
+        warning("Specification of pointmass overrides default for method shrink")
       }
     }
-    pi = colSums(classprob)+prior.se-1
-    #pi=colSums(classprob)
-    pi = ifelse(pi<0,0,pi); pi=pi/sum(pi);
-    mm = post_pi(n,varhat,alpha.vec,modalpha.vec,c,pi)
-    m.rowsum = rowSums(mm)
-    loglik[i] = sum(log(m.rowsum))
-    classprob = mm/m.rowsum
-    if(abs(loglik[i]-loglik[i-1])<ltol) break;      
-  }
-  converged = (i< maxiter)
-  niter = min(c(i,maxiter))
-  return(list(pi=pi,classprob=classprob,loglik.final=loglik,converged=converged,niter=niter,c=c,alpha.vec=alpha.vec,modalpha.vec=modalpha.vec))  
-}
-
-logABF = function(betahat,sebetahat,sigmaa){
-  T = betahat/sebetahat
-  lambda = sebetahat^2/(sebetahat^2+sigmaa^2)
-  return(0.5*log(lambda) + 0.5*T^2 *(1-lambda))
-  # the following line is same up to a constant, and probably faster:
-  # return(dnorm(betahat,0,sqrt(sebetahat^2+sigmaa^2),log=TRUE))
-}
-
-#return matrix of ABFs for vector of sigma-a values
-#normalized by maximum of each column
-#betahat is n vector, sebetahat is n vector, sigmaavec is k vector
-#return is n by k matrix of ABFs
-matrixABF = function(betahat, sebetahat, sigmaavec){
-  k = length(sigmaavec)
-  n = length(betahat)
-  labf = matrix(0,nrow=n, ncol=k)
-  for(i in 1:k){
-    labf[,i] = logABF(betahat,sebetahat,sigmaavec[i])
-  }
-  maxlabf = apply(labf, 1, max)
-  labf = labf - maxlabf
-  return(exp(labf))
-}
-
-totalABF = function(betahat, pi.lik, sigma.lik, sigma.prior){
-  L = length(sigma.prior)
-  K = dim(sigma.lik)[2]
-  n = length(betahat)
-  
-  abf = 0
-  for (j in 1:K){
-    labf = matrix(0,nrow=n, ncol=L)
-    for(i in 1:L){
-      labf[,i] = logABF(betahat,sigma.lik[,j],sigma.prior[i])
-    }
-    maxlabf = apply(labf, 1, max)
-    labf = labf - maxlabf
-    abf = abf + outer(pi.lik[,j],rep(1,L))*exp(labf)
-  }
-  return(abf)
-}
-
-
-# EM algorithm to estimate mixture proportion for beta's prior
-# prior.beta: nullbiased: add weight to the null component at each iteration; (NEED TESTING!)
-#        uniform: uniform weight
-# ltol: tolerance of convergence
-# maxiter: max number of iterations
-EMest_meanmix = function(betahat, pi.lik, sigma.lik, sigma.prior, prior.beta='nullbiased', ltol=0.0001, maxiter=5000){
-  K = length(sigma.lik)
-  L = length(sigma.prior)
-  N = length(betahat)
-  nullcomp = which.min(sigma.prior)
-  
-  if(prior.beta=="nullbiased"){ 
-    prior.beta = rep(1,L)
-    prior.beta[nullcomp] = 10
-  }else if(prior.beta=="uniform"){
-    prior.beta = rep(1,L)
-  }
-  pi = rep(1,L)
-  pi[nullcomp] = L
-  pi = pi/sum(pi)
-  
-  loglik = rep(NA,maxiter)
-  abf = totalABF(betahat,pi.lik,sigma.lik,sigma.prior)
-  m  = t(pi * t(abf)) # abf is n by k; so this is also n by k
-  m.rowsum = rowSums(m)
-  loglik[1] = sum(log(m.rowsum))
-  classprob = m/m.rowsum #an n by k matrix
-  
-  for(i in 2:maxiter){
-    pi = colSums(classprob)+prior.beta-1
-    pi = ifelse(pi<0,0,pi); pi=pi/sum(pi);
-    abf = totalABF(betahat,pi.lik,sigma.lik,sigma.prior)
-    m  = t(pi * t(abf)) # abf is n by k; so this is also n by k
-    m.rowsum = rowSums(m)
-    loglik[i] = sum(log(m.rowsum))
-    classprob = m/m.rowsum
-    if(abs(loglik[i]-loglik[i-1])<ltol) break;      
-  }
-  converged = (i< maxiter)
-  niter = min(c(i,maxiter))
-  return(list(pi=pi,classprob=classprob,loglik.final=loglik,converged=converged,niter=niter))  
-}
-
-#return posterior of being <T (or >T) for a mixture of Gaussians
-# each of pi1, mu1, sigma1 is a N by K matrix
-# jth column provides parameters for jth mixture of gauusians 
-# return an n vector of probabilities
-pnormmix = function(T,pi1,mu1,sigma1,lower.tail=TRUE){
-  return(apply(pi1 * pnorm(T,mu1,sigma1,lower.tail),1,sum))
-}
-
-#return the posterior on beta given a prior
-#that is a mixture of normals (pi0,mu0,sigma0)
-#and observation betahat \sim N(beta,sebetahat)
-#current ABF is only for mu0=0, so would need to
-#generalize that for general application
-#INPUT: priors: pi0, mu0, sigma0, all k vectors
-#       data, betahat (n vector), sebetahat (n vector)
-#OUTPUT list (pi1,mu1,sigma1) whose components are each k by n matrices
-#k is number of mixture components, n is number of observations
-old_posterior_dist = function(pi0,mu0,sigma0,betahat,sebetahat){
-  k= length(pi0)
-  n= length(betahat)
-  
-  pi1 = pi0 * t(matrixABF(betahat,sebetahat,sigma0))
-  pi1 = apply(pi1, 2, normalize) #pi1 is now an k by n matrix
-  
-  #make k by n matrix versions of sigma0^2 and sebetahat^2
-  # and mu0 and betahat
-  s0m2 = matrix(sigma0^2,nrow=k,ncol=n,byrow=FALSE)
-  sebm2 = matrix(sebetahat^2,nrow=k,ncol=n, byrow=TRUE)
-  mu0m = matrix(mu0,nrow=k,ncol=n,byrow=FALSE)
-  bhatm = matrix(betahat,nrow=k,ncol=n,byrow=TRUE)
-  
-  sigma1 = (s0m2*sebm2/(s0m2 + sebm2))^(0.5)  
-  w = sebm2/(s0m2 + sebm2)
-  mu1 = w*mu0m + (1-w)*bhatm
-  
-  #WHERE DATA ARE MISSING, SET POSTERIOR = PRIOR
-  ismiss = (is.na(betahat) | is.na(sebetahat)) 
-  pi1[,ismiss] = pi0
-  mu1[,ismiss] = mu0
-  sigma1[,ismiss] = sigma0
-  
-  return(list(pi=t(pi1),mu=t(mu1),sigma=t(sigma1)))
-}
-
-# Compute posterior distribution P(beta|betahat,varhat)
-post_distn_mean = function(pi.lik, pi.prior, betahat, sigma.lik, sigma.prior){
-  K = dim(sigma.lik)[2]
-  L = length(sigma.prior)
-  N = length(betahat)
-  postpi = NULL
-  postmu = NULL
-  postsigma = NULL
-  for (i in 1:K){
-    temppost = old_posterior_dist(pi.prior,0,sigma.prior,betahat,sigma.lik[,i])
-    postpi = cbind(postpi, outer(pi.lik[,i],rep(1,L))*temppost$pi)
-    postmu = cbind(postmu, temppost$mu)
-    postsigma = cbind(postsigma, temppost$sigma)
-  }
-  return(list(pi=postpi,mu=postmu,sigma=postsigma))
-}
-
-#find point estimates of beta from a posterior produced by post_distn_mean
-posterior_mean = function(post){
-  return(rowSums(post$pi * post$mu))
-}
-
-# Approximate t-mixture likelihood P(betahat|varhat,beta)=pi*(beta+b.vec/alpha.vec*t(2*alpha.vec))
-# by normal-mixture, with fixed normal params for each component N(0,sigma^2)
-# estimate the normal-mixture proportion fi*N(0,sigma^2)
-# alpha.vec, beta.vec, pi: P(var|varhat)=pi*InvGamma(alpha.vec,b.vec)
-# Solve fi s.t. several quantiles of normal-mixture approx that of t-mixture
-library(limSolve)
-approxlik = function(params,K){
-  alpha.vec = params[1:K]
-  b.vec = params[(K+1):(2*K)]
-  pi = params[(2*K+1):(3*K)] 
-  sigma = params[(3*K+1):length(params)]
-  L = length(sigma)
-  
-  pts = 2^(seq(-2,2))  # NEED TESTING!
-  A = pnorm(outer(pts,rep(1,L)),mean=0,sd=outer(rep(1,L),sigma))
-  b = rowSums(outer(rep(1,L),pi)*pt(outer(pts,alpha.vec/b.vec),df=outer(rep(1,L),2*alpha.vec)))
-  fi = lsei(A = A, B = b, E = rep(1,L), F = 1, G = diag(L), H = rep(0,L))$X
-  
-  #xgrid = seq(-10,10,by=0.001)
-  #densmat = outer(rep(1,length(xgrid)),alpha.vec/b.vec)*dt(outer(xgrid,alpha.vec/b.vec),df=outer(rep(1,length(xgrid)),2*alpha.vec))
-  #truedens = apply(outer(rep(1,length(xgrid)),pi)*densmat,1,sum)
-  #densmat = dnorm(outer(xgrid,rep(1,L)),mean=0,sd=outer(rep(1,length(xgrid)),sigma))
-  #approxdens = apply(outer(rep(1,length(xgrid)),fi)*densmat,1,sum)
-  #return(list(fi=fi,sigma=sigma,xgrid=xgrid,truedens=truedens,approxdens=approxdens))
-  return(fi)
-}
-
-# Adaptive shrinkage for variances
-# Unimodal: 'variance': variances~Mix IG with common mode c
-#           'precision': precisions~Mix Gamma with common mode c
-# SGD: use stochastic gradient descent to est hyperparams
-# singlecomp: fit single component prior.se (est both prior.se mean and var params by EB)
-vash = function(betahat,sebetahat,n,localfdr=TRUE,sigma.prior=NULL,prior.se='uniform',prior.beta='nullbiased',unimodal='precision',alpha.vec=NULL,c=NULL,pi.se=NULL,SGD=TRUE,singlecomp=FALSE){
-  varhat = sebetahat^2
-  N = length(betahat)
-  if(is.null(alpha.vec)){
-    alpha.vec = 2+2^seq(-3,10)
-  }
-  if(singlecomp==TRUE){
-    alpha.vec=max(1/(mean(varhat)^2*sd(varhat)^2),2)
-  }
-  if(is.null(pi.se)){
-    pi.se = rep(1,length(alpha.vec))/length(alpha.vec)
-  }
-  if(is.null(sigma.prior)){
-    sigma.prior = autoselect.mixsd(betahat,sqrt(varhat),10)
-  }
-  
-  # Estimate hyperparams for var prior P(var)~mix IG
-  pifit.se = EMest_semix(varhat,n,c,alpha.vec,pi.se,prior.se, ltol=0.0001, maxiter=5000, unimodal,SGD, singlecomp)
-  
-  # Posterior distribution P(var|varhat)
-  post.se = post_distn_se(n,varhat,pifit.se$alpha.vec,pifit.se$modalpha.vec,pifit.se$c,pifit.se$pi)
-  
-  # Approximate t-mixture likelihood P(betahat|beta,varhat) by normal mixture 
-  if (n>2){
-    sigma.lik = outer(rep(1,N),2^seq(-2,2))*apply(post.se$gammaa/post.se$gammab,1,mean)*n/(n-1.9)
-  }else{
-    sigma.lik = outer(rep(1,N),2^seq(-2,2))*apply(post.se$gammaa/post.se$gammab,1,mean)
-  }
-  K = dim(sigma.lik)[2]
-  post.se.params = cbind(post.se$gammaa, post.se$gammab, post.se$pi,sigma.lik)
-  pi.lik = t(apply(post.se.params,1,approxlik, K=length(pifit.se$pi)))
-  
-  # Estimate hyperparams for beta prior P(beta)~mix normal
-  pifit.beta = EMest_meanmix(betahat, pi.lik, sigma.lik, sigma.prior, prior.beta)
-  
-  # Compute posterior P(beta|betahat,varhat)
-  post.beta = post_distn_mean(pi.lik, pifit.beta$pi, betahat, sigma.lik, sigma.prior)
-  PosteriorMean = posterior_mean(post.beta)
-  
-  # Estimate lfdr, lfsr
-  PositiveProb = pnormmix(0,post.beta$pi,post.beta$mu,post.beta$sigma,lower.tail=FALSE)
-  ZeroProb = rowSums(post.beta$pi[,rep(sigma.prior,K)==0,drop=FALSE])
-  NegativeProb =  1- PositiveProb-ZeroProb
-  if(localfdr==TRUE){
-    localfsr = ifelse(PositiveProb<NegativeProb,PositiveProb+ZeroProb,NegativeProb+ZeroProb)
-    localfdr = 2* localfsr
-    qvalue = qval.from.lfdr(localfdr)
-  }else{
-    localfdr = NULL
-    localfsr = NULL
-    qvalue = NULL
-  }
     
-  return(list(PosteriorMean=PosteriorMean, pifit.se=pifit.se, pifit.beta=pifit.beta,
-              post.se=post.se, post.beta=post.beta, alpha=alpha.vec, c=pifit.se$c,
-              pi.beta=pifit.beta$pi, pi.se=pifit.se$pi, pi.lik=pi.lik,
-              unimodal=unimodal, sigma.prior=sigma.prior, sigma.lik=sigma.lik,
-              localfdr=localfdr,localfsr=localfsr, qvalue=qvalue))
-}
-
-# function to plot the Empirical Bayes prior of variances/precisions
-# xmax: plot density on (0,xmax)
-vashEBprior=function(vashobj,xmax){
-  xgrid=seq(0.0001,xmax,by=0.01)
-  if(vashobj$unimodal=='variance'){
-    EBprior.var.sep=dgamma(outer(1/xgrid,rep(1,length(vashobj$alpha))),
-                           shape=outer(rep(1,length(xgrid)),vashobj$alpha),
-                           rate=vashobj$c*outer(rep(1,length(xgrid)),vashobj$alpha+1))*outer(1/xgrid^2,rep(1,length(vashobj$alpha)))
-    EBprior.var=rowSums(outer(rep(1,length(xgrid)),vashobj$pi)*EBprior.se.var.sep)
-    EBprior.prec.sep=dgamma(outer(xgrid,rep(1,length(vashobj$alpha))),
-                            shape=outer(rep(1,length(xgrid)),vashobj$alpha),
-                            rate=vashobj$c*outer(rep(1,length(xgrid)),vashobj$alpha+1))                    
-    EBprior.prec=rowSums(outer(rep(1,length(xgrid)),vashobj$pi)*EBprior.se.prec.sep)
-  }else if (vashobj$unimodal=='precision'){
-    EBprior.var.sep=dgamma(outer(1/xgrid,rep(1,length(vashobj$alpha))),
-                           shape=outer(rep(1,length(xgrid)),vashobj$alpha),
-                           rate=vashobj$c*outer(rep(1,length(xgrid)),vashobj$alpha-1))*outer(1/xgrid^2,rep(1,length(vashobj$alpha)))
-    EBprior.var=rowSums(outer(rep(1,length(xgrid)),vashobj$pi)*EBprior.se.var.sep)
-    EBprior.prec.sep=dgamma(outer(xgrid,rep(1,length(vashobj$alpha))),
-                            shape=outer(rep(1,length(xgrid)),vashobj$alpha),
-                            rate=vashobj$c*outer(rep(1,length(xgrid)),vashobj$alpha-1))                   
-    EBprior.prec=rowSums(outer(rep(1,length(xgrid)),vashobj$pi)*EBprior.se.prec.sep)
+    if(method=="fdr"){
+      if(missing(prior.mean)){
+        prior.mean = "nullbiased"
+      } else {
+        warning("Specification of prior overrides default for method fdr")
+      }
+      if(missing(pointmass)){
+        pointmass=TRUE
+      } else {
+        warning("Specification of pointmass overrides default for method fdr")
+      }
+    }  
   }
-  return(list(xgrid=xgrid,EBprior.var=EBprior.se.var,EBprior.prec=EBprior.prec, 
-              EBpriorvar.sep=EBprior.var.sep, EBprior.prec.sep=EBprior.prec.sep))
+  
+  if(missing(unimodal)){
+    unimodal = match.arg(unimodal) 
+  }
+  if(!is.element(unimodal,c("variance","precision"))) stop("Error: invalid type of singlecomp")
+  
+  if(onlylogLR){
+    pointmass = TRUE  
+  }
+  
+  mixcompdist = match.arg(mixcompdist)
+  
+  if(!is.numeric(prior.mean)){
+    prior.mean = match.arg(prior.mean)
+  }  
+  
+  if(length(sebetahat)==1){
+    sebetahat = rep(sebetahat,length(betahat))
+  }
+  if(length(sebetahat) != length(betahat)){
+    stop("Error: sebetahat must have length 1, or same length as betahat")
+  }
+  
+  completeobs = (!is.na(betahat) & !is.na(sebetahat))
+  n=sum(completeobs)
+  
+  if(n==0){
+    if(onlylogLR){
+      return(list(pi=NULL, logLR = 0))
+    }
+    else{
+      stop("Error: all input values are missing")
+    }
+  }  
+  
+  if(!missing(g.se)){
+    maxiter.se = 1 # if g is specified, don't iterate the EM
+    prior.se = rep(1,ncomp(g.se)) #prior is not actually used if g specified, but required to make sure EM doesn't produce warning
+    l = ncomp(g.se)
+  } else {   
+    mm = momentm(sebetahat,df)
+    if(singlecomp==TRUE){
+      alpha = mm$a
+    }else{
+      if(mm$a>1){
+        alpha = 1+2^seq(-3,3)*(mm$a-1)
+      }else{
+        alpha = mm$a*2^seq(0,6)
+      }
+    }
+    
+    if(unimodal=='precision'){
+      alpha = unique(pmax(alpha,1+1e-5)) # alpha<=1 not allowed
+      beta = mm$b/(mm$a-1)*(alpha-1)
+    }else if(unimodal=='variance'){
+      beta = mm$b/(mm$a+1)*(alpha+1)
+    }
+    
+    l = length(alpha)
+    
+    if(missing(prior.se)){
+      prior.se = rep(1,l)
+    }
+    
+    if(randomstart){
+      pi.se = rgamma(l,1,1)
+    } else {   
+      pi.se=rep(1,l)/l
+    }
+    pi.se=pi.se/sum(pi.se)
+    
+    g.se=igmix(pi.se,alpha,beta)
+  }
+  
+  if(length(prior.se)!=l){
+    stop("invalid prior specification")
+  }
+  
+  pi.fit.se = EMest_se(betahat,sebetahat,g.se,prior.se,maxiter.se,df,unimodal, SGD, singlecomp)
+  post.se = post.igmix(pi.fit.se$g,betahat[completeobs],sebetahat[completeobs],df)
+  postpi.se = t(comppostprob(pi.fit.se$g,betahat[completeobs],sebetahat[completeobs],df))
+  
+  PosteriorMean.se = rep(0,length=n)
+  PosteriorSD.se = rep(0,length=n)
+  PosteriorMean.se[completeobs] = sqrt(postmean(pi.fit.se$g,betahat[completeobs],sebetahat[completeobs],df))
+  #PosteriorSD.se[completeobs] = postsd(pi.fit.se$g,betahat[completeobs],sebetahat[completeobs],df) 
+  
+  if(mixcompdist=="normal"){
+    appnorm = mixlik_sd(postpi.se,post.se$alpha,post.se$beta)
+    pilik = appnorm$pilik
+    selik = appnorm$selik
+    moddf = NULL
+  }else if(mixcompdist=="uniform" | mixcompdist=="halfuniform"){
+    pilik = postpi.se
+    selik = sqrt(post.se$beta/post.se$alpha)
+    moddf = 2*post.se$alpha[1,]
+  }
+  pilik = tomatrix(pilik)
+  selik = tomatrix(selik)
+  l = dim(pilik)[2]
+  
+  
+  if(!missing(g.mean)){
+    maxiter.mean = 1 # if g is specified, don't iterate the EM
+    prior.mean = rep(1,ncomp(g.mean)) #prior is not actually used if g specified, but required to make sure EM doesn't produce warning
+    null.comp=1 #null.comp also not used, but required 
+  } else {
+    if(is.null(mixsd)){
+      mixsd = autoselect.mixsd(betahat[completeobs],sebetahat[completeobs],gridmult)
+    }
+    if(pointmass){
+      mixsd = c(0,mixsd)
+    }
+    
+    null.comp = which.min(mixsd) #which component is the "null"
+    
+    k = length(mixsd)
+    if(!is.numeric(prior.mean)){
+      if(prior.mean=="nullbiased"){ # set up prior to favour "null"
+        prior.mean = rep(1,k)
+        prior.mean[null.comp] = 10 #prior 10-1 in favour of null
+      }else if(prior.mean=="uniform"){
+        prior.mean = rep(1,k)
+      }
+    }
+    
+    if(length(prior.mean)!=k | !is.numeric(prior.mean)){
+      stop("invalid prior specification")
+    }
+    
+    if(randomstart){
+      pi.mean = rgamma(k,1,1)
+    } else {
+      if(k<n){
+        pi.mean=rep(1,k)/n #default initialization strongly favours null; puts weight 1/n on everything except null
+        pi.mean[null.comp] = (n-k+1)/n #the motivation is data can quickly drive away from null, but tend to drive only slowly toward null.
+      } else {
+        pi.mean=rep(1,k)/k
+      }
+    }
+    
+    pi.mean=pi.mean/sum(pi.mean)
+    if(!is.element(mixcompdist,c("normal","uniform","halfuniform"))) stop("Error: invalid type of mixcompdist")
+    if(mixcompdist=="normal") g.mean=normalmix(pi.mean,rep(0,k),mixsd)
+    if(mixcompdist=="uniform") g.mean=unimix(pi.mean,-mixsd,mixsd)
+    if(mixcompdist=="halfuniform"){
+      g.mean = unimix(c(pi,pi)/2,c(-mixsd,rep(0,k)),c(rep(0,k),mixsd))
+      prior.mean = rep(prior.mean, 2)
+      pi.mean = rep(pi, 2)
+    }
+  }
+  
+  
+  pi.fit=EMest_mean(betahat[completeobs],lambda1*selik+lambda2,pilik,g.mean,prior.mean,null.comp=null.comp,nullcheck=nullcheck,maxiter = maxiter.mean, df=moddf)  
+  
+  if(onlylogLR){
+    logLR = tail(pi.fit$loglik,1) - pi.fit$null.loglik
+    return(list(fitted.g=pi.fit$g, logLR = logLR))
+  } else if(minimaloutput){
+    n=length(betahat)
+    ZeroProb = rep(0,length=n)
+    NegativeProb = rep(0,length=n)
+    
+    #print("normal likelihood")
+    ZeroProb[completeobs] = colSums(comppostprob_mixlik(pi.fit$g,betahat[completeobs],sebetahat[completeobs,],moddf,pilik[completeobs,])[comp_sd(pi.fit$g)==0,,drop=FALSE])     
+    NegativeProb[completeobs] = cdf_post_mixlik(pi.fit$g, 0, betahat[completeobs],sebetahat[completeobs,],moddf,pilik[completeobs,]) - ZeroProb[completeobs]
+    ZeroProb[!completeobs] = sum(mixprop(pi.fit$g)[comp_sd(pi.fit$g)==0])
+    NegativeProb[!completeobs] = mixcdf(pi.fit$g,0) 
+    
+    lfsr = compute_lfsr(NegativeProb,ZeroProb)
+    result = list(fitted.g=pi.fit$g,lfsr=lfsr,fit=pi.fit)
+    return(result) 
+  } else{
+    
+    
+    #     post = posterior_dist(pi.fit$g,betahat,sebetahat)
+    n=length(betahat)
+    ZeroProb = rep(0,length=n)
+    NegativeProb = rep(0,length=n)
+    PosteriorMean = rep(0,length=n)
+    PosteriorSD=rep(0,length=n)
+
+    pilikco = tomatrix(pilik[completeobs,])
+    selikco = tomatrix(selik[completeobs,])
+    
+    ZeroProb[completeobs] = colSums(comppostprob_mixlik(pi.fit$g, betahat[completeobs], selikco, moddf,  pilikco)[comp_sd(pi.fit$g)==0,,drop=FALSE])    
+    NegativeProb[completeobs] = cdf_post_mixlik(pi.fit$g, 0, betahat[completeobs],selikco,moddf, pilikco) - ZeroProb[completeobs]
+    PosteriorMean[completeobs] = postmean_mixlik(pi.fit$g,betahat[completeobs],selikco,moddf, pilikco)
+    PosteriorSD[completeobs] =postsd_mixlik(pi.fit$g,betahat[completeobs],selikco,moddf, pilikco) 
+    
+    #FOR MISSING OBSERVATIONS, USE THE PRIOR INSTEAD OF THE POSTERIOR
+    ZeroProb[!completeobs] = sum(mixprop(pi.fit$g)[comp_sd(pi.fit$g)==0])
+    NegativeProb[!completeobs] = mixcdf(pi.fit$g,0) 
+    PosteriorMean[!completeobs] = mixmean(pi.fit$g)
+    PosteriorSD[!completeobs] =mixsd(pi.fit$g)  
+    PositiveProb =  1- NegativeProb-ZeroProb    
+    
+    lfsr = compute_lfsr(NegativeProb,ZeroProb)
+    lfsra =  compute_lfsra(PositiveProb,NegativeProb,ZeroProb) 
+    
+    lfdr = ZeroProb
+    qvalue = qval.from.lfdr(lfdr)
+    
+    result = list(fitted.g=pi.fit$g,fitted.g.se=pi.fit.se$g,logLR =tail(pi.fit$loglik,1) - pi.fit$null.loglik,
+                  PosteriorMean = PosteriorMean,PosteriorSD=PosteriorSD,PosteriorMean.se=PosteriorMean.se,
+                  #PosteriorSD.se=PosteriorSD.se,
+                  PositiveProb =PositiveProb,NegativeProb=NegativeProb, ZeroProb=ZeroProb,lfsr = lfsr,lfsra=lfsra, lfdr=lfdr,qvalue=qvalue,
+                  fit=pi.fit,fit.se=pi.fit.se,lambda1=lambda1,lambda2=lambda2,call=match.call(),data=list(betahat = betahat, sebetahat=sebetahat))
+    class(result)= "ash"
+    return(result)
+    
+  }
+  
 }
 

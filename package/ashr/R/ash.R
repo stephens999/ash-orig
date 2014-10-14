@@ -13,7 +13,7 @@
 #' @param method specifies how ash is to be run. Can be "shrinkage" (if main aim is shrinkage) or "fdr" (if main aim is to assess fdr or fsr)
 #' This is simply a convenient way to specify certain combinations of parameters: "shrinkage" sets pointmass=FALSE and prior="uniform";
 #' "fdr" sets pointmass=TRUE and prior="nullbiased".
-#' @param mixcompdist distribution of components in mixture ("normal", "uniform" or "halfuniform")
+#' @param mixcompdist distribution of components in mixture ( "uniform","halfuniform" or "normal"), the default value would be "uniform"
 #'
 #' @param lambda1  multiplicative "inflation factor" for standard errors (like Genomic Control)
 #' @param lambda2  additive "inflation factor" for standard errors (like Genomic Control)
@@ -22,7 +22,7 @@
 #' @param df appropriate degrees of freedom for (t) distribution of betahat/sebetahat, default is NULL(Gaussian)
 #' @param nullweight scalar, the weight put on the prior under "nullbiased" specification, see \code{prior}
 #' @param randomstart logical, indicating whether to initialize EM randomly. If FALSE, then initializes to prior mean (for EM algorithm) or prior (for VBEM)
-#' @param nonzeromean logical, indicating whether to use a nonzero mean unimodal mixture(defaults to "FALSE")
+#' @param nonzeromode logical, indicating whether to use a non-zero unimodal mixture(default is "FALSE")
 #' @param pointmass logical, indicating whether to use a point mass at zero as one of components for a mixture distribution
 #' @param onlylogLR logical, indicating whether to use this function to get logLR. Skip posterior prob, posterior mean, lfdr...
 #' @param prior string, or numeric vector indicating Dirichlet prior on mixture proportions (defaults to "uniform", or (1,1...,1); also can be "nullbiased" (nullweight,1,...,1) to put more weight on first component)
@@ -31,7 +31,9 @@
 #' @param gridmult the multiplier by which the default grid values for mixsd differ by one another. (Smaller values produce finer grids)
 #' @param minimal_output if TRUE, just outputs the fitted g and the lfsr (useful for very big data sets where memory is an issue) 
 #' @param g the prior distribution for beta (usually estimated from the data; this is used primarily in simulated data to do computations with the "true" g)
-#' @param maxiter maximum number of iterations of the EM algorithm
+#' @param maxiter maximum number of iterations of the EM algorithm.
+#' @param retol the relelative precision for the mode of mixture when nonzeromode=TRUE, the default value is 1e-5.
+#' @param trace a logical variable denoting whether some of the intermediate results of iterations should be displayed to the user. Default is FALSE.
 #' @param cxx flag to indicate whether to use the c++ (Rcpp) version. After application of Squared extrapolation methods for accelerating fixed-point iterations (R Package "SQUAREM"), the c++ version is no longer faster than non-c++ version, thus we do not recommend using this one, and might be removed at any point. 
 #'
 #' @return ash returns an object of \code{\link[base]{class}} "ash", a list with the following elements(or a  simplified list, if \eqn{onlylogLR=TRUE}, \eqn{minimaloutput=TRUE}   or \eqn{multiseqoutput=TRUE}) \cr
@@ -46,12 +48,14 @@
 #' \item{lfsra}{The local false sign rate(adjusted)}
 #' \item{lfdr}{A vector of estimated local false discovery rate}
 #' \item{qvalue}{A vector of q values given estimated local false discovery rates, and estimate of (tail) False Discovery Rate}
-#' \item{fit}{The fitted object return by \code{\link{EMest}}}
+#' \item{fit}{The fitted mixture object by \code{\link{mixEM}} or \code{\link{mixVBEM}} }
 #' \item{lambda1}{multiplicative "inflation factor"}
 #' \item{lambda2}{additive "inflation factor"}
 #' \item{call}{a call in which all of the specified arguments are specified by their full names}
 #' \item{data}{a list consisting the input betahat and sebetahat}
 #' \item{df}{the specified degrees of freedom for (t) distribution of betahat/sebetahat}
+#'
+#' @seealso \code{\link{ashci}} for computation of credible intervals after getting the ash object return by \code{ash()}
 #'
 #' @export
 #' @examples 
@@ -62,7 +66,9 @@
 #' summary(beta.ash)
 #' plot(betahat,beta.ash$PosteriorMean,xlim=c(-4,4),ylim=c(-4,4))
 #' 
-#' betahat=betahat+1000
+#' CIMatrix=ashci(beta.ash,level=0.95) 
+#' 
+#' betahat=betahat+5
 #' beta.ash = ash(betahat, sebetahat)
 #' summary(beta.ash)
 #' plot(betahat,beta.ash$PosteriorMean)
@@ -70,9 +76,9 @@
 # check sampling routine
 # check number of iterations
 ash = function(betahat,sebetahat,method = c("shrink","fdr"), 
-               mixcompdist = c("normal","uniform","halfuniform"),
+               mixcompdist = c("uniform","halfuniform","normal"),
                lambda1=1,lambda2=0,nullcheck=TRUE,df=NULL,randomstart=FALSE,
-               nullweight=10,nonzeromean=FALSE, 
+               nullweight=10,nonzeromode=FALSE, 
                pointmass = FALSE, 
                onlylogLR = FALSE, 
                prior=c("uniform","nullbiased"), 
@@ -81,6 +87,8 @@ ash = function(betahat,sebetahat,method = c("shrink","fdr"),
                multiseqoutput=FALSE,
                g=NULL,
                maxiter = 5000,
+               retol=1e-5,
+               trace=FALSE,
                cxx=FALSE){
   
   #method provides a convenient interface to set a particular combinations of parameters for prior an
@@ -119,8 +127,10 @@ ash = function(betahat,sebetahat,method = c("shrink","fdr"),
   
   if(gridmult<=1&multiseqoutput!=TRUE)
     stop("gridmult must be > 1")
-    
   mixcompdist = match.arg(mixcompdist)
+  if(mixcompdist=="normal" & !is.null(df)){
+    stop("Error:Normal mixture for student-t likelihood is not yet implemented")
+  }
   # if(mixcompdist=="uniform" & pointmass==TRUE){
   #    stop("point mass not yet implemented for uniform or half-uniform")
   #  }
@@ -148,7 +158,13 @@ ash = function(betahat,sebetahat,method = c("shrink","fdr"),
     else{
       stop("Error: all input values are missing")
     }
-  }  
+  }
+  
+  if(missing(trace)){
+    if(n>500){
+      trace=TRUE
+    }else {trace=FALSE}
+  }
   
   if(!is.null(g)){
     maxiter = 1 # if g is specified, don't iterate the EM
@@ -156,13 +172,13 @@ ash = function(betahat,sebetahat,method = c("shrink","fdr"),
     null.comp=1 #null.comp also not used, but required 
   } else {
     if(is.null(mixsd)){
-      if(nonzeromean){
+      if(nonzeromode){
         mixsd = autoselect.mixsd(betahat[completeobs]-mean(betahat[completeobs]),sebetahat[completeobs],gridmult)
         if(pointmass){ mixsd = c(0,mixsd) }
-        nonzeromean.fit=nonzeromeanEM(betahat[completeobs], sebetahat[completeobs], mixsd=mixsd, mixcompdist=mixcompdist,df=df,maxiter=maxiter)
-        betahat[completeobs]= betahat[completeobs] - nonzeromean.fit$nonzeromean
-      	}
-      else if(nonzeromean & !is.null(df)){
+        nonzeromode.fit=nonzeromodeEM(betahat[completeobs], sebetahat[completeobs], mixsd=mixsd, mixcompdist=mixcompdist,df=df,retol=retol,maxiter=round(maxiter/10),trace=trace)
+        betahat[completeobs]= betahat[completeobs] - nonzeromode.fit$nonzeromode
+      }
+      else if(nonzeromode & !is.null(df)){
       #  stop("Error: Nonzero mean only implemented for df=NULL")
       }
         mixsd = autoselect.mixsd(betahat[completeobs],sebetahat[completeobs],gridmult)
@@ -209,12 +225,23 @@ ash = function(betahat,sebetahat,method = c("shrink","fdr"),
     }
   }
   
-  pi.fit=EMest(betahat[completeobs],lambda1*sebetahat[completeobs]+lambda2,g,prior,null.comp=null.comp,nullcheck=nullcheck,VB=VB,maxiter = maxiter, cxx=cxx, df=df)  
+  pi.fit=EMest(betahat[completeobs],lambda1*sebetahat[completeobs]+lambda2,g,prior,null.comp=null.comp,nullcheck=nullcheck,VB=VB,maxiter = maxiter, cxx=cxx, df=df,trace=trace)  
   
-  if(!nonzeromean && max(pi.fit$g$pi)>(1-1/length(betahat))){
-	print("Warning: EM algorithm converges to a single component of the mixture.Results might be unreliable. Try to set nonzeromean=TRUE and rerun")
+  #A stringent criteria based on central limit theorem is set to give the user warning message.
+  #if(!nonzeromode){
+  #  maxsd=max(mixsd)
+  #	maxse=quantile(sebetahat[completeobs],0.999)
+  #	thresholdval=qnorm(0.999,mean=0,sd=maxse+maxsd)
+  #	currentval=abs(sum(betahat[completeobs])/sqrt(length(betahat[completeobs])))
+  #	if(currentval>thresholdval){
+  #		print("Caution:It's likely that the input data is not coming from a distribution with zero mean, consider to set nonzeromode=TRUE when applying ash()")
+  #	}
+  #}
+  if(!nonzeromode){
+    zvalue=betahat[completeobs]/sebetahat[completeobs]
+    abststat=abs(mean(zvalue)/sd(zvalue))*sqrt(length(zvalue))
+    if(abststat>3.2905){print("Caution:It's likely that the input data is not coming from a distribution with zero mean, consider to set nonzeromode=TRUE when applying ash()")}
   }
-  
   
   if (!onlylogLR){
       n=length(betahat)
@@ -245,8 +272,8 @@ ash = function(betahat,sebetahat,method = c("shrink","fdr"),
           lfsr = compute_lfsr(NegativeProb,ZeroProb)
       }
       if (!minimaloutput){
-          PosteriorMean[!completeobs] = mixmean(pi.fit$g)
-          PosteriorSD[!completeobs] = mixsd(pi.fit$g)
+          PosteriorMean[!completeobs] = calc_mixmean(pi.fit$g)
+          PosteriorSD[!completeobs] = calc_mixsd(pi.fit$g)
       }
       if (!minimaloutput & !multiseqoutput){
           PositiveProb = 1- NegativeProb-ZeroProb
@@ -258,17 +285,17 @@ ash = function(betahat,sebetahat,method = c("shrink","fdr"),
   if (!minimaloutput)
       logLR = tail(pi.fit$loglik,1) - pi.fit$null.loglik
   
-  if(nonzeromean){
+  if(nonzeromode){
       #Adding back the nonzero mean
-      betahat[completeobs]= betahat[completeobs]+nonzeromean.fit$nonzeromean
+      betahat[completeobs]= betahat[completeobs]+nonzeromode.fit$nonzeromode
       if(mixcompdist=="normal"){
-      	pi.fit$g$mean = rep(nonzeromean.fit$nonzeromean,length(pi.fit$g$pi))
+        pi.fit$g$mean = rep(nonzeromode.fit$nonzeromode,length(pi.fit$g$pi))
       }
       else if(mixcompdist=="uniform"|mixcompdist=="halfuniform"){
-      	pi.fit$g$a = pi.fit$g$a + nonzeromean.fit$nonzeromean
-      	pi.fit$g$b = pi.fit$g$b + nonzeromean.fit$nonzeromean
+        pi.fit$g$a = pi.fit$g$a + nonzeromode.fit$nonzeromode
+        pi.fit$g$b = pi.fit$g$b + nonzeromode.fit$nonzeromode
       }
-      PosteriorMean = PosteriorMean + nonzeromean.fit$nonzeromean      
+      PosteriorMean = PosteriorMean + nonzeromode.fit$nonzeromode      
   }	   
   
   if (onlylogLR)
@@ -432,6 +459,7 @@ compute_lfsra = function(PositiveProb, NegativeProb,ZeroProb){
 #' @param pi.init, the initial value of \eqn{\pi} to use. If not specified defaults to (1/k,...,1/k).
 #' @param retol, the relative tolerance for estimate of nonzero mean
 #' @param maxiter the maximum number of iterations performed
+#' @param trace a logical variable denoting whether some of the intermediate results of iterations should be displayed to the user. Default is FALSE.
 #' 
 #' @return A list, including the estimates (\eqn{\mu}) and (\eqn{\pi}), the log likelihood for each iteration (NQ)
 #' and a flag to indicate convergence
@@ -439,7 +467,7 @@ compute_lfsra = function(PositiveProb, NegativeProb,ZeroProb){
 #' @export
 #' 
 #' 
-nonzeromeanEM = function(betahat, sebetahat, mixsd, mixcompdist, df=NULL, pi.init=NULL,retol=1e-6,maxiter=5000){
+nonzeromodeEM = function(betahat, sebetahat, mixsd, mixcompdist, df=NULL, pi.init=NULL,retol=1e-5,maxiter=500,trace=trace){
   if(is.null(pi.init)){
     pi.init = rep(1/length(mixsd),length(mixsd))# Use as starting point for pi
   }
@@ -447,111 +475,100 @@ nonzeromeanEM = function(betahat, sebetahat, mixsd, mixcompdist, df=NULL, pi.ini
     pi.init=rgamma(length(mixsd),1,1)
   }
   
-  #tol in squarem needs special attention as it compares the difference of estimate fixed point (\mu), thus, the absolute tol is not of our interest.
-  #here we set it to be relative tol, and our reference level would be the sample mean, the naive estimator,we keep significant figures to be 6 for fast convergence
-  #failing to set tol to adapt to data would result in keeping the fixed point iteration running till maxiter, and NaN would be produced, making the method inapplicable
+  if(trace==TRUE){tic()}
   
-  tol=mean(betahat)*retol
+  #tol in squarem needs special attention as it compares the difference of estimate fixed point (\mu),
+  #thus, the absolute tol is not of our interest.here we set it to be relative tol, and our reference 
+  #level would be the sample mean, the naive estimator,we keep significant figures to be 6 for fast 
+  #convergence failing to set tol to adapt to data would result in keeping the fixed point iteration 
+  #running till maxiter, and NaN would be produced, making the method inapplicable
+  tol=max(mean(betahat),1)*retol
 
   if(length(sebetahat)==1){
     sebetahat = rep(sebetahat,length(betahat))
   }
-  if(!is.element(mixcompdist,c("normal","uniform","halfuniform"))) stop("Error: invalid type of mixcompdist occcur in nonzeromeanEM()")
+  if(!is.element(mixcompdist,c("normal","uniform","halfuniform"))) stop("Error: invalid type of mixcompdist occcur in nonzeromodeEM()")
   
   if(mixcompdist=="normal" & is.null(df)){
-  	#print("Warning:method comp_postsd of normal mixture not written for df!=NULL, nonzeroMean would return the naive estimator")
-  	g=normalmix(pi.init,rep(0,length(mixsd)),mixsd)
-  	mupi=c(mean(betahat),pi.init)
-    res=squarem(par=mupi,fixptfn=nonzeromeanEMfixpoint,objfn=nonzeromeanEMobj,betahat=betahat,sebetahat=sebetahat,mixsd=mixsd,control=list(maxiter=maxiter,tol=tol))
+    g=normalmix(pi.init,rep(0,length(mixsd)),mixsd)
+    mupi=c(mean(betahat),pi.init)
+    res=squarem(par=mupi,fixptfn=nonzeromodeEMfixpoint,objfn=nonzeromodeEMobj,betahat=betahat,sebetahat=sebetahat,mixsd=mixsd,control=list(maxiter=maxiter,tol=tol,trace=trace))
   }
   else if(mixcompdist=="normal" & !is.null(df)){
-  	#stop("method comp_postsd of normal mixture not yet written for t likelihood")
-  	print("Warning:method comp_postsd of normal mixture not written for df!=NULL, nonzeroMean would return the naive estimator")
-
-  	#g=normalmix(pi.init,rep(0,length(mixsd)),mixsd)
-  	#mupi=c(mean(betahat),pi.init)
-    #res=squarem(par=mupi,fixptfn=nonzeromeanEMoptimfixpoint,objfn=nonzeromeanEMoptimobj,betahat=betahat,sebetahat=sebetahat,g=g,df=df,control=list(maxiter=maxiter,tol=tol))
-	return(list(nonzeromean=mean(betahat)))
+    stop("method comp_postsd of normal mixture not yet written for t likelihood")
   }
   else if(mixcompdist=="uniform"){
-    #return(list(nonzeromean=mean(betahat)))
-  	#stop("method not yet completed")
     g=unimix(pi.init,-mixsd,mixsd)
     mupi=c(mean(betahat),pi.init)    
-    res=squarem(par=mupi,fixptfn=nonzeromeanEMoptimfixpoint,objfn=nonzeromeanEMoptimobj,betahat=betahat,sebetahat=sebetahat,g=g,df=df,control=list(maxiter=maxiter,tol=tol))
+    res=squarem(par=mupi,fixptfn=nonzeromodeEMoptimfixpoint,objfn=nonzeromodeEMoptimobj,betahat=betahat,sebetahat=sebetahat,g=g,df=df,control=list(maxiter=maxiter,tol=tol,trace=trace))
   }
   else if(mixcompdist=="halfuniform"){
-  	#stop("method not yet completed")
-  	g=unimix(c(pi.init, pi.init)/2,c(-mixsd,rep(0,length(mixsd))),c(rep(0,length(mixsd)),mixsd))
+    g=unimix(c(pi.init, pi.init)/2,c(-mixsd,rep(0,length(mixsd))),c(rep(0,length(mixsd)),mixsd))
     mupi=c(mean(betahat),pi.init/2,pi.init/2)
-    res=squarem(par=mupi,fixptfn=nonzeromeanEMoptimfixpoint,objfn=nonzeromeanEMoptimobj,betahat=betahat,sebetahat=sebetahat,g=g,df=df,control=list(maxiter=maxiter,tol=tol))
+    res=squarem(par=mupi,fixptfn=nonzeromodeEMoptimfixpoint,objfn=nonzeromodeEMoptimobj,betahat=betahat,sebetahat=sebetahat,g=g,df=df,control=list(maxiter=maxiter,tol=tol,trace=trace))
   }
-  
-  return(list(nonzeromean=res$par[1],pi=res$par[-1],NQ=-res$value.objfn,niter = res$iter, converged=res$convergence,post=res$par))
+  if(trace==TRUE){toc()}
+  return(list(nonzeromode=res$par[1],pi=res$par[-1],NQ=-res$value.objfn,niter = res$iter, converged=res$convergence,post=res$par))
 }
 
 
-nonzeromeanEMoptimfixpoint = function(mupi,betahat,sebetahat,g,df){
-	#omegamatrix=matrix(NA,nrow=length(betahat),ncol=length(mixsd))
-	mu=mupi[1]
-	pimean=mupi[-1]
-	
-	matrix_lik=t(compdens_conv(g,betahat-mu,sebetahat,df))
-    m=t(pimean * t(matrix_lik)) # matrix_lik is n by k; so this is also n by k
-    m.rowsum=rowSums(m)
-    classprob=m/m.rowsum #an n by k matrix	
-    pinew=normalize(colSums(classprob))
-	
-	munew=optimize(f=nonzeromeanEMoptim,interval=c(min(betahat),max(betahat)), pinew=pinew,betahat=betahat,sebetahat=sebetahat,g=g,df=df)$minimum
-	mupi=c(munew,pinew)
-	return(mupi)
+nonzeromodeEMoptimfixpoint = function(mupi,betahat,sebetahat,g,df){
+  mu=mupi[1]
+  pimean=normalize(pmax(0,mupi[-1])) #avoid occasional problems with negative pis due to rounding
+  matrix_lik=t(compdens_conv(g,betahat-mu,sebetahat,df))
+  m=t(pimean * t(matrix_lik)) # matrix_lik is n by k; so this is also n by k
+  m.rowsum=rowSums(m)
+  classprob=m/m.rowsum #an n by k matrix
+  pinew=normalize(colSums(classprob))
+  munew=optimize(f=nonzeromodeEMoptim,interval=c(min(betahat),max(betahat)), pinew=pinew,betahat=betahat,sebetahat=sebetahat,g=g,df=df)$minimum
+  mupi=c(munew,pinew)
+  return(mupi)
 }
 
 
-nonzeromeanEMoptimobj = function(mupi,betahat,sebetahat,g,df){
-	mu=mupi[1]
-	pimean=mupi[-1]
-	matrix_lik = t(compdens_conv(g,betahat-mu,sebetahat,df))
-	m = t(pimean * t(matrix_lik))
-	m.rowsum = rowSums(m)
-	loglik = sum(log(m.rowsum))
-	return(-loglik)
+nonzeromodeEMoptimobj = function(mupi,betahat,sebetahat,g,df){
+  mu=mupi[1]
+  pimean=normalize(pmax(0,mupi[-1])) #avoid occasional problems with negative pis due to rounding
+  matrix_lik = t(compdens_conv(g,betahat-mu,sebetahat,df))
+  m = t(pimean * t(matrix_lik))
+  m.rowsum = rowSums(m)
+  loglik = sum(log(m.rowsum))
+  return(-loglik)
 }
 
 
-nonzeromeanEMoptim = function(mu,pinew,betahat,sebetahat,g,df){
-	matrix_lik = t(compdens_conv(g,betahat-mu,sebetahat,df))
-	m = t(pinew * t(matrix_lik))
-	m.rowsum = rowSums(m)
-	nloglik =- sum(log(m.rowsum))
-	return(nloglik)
+nonzeromodeEMoptim = function(mu,pinew,betahat,sebetahat,g,df){
+  matrix_lik = t(compdens_conv(g,betahat-mu,sebetahat,df))
+  pinew=normalize(pmax(0,pinew)) #avoid occasional problems with negative pis due to rounding
+  m = t(pinew * t(matrix_lik))
+  m.rowsum = rowSums(m)
+  nloglik =- sum(log(m.rowsum))
+  return(nloglik)
 }
 
 
-nonzeromeanEMfixpoint = function(mupi,betahat,sebetahat,mixsd){
-	#omegamatrix=matrix(NA,nrow=length(betahat),ncol=length(mixsd))
-	mu=mupi[1]
-	pimean=mupi[-1]
-	sdmat = sqrt(outer(sebetahat ^2,mixsd^2,"+")) 
-	xmat=matrix(rep(betahat,length(mixsd)),ncol=length(mixsd))
-	omegamatrix=t(t(dnorm(xmat,mean=mu,sd=sdmat))*pimean)
-	omegamatrix=omegamatrix /rowSums(omegamatrix)
-	pinew=normalize(colSums(omegamatrix))
-	munew=sum(omegamatrix*xmat/(sdmat^2))/sum(omegamatrix/(sdmat^2))
-	mupi=c(munew,pinew)
-	return(mupi)
+nonzeromodeEMfixpoint = function(mupi,betahat,sebetahat,mixsd){
+  mu=mupi[1]
+  pimean=normalize(pmax(0,mupi[-1])) #avoid occasional problems with negative pis due to rounding
+  sdmat = sqrt(outer(sebetahat ^2,mixsd^2,"+")) 
+  xmat=matrix(rep(betahat,length(mixsd)),ncol=length(mixsd))
+  omegamatrix=t(t(dnorm(xmat,mean=mu,sd=sdmat))*pimean)
+  omegamatrix=omegamatrix /rowSums(omegamatrix)
+  pinew=normalize(colSums(omegamatrix))
+  munew=sum(omegamatrix*xmat/(sdmat^2))/sum(omegamatrix/(sdmat^2))
+  mupi=c(munew,pinew)
+  return(mupi)
 }
 
-nonzeromeanEMobj = function(mupi,betahat,sebetahat,mixsd){
-	mu=mupi[1]
-	pimean=mupi[-1]
-	sdmat = sqrt(outer(sebetahat ^2,mixsd^2,"+")) 
-	xmat=matrix(rep(betahat,length(mixsd)),ncol=length(mixsd))
-	
-	omegamatrix=t(t(dnorm(xmat,mean=mu,sd=sdmat))*pimean)
-	omegamatrix=omegamatrix /rowSums(omegamatrix)
-	NegativeQ=-sum(omegamatrix*dnorm(xmat,mean=mu,sd=sdmat,log=TRUE))
-	return(NegativeQ)
+nonzeromodeEMobj = function(mupi,betahat,sebetahat,mixsd){
+  mu=mupi[1]
+  pimean=normalize(pmax(0,mupi[-1])) #avoid occasional problems with negative pis due to rounding
+  sdmat = sqrt(outer(sebetahat ^2,mixsd^2,"+")) 
+  xmat=matrix(rep(betahat,length(mixsd)),ncol=length(mixsd))
+  omegamatrix=t(t(dnorm(xmat,mean=mu,sd=sdmat))*pimean)
+  omegamatrix=omegamatrix /rowSums(omegamatrix)
+  NegativeQ=-sum(omegamatrix*dnorm(xmat,mean=mu,sd=sdmat,log=TRUE))
+  return(NegativeQ)
 }
 
 
@@ -572,6 +589,7 @@ nonzeromeanEMobj = function(mupi,betahat,sebetahat,mixsd){
 #' @param post.init: the initial value of the posterior parameters. If not specified defaults to the prior parameters.
 #' @param tol: the tolerance for convergence of log-likelihood bound.
 #' @param maxiter: the maximum number of iterations performed
+#' @param trace a logical variable denoting whether some of the intermediate results of iterations should be displayed to the user. Default is FALSE. 
 #' 
 #' @return A list, whose components include point estimates (pihat), 
 #' the parameters of the fitted posterior on \eqn{\pi} (pipost),
@@ -580,12 +598,12 @@ nonzeromeanEMobj = function(mupi,betahat,sebetahat,mixsd){
 #'  
 #' @export
 #' 
-mixVBEM = function(matrix_lik, prior, pi.init = NULL,tol=1e-7, maxiter=5000){
+mixVBEM = function(matrix_lik, prior, pi.init = NULL,tol=1e-7, maxiter=5000,trace=FALSE){
   k=ncol(matrix_lik)
   if(is.null(pi.init)){
     pi.init = rep(1,k)# Use as starting point for pi
   } 
-  res = squarem(par=pi.init,fixptfn=VBfixpoint, objfn=VBnegpenloglik,matrix_lik=matrix_lik, prior=prior, control=list(maxiter=maxiter,tol=tol))
+  res = squarem(par=pi.init,fixptfn=VBfixpoint, objfn=VBnegpenloglik,matrix_lik=matrix_lik, prior=prior, control=list(maxiter=maxiter,tol=tol,trace=trace))
   return(list(pihat = res$par/sum(res$par), B=res$value.objfn, niter = res$iter, converged=res$convergence,post=res$par))
 }
 
@@ -633,6 +651,7 @@ VBpenloglik = function(pipost, matrix_lik, prior){
 #' @param pi.init, the initial value of \eqn{\pi} to use. If not specified defaults to (1/k,...,1/k).
 #' @param tol, the tolerance for convergence of log-likelihood.
 #' @param maxiter the maximum number of iterations performed
+#' @param trace a logical variable denoting whether some of the intermediate results of iterations should be displayed to the user. Default is FALSE.
 #' 
 #' @return A list, including the estimates (pihat), the log likelihood for each interation (B)
 #' and a flag to indicate convergence
@@ -640,11 +659,11 @@ VBpenloglik = function(pipost, matrix_lik, prior){
 #' @export
 #' 
 #' 
-mixEM = function(matrix_lik, prior, pi.init = NULL,tol=1e-7, maxiter=5000){
+mixEM = function(matrix_lik, prior, pi.init = NULL,tol=1e-7, maxiter=5000,trace=FALSE){
   if(is.null(pi.init)){
     pi.init = rep(1/k,k)# Use as starting point for pi
   } 
-  res = squarem(par=pi.init,fixptfn=fixpoint, objfn=negpenloglik,matrix_lik=matrix_lik, prior=prior, control=list(maxiter=maxiter,tol=tol))
+  res = squarem(par=pi.init,fixptfn=fixpoint, objfn=negpenloglik,matrix_lik=matrix_lik, prior=prior, control=list(maxiter=maxiter,tol=tol,trace=trace))
   return(list(pihat = normalize(pmax(0,res$par)), B=res$value.objfn, 
               niter = res$iter, converged=res$convergence))
 }
@@ -736,13 +755,15 @@ gradient = function(matrix_lik){
 #of mixture proportions of sigmaa by variational Bayes method
 #(use Dirichlet prior and approximate Dirichlet posterior)
 #if cxx TRUE use cpp version of R function mixEM
-EMest = function(betahat,sebetahat,g,prior,null.comp=1,nullcheck=TRUE,VB=FALSE, maxiter=5000, cxx=TRUE, df=NULL){ 
+EMest = function(betahat,sebetahat,g,prior,null.comp=1,nullcheck=TRUE,VB=FALSE, maxiter=5000, cxx=TRUE, df=NULL,trace=FALSE){ 
+  
   
   pi.init = g$pi
   k=ncomp(g)
   n = length(betahat)
   tol = min(0.1/n,1e-5) # set convergence criteria to be more stringent for larger samples
   
+  if(trace==TRUE){tic()}
 
   matrix_lik = t(compdens_conv(g,betahat,sebetahat,df))
 
@@ -756,7 +777,7 @@ EMest = function(betahat,sebetahat,g,prior,null.comp=1,nullcheck=TRUE,VB=FALSE, 
   #}
   
   if(VB==TRUE){
-    EMfit=mixVBEM(matrix_lik,prior,maxiter=maxiter)}
+    EMfit=mixVBEM(matrix_lik,prior,maxiter=maxiter,trace)}
   else{
     if (cxx==TRUE){
       EMfit = cxxMixEM(matrix_lik,prior,pi.init,1e-5, maxiter) #currently use different convergence criteria for cxx version 
@@ -765,7 +786,7 @@ EMest = function(betahat,sebetahat,g,prior,null.comp=1,nullcheck=TRUE,VB=FALSE, 
       }
     }
     else{
-      EMfit = mixEM(matrix_lik,prior,pi.init,tol, maxiter)
+      EMfit = mixEM(matrix_lik,prior,pi.init,tol, maxiter,trace)
       if(!EMfit$converged & !(maxiter==1)){
         warning("EM algorithm in function mixEM failed to converge. Results may be unreliable. Try increasing maxiter and rerunning.")
       }
@@ -793,6 +814,7 @@ EMest = function(betahat,sebetahat,g,prior,null.comp=1,nullcheck=TRUE,VB=FALSE, 
   }
   
   g$pi=pi
+  if(trace==TRUE){toc()}
   
   return(list(loglik=loglik.final,null.loglik=null.loglik,
               matrix_lik=matrix_lik,converged=converged,g=g))
@@ -909,7 +931,7 @@ autoselect.mixsd = function(betahat,sebetahat,mult){
   sigmaamin = min(sebetahat)/10 #so that the minimum is small compared with measurement precision
   if(all(betahat^2<sebetahat^2)){
     sigmaamax = 8*sigmaamin #to deal with the occassional odd case where this could happen; 8 is arbitrary
-  } else {
+  }else{
     sigmaamax = 2*sqrt(max(betahat^2-sebetahat^2)) #this computes a rough largest value you'd want to use, based on idea that sigmaamax^2 + sebetahat^2 should be at least betahat^2   
   }
   if(mult==0){
@@ -939,4 +961,24 @@ VB.update = function(matrix_lik, pipost){
   classprob = classprob/rowSums(classprob) # n by k matrix
   B = sum(classprob*log(avgpipost*matrix_lik),na.rm=TRUE) - diriKL(prior,pipost) #negative free energy
   return(list(classprob=classprob,B=B))
+}
+
+#Helper Function for nonzeromodeEM, from MATLAB Package
+tic <- function(gcFirst = TRUE, type=c("elapsed", "user.self", "sys.self"))
+{
+   type <- match.arg(type)
+   assign(".type", type, envir=baseenv())
+   if(gcFirst) gc(FALSE)
+   tic <- proc.time()[type]         
+   assign(".tic", tic, envir=baseenv())
+   invisible(tic)
+}
+
+toc <- function()
+{
+   type <- get(".type", envir=baseenv())
+   toc <- proc.time()[type]
+   tic <- get(".tic", envir=baseenv())
+   print(toc - tic)
+   invisible(toc)
 }
