@@ -12,9 +12,11 @@
 
 % amsmath package, useful for mathematical formulas
 \usepackage{amsmath}
+%\usepackage{natbib}
 % amssymb package, useful for mathematical symbols
 \usepackage{amssymb}
 \usepackage{booktabs}
+\usepackage{xspace}
 % graphicx package, useful for including eps and pdf graphics
 % include graphics with the command \includegraphics
 \usepackage{graphicx}
@@ -41,7 +43,7 @@
 \usepackage[labelfont=bf,labelsep=period,justification=raggedright]{caption}
 
 % Use the PLoS provided bibtex style
-\bibliographystyle{plos2009}
+\bibliographystyle{/Users/stephens/Dropbox/Documents/stylefiles/plos2009}
 
 % Remove brackets from numbering in List of References
 \makeatletter
@@ -114,6 +116,11 @@
 \def\I{I}
 \def\luu{L_{UU}}
 \def\indep{\perp}
+\def\qvalue{{\tt qvalue}\xspace}
+\def\locfdr{{\tt locfdr}\xspace}
+\def\mixfdr{{\tt mixfdr}\xspace}
+\def\ashr{{\tt ashr}\xspace}
+
 \newcommand{\mbf}[1]{\mbox{\boldmath$#1$}} % true mathbf works in math
                                 % mode too
 \newcommand\height{{\it height}}
@@ -122,7 +129,7 @@
 
 
 %% END MACROS SECTION
-\externaldocument{plos_one_rev1_suppinfo}
+%\externaldocument{plos_one_rev1_suppinfo}
 
 \begin{document}
 
@@ -150,10 +157,11 @@ $\ast$ E-mail: Corresponding mstephens@uchicago.edu
 
 \section*{Introduction}
 
-Since its introduction in 19xx by Benjamini and Hochberg 
-\cite{bh:xx}, the ``False Discovery Rate" (FDR) has quickly established itself
-as a key concept in modern statistics. 
-%, and the primary tool by which most practitioners handle large-scale multiple testing.
+Since its introduction in 1995 by Benjamini and Hochberg 
+\cite{benjamini1995controlling}, the ``False Discovery Rate" (FDR) has quickly established itself
+as a key concept in modern statistics, and the primary tool by which most practitioners handle large-scale multiple testing.
+
+
 Here we consider one setting in which FDR-based methods are widely used:
 an experimenter has measured a large numbers of ``effects", each with an associated
 measurement precision (standard error), 
@@ -185,8 +193,8 @@ these could be useful in settings such as wavelets.
 The potential for shrinkage-based estimation to
 address the multiple comparisons problems tackled by the FDR
 has been highlighted
-previously, including Greenland and Robins (1991),
-Efron (2008) and Gelman et al (2012). [Note, check also Louis, JASA, 1984] 
+previously, including \cite{greenland1991empirical},
+\cite{efron2008microarrays} and \cite{gelman2012we}. [Note, check also Louis, JASA, 1984] 
 
 
 The initial goal of the ASH (Adaptive SHrinkage) project is to provide simple, generic, and flexible methods to derive ``shrinkage-based" estimates and credible intervals for unknown quantities $\beta=(\beta_1,\dots,\beta_J)$, given only estimates of those quantities ($\bhat=(\bhat_1,\dots, \bhat_J)$) and their corresponding estimated standard errors ($s=(s_1,\dots,s_J)$). 
@@ -200,14 +208,13 @@ have two key properties in mind. First, the appropriate amount of shrinkage is d
 
 Given that shrinkage estimation is widely recognized as a powerful tool, there are surprisingly few software packages for performing the simplest type of shrinkage estimation considered here. (There are more packages for the more complex setting of covariance estimation, where shrinkage is perhaps still more important.)
 The only package we have found that provides anything similar
-to the functionality provided here is mixfdr (Muralidharan). Compared with mixfdr, the key features of ashr are that it
+to the functionality provided here is \mixfdr \cite{muralidharan2010empirical}. Compared with \mixfdr, the key features of ashr are that it
 i) focuses on allowing for variation in the standard deviation of each observation; ii) constrains the underlying density to be unimodal (and possibly symmetric).
 NOTE: should emphasize these differences in the examples.
 
 As an important special case, these methods address the "multiple comparisons" setting, where interest usually focuses on which $\beta_j$ can be confidently inferred to be non-zero. Such problems are usually tackled by computing a $p$ value for each $j$, often by applying a $t$ test to $\bhat_j/s_j$,
-and then applying a generic procedure, such as that of Benjamini 
-and Hochberg (1995?) or Storey (2001?), designed to control or
-estimate the false discovery rate (FDR) or the positive FDR (Storey, 2001?). In essence we aim to provide analagous
+and then applying a generic procedure, such as that of \cite{benjamini1995controlling} or \cite{storey2003statistical}, designed to control or
+estimate the false discovery rate (FDR) or the positive FDR \cite{storey.03}. In essence we aim to provide analagous
 generic methods that work directly with two numbers for each 
 measurement $(\bhat_j,s_j$), rather than a single number (e.g.~ the $p$ value, or $t$ statistic). Working with these two numbers has two important benefits: first, it permits estimation and not only testing; second, the 
 uncertainty in each measurement $\bhat_j$ can be more fully accounted for, reducing the impact of ``high-noise" measurements (large $s_j$) that can reduce the effectiveness of a standard FDR analysis. 
@@ -237,6 +244,9 @@ In the special case $\nu \rightarrow \infty$ this includes the situation where t
  t_j:=\bhat_j/\shat_j
  \end{equation}
  have a $t_\nu$ distribution under the $j$th null hypothesis $H_j:\beta_j=0$, and this fact can be used to compute a $p$ value $p_j$ testing $H_j$.
+Some methods for FDR analysis require $z$ scores instead of $t$ statistics or $p$ values; these methods can be applied by translating each $t_j$ into a corresponding
+$z$ score, $z_j$.
+
 
 One nice feature of the False Discovery Rate (FDR) is that Frequentist and Bayesian definitions are closely aligned.
 Here we provide Bayesian definitions, and refer the reader to \cite{storey.03}, particularly his Theorem 1,  for connections with frequentist definitions.
@@ -244,32 +254,135 @@ The (tail) FDR at threshold $T$ is defined as
 \begin{equation}
 \FDR(T) := \Pr(\text{$H_j$ false} | t_j \geq T).
 \end{equation}
-The local FDR at $t$ is defined \cite{efron} as
+The local FDR at $t$ is defined \cite{efron2008microarrays} as
 \begin{equation}
 \fdr(t) := \Pr(\text{$H_j$ is false} | t_j = t).
 \end{equation}
-The local FDR is perhaps more relevant than the tail FDR, but less widely used because
+The local FDR is perhaps more relevant than the tail FDR, but less widely used, perhaps because
 it is harder to estimate (density estimation is harder than tail area estimation). 
 The $q$ value for observation $j$ is defined \cite{storey.03} as:
 \begin{equation}
 q_j := \FDR(t_j).
 \end{equation}
-That is, the $q$ value is the FDR if we reject the null for all observations that are at least as significant as $j$.
+That is, the $q$ value for observation $j$ is the FDR if we reject the null for all observations that are at least as significant as observation $j$.
 
 One standard genomics analysis pipeline is to take the $p$ values $p_1,\dots,p_J$ and convert them to (estimated) $q$ values $q_1,\dots,q_J$
- using the R package {\tt qvalue}. A graphical description of how {\tt qvalue} works is given in Figure \ref{}. 
+ using the R package \qvalue. Figure \ref{fig:qvalue} shows a graphical illustration of the procedure implemented in \qvalue. 
+ In brief, the idea is that the overall distribution of $p$ values can be decomposed into two constitutive
+ components: one component corresponding to the ``null" tests, and a second component corresponding to the ``alternative" tests. 
+To perform this decomposition, \qvalue makes two key assumptions:
+  i) the null $p$ values have a uniform distribution, and ii) the $p$ values near 1 are all from
+ tests where the null is true. Under these assumptions performing the decomposition boils down to 
+ drawing the horizontal line on the $p$ value histogram that intersects with the distribution at $p=1$: the area under this horizontal
+ line defines the uniform component that is due to the null $p$ values, with the remainder necessarily corresponding to
+ the alternative $p$ values. Now, for any given threshold, although we do not know {\it which} $p$ values correspond
+ to  null tests  and which to alternative tests, the areas of the two components indicate {\it how many} $p$ values correspond to each,
+ allowing the FDR to be estimated (Figure \ref{fig:qvalue}).
+ 
+ Of course \qvalue is not the only approach to estimating False Discovery Rates. Indeed, there is such a large
+ literature on FDR methods that we do not attempt a comprehensive review. Instead we highlight the two methods that
+ seem most relevant to our work here. The first is due to \cite{efron.xx}, implemented in the R package \locfdr.
+ This method differs from \qvalue in that, instead of working with $p$ values, it works with $z$ scores.
+ Analagous to \qvalue, \locfdr attempts to decompose the overall distribution of $z$ scores into two constitutive components,
+ one corresponding to the null tests, and the other corresponding to the alternative tests. 
+ In the simplest case
+ \locfdr  makes assumptions analogous to the two key assumptions of \qvalue: i) the null $z$ scores have a $N(0,1)$ distribution,
+ and ii) the $z$ scores near 0 are from the null, which Efron
+calls the ``Zero Assumption" (ZA). Under these assumptions, \locfdr can decompose the
+overall distribution of $z$ scores into a null and alternative component, and estimate the local FDR for each observation. 
+ (An important focus of Efron's work \cite{}, also implemented in \locfdr, 
+ is to relax the assumption that the null $z$ scores are $N(0,1)$, to allow for empirical deviations from this
+theoretical null distribution. Although important, this issue is largely orthogonal to the issues we focus on here, which arise
+even if the theoretical null distribution holds precisely in the empirical data, and so we consider it just briefly in the Discussion.) 
+
+Another method for FDR estimation, and perhaps the one most closely related to our
+work here, is due to \cite{muralidharan.xx}, implemented in the R package \mixfdr.
+Like \locfdr, \mixfdr works with $z$ scores, but it differs in that it {\it explicitly} models the alternative
+distribution of $z$ scores (using a mixture of normal distributions). In principle this approach also differs from \qvalue and \locfdr in
+that it does not explicitly make the Zero Assumption. However, the fitting procedure used means that the approach often comes close to making the ZA in practice.
+
+Figure \ref{fig:qvalue} illustrates these three methods in a simple simulated setting. 
+
+
+
+Note that incorporating differential errors messes up the EM algorithm?
+
+Efron models the overall distribution of $z$ scores using a non-parametric regression approach, and then ``subtracts out" the
+null component, leaving the remainder to be the alternative component. 
+
+Mention correspondance between fdr and FDR?
+
+
+ %The details of how this decomposition is performed vary among methods, but they share one important element in common with \qvalue: just as \qvalue assumes that the $p$ values near 1 are from the null, so \locfdr assumes that the $z$ scores near 0 are from the null; Efron calls this assumption the ``Zero Assumption" (ZA). 
+
+  
+  
+ Before proceeding, we feel obliged to correct the common misconception
+ that the use of FDR methods is to ``correct" for the number of tests performed. In fact the FDR does
+ not depend on the number of tests. This is because, as the number of tests increases, both the true positives and false positives increase linearly,
+ and the FDR remains the same. (If this intuitve argument does not convince, see \cite{storey.xx}, and note that the FDR does not depend on the number of tests $m$.)
+  A better way to think of it is that the FDR accounts for the {\it amount of signal} in the tests that were performed: 
+ if there are lots of strong signals then the FDR at a given threshold may be low, even if a large number of tests were performed; and conversely
+ if there are no strong signals then the FDR at the same threshold may be high, even if relatively few tests were performed. 
+ In other words, FDR corrects for the {\it results} of all tests performed, not the {\it number} of all tests performed.
+ 
+Possibly show two situations in figure - a high signal and low signal situation?
+
+\begin{figure}
+\includegraphics{Rcode/figures/FDReg_hist.pdf}
+\caption{Illustration of how FDR is estimated by the \qvalue \, package, by decomposing the overall distribution of $p$ values (left) into a null component and alternative component (right). This is done by estimating the density of $p$ values near 1, and drawing a horizontal line at that height to represent the density of the $p$ values from the null distribution (based on the assumption that all $p$ values near 1 are null).
+At a given threshold (red vertical line at 0.1), the area $A$ corresponds to the true discoveries, and the area $B$ corresponds to the true discoveries,
+so the FDR is estimated by $B/(A+B)$ which in this case is 0.28.} \label{fig:qvalue}
+\end{figure}
+
+\begin{figure}
+\center \includegraphics[height=6in]{Rcode/figures/decomp_ZA.pdf}
+\caption{Comparison of the way that different methods decompose $p$ values (left) and $z$ scores (right) into a null component (dark blue) and an alternative component (light blue). In the $z$ score space the alternative distribution is placed on the bottom to make its shape easy to see.
+The three existing methods (\qvalue, \locfdr, \mixfdr) all effectively make the Zero Assumption, which results in a ``hole" in the alternative $z$ score distribution around 0.
+In contrast the method introduced here (\ashr) assumes that the effect sizes (and thus the $z$ scores) have a unimodal distribution about 0, resulting in a very different decomposition that in this case is much closer to the truth. (These data were simulated under a model where all of the effects are non-zero, so the ``true" decomposition would make everything light blue.)} \label{fig:ZA}
+\end{figure}
 
 
 
 
 \subsection*{Problems with existing methods}
 
- There are two issues with this approach that I would like to address here. The first is that it really does not take proper account of the measurement errors. To see this, consider an example where half the measurements are quite precise, and the other half are really, really, poor. Intuitively, the poor measurements tell us nothing, and any sane analysis should effectively ignore them. However, in a standard FDR-type analysis, these poor measurements add ``noise" and affect estimated FDRs. This is because the $p$ values from the poor measurements will be effectively uniformly distributed, and some will be significant at any given threshold. 
+ There are two issues with existing approaches to FDR estimation and control that I would like to address here. 
+ The first is that they do not take proper account of differences in measurement precision across units (i.e. differences in $\shat_j$). 
+ The second is that the Zero Assumption, although initially appealing as a ``conservative" assumption,
+  is often an unrealistic and unnecessarily conservative assumption. As we shall see, both factors can cause the FDR to be overestimated.
  
+ To illustrate the first issue - differing measurement precision across units - consider a simplistic
+ situation where half the measurements are quite precise, and the other half are really, really, poor. 
+ Intuitively, the poor measurements tell us nothing, and any sane analysis should effectively ignore them. However, in a standard FDR-type analysis, these poor measurements add ``noise" and affect estimated FDRs. This is because the $p$ values from the poor measurements will be effectively uniformly distributed, and some will be significant at any given threshold. 
+ 
+To give a concrete example, we performed a simple simulation in which half the observations have
+good precision ($s_j = 0.5$) and half the observations have very poor precision ($s_j=10$). In both cases,
+we assume that half the effects are null ($\beta_j=0$)
+and the other half are normally distributed with standard deviation 2 ($\beta_j \sim N(0,2)$). 
+That is, we simulate $\beta_j$ from a mixture 
+\begin{equation}
+p(\beta) = 0.5 \delta_0(\beta) + 0.5 N(\beta; 0,2)
+\end{equation}
+where $\delta_0(\cdot)$ denotes a point mass at 0.
+
 Illustration (Figure).
 
 Note that the problem could be reduced by discarding measurements that are too noisy. However,
 note limitation of this.
+
+To illustrate the second issue, it is helpful to go back from the $p$ values in Figure \ref{}
+
+
+we start by noting that the $p$ values in Figure \ref{} were actually generated under a scenario where
+{\it no tests were null}! Thus the qvalue procedure, which estimates the proportion of nulls to be xx\%, is acting very conservatively in this case.
+However, it could be argued that some degree of conservativeness is inevitable, and that nonetheless the procedure is acting sensibly.
+Therefore, to illustrate this point we really want to focus on the fact that, at least in some settings, the assumption is {\it unrealistic}.
+Specifically, we want to argue that the implied distribution of the alternative $p$ values is unrealistic. In fact, this is hard to see in $p$ value space,
+and so instead we translate these $p$ values back to the $z$ scores that lead to these $p$ values.
+
+
+
 
 The second issue is that directly modeling the p values, or z scores, say via non-parametric methods, 
 can lead to unrealistic distributions being fitted. Put another way, because z scores are the result of adding noise to some
@@ -278,10 +391,17 @@ The solution is to model beta hat as a convolution of some distribution g and an
 
 Illustration (Figure).
 
+It should be noted that existing methods were perhaps developed with the expectation that they would typically 
+be applied in settings where the vast majority of all tests are null, and under such circumstances
+the problems caused by this assumption are less severe. However, it seems desirable to have methods that
+also perform well in settings where  this assumptions does not hold, and this motivates the methods developed here.
 
- 
+
+
+ \subsection*{Adaptive Shrinkage}
  
  %(See Discussion for ideas on how our methods may be applicable more generally; for example if, in place of $\shat_j$, we have a $p$ value testing $\beta_j=0$.)
+ 
  
  In outline, we use a hierarchical model to combine information across measurements, with the aim of improving both accuracy and precision of estimates. 
  Specifically we assume that the effects $\beta_j$ are independent and identically distributed from some unknown distribution $g(\cdot)$,
@@ -293,10 +413,12 @@ Illustration (Figure).
    \begin{enumerate}
   \item[A1:] The distribution $g(\cdot)$ is unimodal. (We assume here that the mode is at 0, although 
 this could be relaxed.)  
- \item[A2:] The likelihood $L(\beta_j) := p(D_j | \beta_j)$ can be approximated by a normal likelihood,
- \begin{equation} \label{eqn:lik}
- \hat{L}_j(\beta_j) \propto \exp[-0.5(\beta_j-\bhat_j)^2/\shat_j^2].
+ \item[A2:] The likelihood $L(\beta_j) := p(D_j | \beta_j)$ can be approximated by $p(\bhat_j | \beta_j, \shat_j)$, given by \ref{eqn:betahat-t}.
+Equivalently
+  \begin{equation} \label{eqn:lik}
+ \hat{L}_j(\beta_j) \propto t_\nu((\beta_j-\bhat_j)/\shat_j)
  \end{equation}
+ where $t_\nu$ denotes the density of the standard $t$ distribution on $\nu$ degrees of freedom.
 %which, in light of (\ref{eqn:betahat}), is equivalent to
  % \begin{equation} \label{eqn:lik2}
 % L(\beta_j) \propto p(\bhat_j | \beta_j, \shat_j).
@@ -318,11 +440,12 @@ In contrast, almost all analogous work in large-scale regression assumes
 a unimodal prior distribution for the effect sizes, common choices being the spike and slab, Laplace, $t$, normal-gamma, normal-inverse-gamma, or horseshoe priors.
 One of our aims here is to emphasize potential benefits of also making the unimodal assumption in the FDR context.
 
-Assumption A2 can derived from (\ref{eqn:betahat}) plus a couple of other assumptions. Specifically, assume that a) $\bhat_j, \shat_j$ contain most of the information about $\beta_j$ in the data $D_j$ (i.e. they are ``approximately sufficient" for $D_j$) and that b) $\shat_j$ alone contains little information about $\beta_j$. The former (a) suggests the approximation $\hat{L}_j(\beta_j) \propto p(\bhat_j, \shat_j | \beta) = p(\bhat | \beta, \shat_j) p(\shat_j | \beta)$, while the latter (b) suggests assuming that $p(\shat_j|\beta_j)$ does not depend on $\beta_j$. Putting these two together yields $\hat{L}_j(\beta_j) \propto p(\bhat_j | \beta, \shat_j)$, which, with (\ref{eqn:betahat}),  implies A2. If $\bhat_j, \shat_j$ are not sufficient for $D_j$ then there is some loss of efficiency in making this approximation, but all Bayesian inferences remain valid provided they are interpreted as conditional on $\bhat_j,\shat_j$, rather than conditional on $D_j$. See \cite{johnson.xx} and \cite{wakefield.xx} for more general discussion and examples of Bayesian inference based on summary statistics. 
+Assumption A2 can derived from two additional assumptions: a) $\bhat_j, \shat_j$ contain most of the information about $\beta_j$ in the data $D_j$ (i.e. they are ``approximately sufficient" for $D_j$); and b) $\shat_j$ alone contains little information about $\beta_j$. The former (a) suggests the approximation $\hat{L}_j(\beta_j) \propto p(\bhat_j, \shat_j | \beta) = p(\bhat | \beta, \shat_j) p(\shat_j | \beta)$, while the latter (b) suggests assuming that $p(\shat_j|\beta_j)$ does not depend on $\beta_j$. Putting these two together yields $\hat{L}_j(\beta_j) \propto p(\bhat_j | \beta, \shat_j)$. If $\bhat_j, \shat_j$ are not sufficient for $D_j$ then there is some loss of efficiency in making this approximation, but all Bayesian inferences remain valid provided they are interpreted as conditional on $\bhat_j,\shat_j$, rather than conditional on $D_j$. See \cite{johnson:2008} and \cite{wakefield:2009} for more general discussion and examples of Bayesian inference based on summary statistics. 
 
-Alternatively A2 could be considered definitional for $\bhat_j,\shat_j$: that is, choose $\bhat_j,\shat_j$ such that A2 holds. 
+Alternatively A2 could be considered definitional for $\bhat_j,\shat_j$: that is, choose $\bhat_j,\shat_j,\nu$ such that A2 holds. 
 
-While Assumption A2 has parallels with approaches like \cite{efron, cai?} that model the $Z$ scores $Z_j = \bhat_j/\shat_j$ as normally distributed under the null, 
+While Assumption A2 has parallels with approaches like \cite{efron2008microarrays, sun2007oracle}
+ that model the $Z$ scores $Z_j = \bhat_j/\shat_j$ as normally distributed under the null, 
 there is an important difference: here, observations with a large $\shat_j$ have an essentially flat likelihood (\ref{eqn:lik}), and so do not affect inference for
 other parameters, whereas when modeling the $Z$ scores directly, observations with large $\shat_j$ produce $Z$ scores with an $N(0,1)$ distribution that {\it do} affect inference. 
 Because of this the likelihood-based approach can take better account of the informativeness of each measurement, as illustrated in Results below.
@@ -345,7 +468,7 @@ component distributions with one of the following forms:
 where $N(\cdot; 0,\sigma^2)$ denotes the density of a normal distribution with mean 0 and variance $\sigma^2$ and
 $U[\cdot; a,b]$ denotes the density of a uniform distribution on $[a,b]$.
 That is, the non-zero effects are modeled as either i) a mixture of zero-centered normal distributions; ii) a mixture of zero-centered uniform distributions;
-or iii) a mixture of ``zero-anchored" uniform distributions, which have one end of their range at 0. These approaches closely mirror approaches in \cite{campy.thomas}.
+or iii) a mixture of ``zero-anchored" uniform distributions, which have one end of their range at 0. These approaches closely mirror approaches in \cite{cordy1997deconvolution}.
  
 To see the flexibility of the representation (\ref{eqn:g})
 think of $K$ as being ``large", with the values of $\sigma^2_k$ or $a_k$ 
@@ -363,7 +486,7 @@ The latter two claims are related to characterizations of unimodal distributions
 Furthermore, although it is natural for statisticians to worry about ``overfitting" if $K$ is large, 
 in fact the unimodal constraint is sufficient to prevent serious problems with overfitting. For example, note that the unimodal
 constraint is sufficiently strong that there will exist a non-parametric
-maximum likelihood estimate (NPMLE) for $g$ under this constraint. (Indeed, if the $\beta_j$ are observed without error, corresponding to the standard errors $\shat_j \rightarrow 0$, this NPMLE has an explicit and elegant form; \cite{grenander}.)
+maximum likelihood estimate (NPMLE) for $g$ under this constraint. (Indeed, if the $\beta_j$ are observed without error, corresponding to the standard errors $\shat_j \rightarrow 0$, this NPMLE has an explicit and elegant form; \cite{grenander1956theory}.)
 Thus allowing $K$ to be large in ii) or iii) can be thought of as approximating the NPMLE for $g$, under the constraints of symmetry and unimodality (ii), or unimodality alone (iii). 
 
 Having emphasized the flexibility that can be achieved with large $K$, we note that in practice even quite small values of $K$ (e.g. 2-10) provide highly flexible
@@ -432,7 +555,7 @@ and credible intervals/regions.
 
 \subsection*{The local False Sign Rate}
 
-The local False Discovery Rate (lfdr) for observation $j$ is defined \cite{efron} as
+The local False Discovery Rate (lfdr) for observation $j$ is defined \cite{efron2001empirical} as
 \begin{equation}
 \lfdr_j = p(\beta_j = 0 | \hat\pi, \bhat, s).
 \end{equation}
@@ -440,10 +563,10 @@ The lfdr terminology comes from using "discovery" to refer to rejecting the null
 Specifically $\lfdr_j$ is the probability that, if we reject $H_j$,
 it is a  "false discovery".  
 
-As pointed out by \cite{gelman.etal}, there are settings where
+As pointed out by \cite{gelman2012we}, there are settings where
 $\beta_j=0$ is implausible, in which case the lfdr is not useful: if every $\beta_j$ is non-zero then there
 is no such thing as a false discovery and the lfdr will always be identically 0. 
-Gelman et al suggest that in such settings we
+Gelman et.~al.~suggest that in such settings we
 might replace the concept of a false discovery with the
 concept of an ``error in sign". The idea is that, in settings where $\beta_j=0$ is implausible, the most fundamental
 inference objective is to ask which $\beta_j$ are positive and which are negative. Indeed, even in settings where some
@@ -523,7 +646,7 @@ for Scenario 2 we used $n=1000$.
 For each simulation scenario we simulated 200 independent data sets. For each data set we simulated
 the true value of $\pi_0  \sim U[0,1]$, and then simulated $\beta_j \sim \pi_0 \delta_0 + (1-\pi_0) f_1(\cdot)$
 and $\bhat_j | \beta_j = N(\beta_j,1)$ for $j=1,\dots,n$. Thus these simulations assume the same
-precision for each measurement. We applied the methods implemented in the R packages qvalue, fdrtool, locfdr, and mixfdr
+precision for each measurement. We applied the methods implemented in the R packages qvalue, fdrtool, locfdr, and \mixfdr
 for estimating $\pi_0$. We also applied our method to estimate $\pi_0$ in two ways, one using a penalty encourage
 $\pi_0$ to be as large as possible (``null-biased"), and the other using the maximum likelihood estimate for $\pi$.
 
@@ -706,56 +829,23 @@ TO THINK ABOUT: does multiplying the smaller of Pr(<0) and Pr(>0) by 2, and addi
 
 \subsection{Side notes on Multiple comparisons}
 
-Note on multiple comparisons: it isn't really a "problem" but an "opportunity". This viewpoint also espoused by Greenland and Robins. It isn't the number of tests that is relevant (the false
+Note on multiple comparisons: it isn't really a "problem" but an "opportunity". This viewpoint also espoused by \cite{greenland1991empirical}. It isn't the number of tests that is relevant (the false
 discovery rate at a given threshold does not depend on the number of tests). It is the *results* of the tests that are relevant.
 
 Performing multiple comparisons, or multiple tests, is often
 regarded as a "problem". However, here we regard it instead as an opportunity - an opportunity to combine (or "pool") information across tests or comparisons.
 
-Imagine that you are preparing to perform 1 million tests,
-each based on a $Z$ score that is assumed to be $N(0,1)$ under the null.
-You first order these tests randomly, and begin by 
-performing the first test, which returns a $Z$ score of 4.
-At this point you are interrupted by a friend, who asks how the analysis is going. "It's early days, but looking promising" you reply. Well, who wouldn't? If the aim is to find lots of significant differences, a strong first result is surely a good outcome. 
-
-At this point you have reason to expect that many of the
-subsequent tests also output strong results.
-
-Now consider two alternative scenarios for the remaining 999,999 tests. In the first scenario, the remaining tests
-produce $Z$ values that fit very well with the null, closely following a standard normal distribution; in the second
-scenario a large proportion of the remaining tests, say 50 percent, show outcomes that lie outside of $[-4,4]$. 
-
-If your friend enquired after your analysis again, your
-response would surely differ in the first scenario ("Oh, it didn't pan out so well after all") vs the second ("It went great"). Further,
-in the first scenario, if your friend pressed you further about the results of the first test,
-you would likely, I think, be inclined to put them down to chance. In contrast, in the second scenario, the first test turned out to be, as you hoped, a harbinger of good things to come, and in this scenario you would likely regard that test as likely corresponding to a true discovery.
-
-The key point is that it is the *outcomes* of the tests, not the *number* of tests, that impacts interpretation of that first test. 
-
-(Some may by pondering whether the fact that you are about to perform another
-999,999 tests should be considered pertinent in responding to your friend. Our view is that it is  irrelevant.
-The standard frequentist framework would disagree, because
-it requires the analyst to consider hypothetical repetitions
-of the "experiment", and so the fact that the experiment
-consists of a million tests is pertinent. However, this
-argument is a distraction from the main point.)
-
-Indeed, we believe that the practice of focussing on the *number* of tests performed is 
-
 Focussing on the number of tests performed can be
 seen as an approximation. 
 
-The standard argument is that,
-when performing multiple tests, some will be significant
-just by chance.
 
 \subsection{Discussion}
 
-Efron (2008) states the Zero Assumption as the assumption that ``most of the z-values near zero come from null genes".
+\cite{efron2008microarrays} states the Zero Assumption as the assumption that ``most of the z-values near zero come from null genes".
 His main aim in making this assumption is to estimate an empirical null though (not assume N(0,1) for the null)
 rather than to impose identifiability.
 
-Note that \cite{muralidharan:2012} models $z$ scores as something plus noise under both $H_0$ and $H_1$, which
+Note that \cite{muralidharan2010empirical} models $z$ scores as something plus noise under both $H_0$ and $H_1$, which
 avoids this problem. (DOes the same maybe apply to modeling beta, rather than z scores, when the errors vary?)
 
 Rice and Spiegelhalter - BRCA data?
@@ -765,14 +855,19 @@ that the measurements of $\beta_j$ for each gene can be used to improve inferenc
 
 
 % Do NOT remove this, even if you are not including acknowledgments
-\section*{Acknowledgments}
+\section*{Acknowledgements}
 
 Statistical analyses were conducted in the {\sf R} programming language \cite{Rcore:2012}, Figures produced using the ggplot2 package \cite{ggplot2}, and text
-prepared using \LaTeX.
+prepared using \LaTeX. Development of the methods in this paper was greatly enhanced by the use of the \cite{knitr} package within the RStudio GUI, and 
+git and github. The {\tt ashr} R package is available from \url{http://github.com/stephens999/ash} , and includes contributions 
+from Chaixing (Rick) Dai, Mengyin Lu, and Tian Sen. 
+
+This work was supported by NIH grant .
+
 
 %\section*{References}
 % The bibtex filename
-\bibliography{/Users/stephens/Documents/mainbib}
+\bibliography{/Users/stephens/Dropbox/Documents/mainbib}
 
 \section*{Figure Legends}
 

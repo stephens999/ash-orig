@@ -55,14 +55,7 @@ the z score errors, so its estimated distribution for f1 is at least theoretical
 Our conclusion is that making the zero assumption leads to distributions of the z scores under the
 alternative that are generally implausible.
 ```{r}
-#plot a histogram of z scores, highlighting the alternative distribution
-#of z scores that is implied by localfdr values lfdr.
-  nullalthist = function(z,lfdr,...){
-    h=hist(z, freq=FALSE,col=nullcol,nclass=ncz,...)
-    avlfdr = unlist(lapply(split(lfdr,cut(z,h$breaks),drop=FALSE),mean))
-    h$density = (1-avlfdr) * h$density
-    plot(h,add=TRUE,col=altcol,freq=FALSE)
-  }
+  source("nullalthist.R")
   
   pdf("figures/zhist.pdf")
   par(mfcol=c(3,1))

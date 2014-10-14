@@ -11,6 +11,9 @@ source("plot_examples.R")
 source("plot_rmse.R")
 source("plot_pi0.R")
 source("plot_lfsr.R")
+source("plot_FDReg_hist.R")
+
+
 
 pdf("figures/simABC_egdens.pdf",width=6.5,height=2)
 plot_examples(list(simA,simB,simC))

@@ -1,11 +1,13 @@
 ```{r}
-opts_knit$set(progress = TRUE, verbose = TRUE,root.dir="~/Documents/git/ash/paper/Rcode")
+#opts_knit$set(progress = TRUE, verbose = TRUE,root.dir="~/Documents/git/ash/paper/Rcode")
 require(ashr)
 require(qvalue)
 require(fdrtool)
 require(mixfdr)
 require(locfdr)
 require(ggplot2)
+source("nullalthist.R")
+source("plot_FDReg_hist.R")
 ```
 
 ```{r}
@@ -20,24 +22,8 @@ nc=40 #number of bins in histograms
 ncz = 100 # number of bins in z score histograms
 
 
-plot_FDR_hist=function(sim,iter=1){
-  hh.pval = sim$pval[[iter]]
-  hh.zscore = sim$zscore[[iter]]
-  hh.hist =hist(hh.pval,freq=FALSE,xlab="p value",main="Distribution of p values",nclass=nc,col=altcol)
-  
-  hh.q = qvalue(hh.pval)
-  abline(h=hh.q$pi0,col=nullcol,lwd=2)
-  
-  hh.hist$density=rep(hh.q$pi0,length(hh.hist$density))  
-  plot(hh.hist,add=TRUE,col=nullcol,freq=FALSE)
-  
-  abline(v=0.1,lwd=2,col=2)
-  
-  text(0.05,1.2,labels="A",col=2,cex=1.2)  
-  text(0.05,0.4,labels="B",col=2,cex=1.2)  
-  text(0.6,3,labels=paste0("FDR = B/(A+B) =  ",round(hh.q$pi0*0.1*length(hh.pval)/sum(hh.pval<0.1),2)),cex=1.2)
-}
-plot_FDR_hist(simres1,1)
+source("plot_FDReg_hist.R")
+plot_FDReg_hist(simres1a,1)
 
 ```
 
@@ -55,45 +41,19 @@ plot_lfdr_hist=function(sim,iter=1){
   text(0.1,0.34,labels="b",col=2,cex=1.2)  
   text(0.6,3,labels=paste0("lfdr = b/(a+b) =  ",round(min(hh.gren$f.knots)/approx(hh.gren$x.knots,hh.gren$f.knots,0.1)$y,2)),cex=1.2)
 }
-plot_lfdr_hist(simres1,1)
+plot_lfdr_hist(simres1a,1)
 ```
 
 
 
 ```{r}
-#plot a histogram of z scores, highlighting the alternative distribution
-#of z scores that is implied by localfdr values lfdr.
-  nullalthist = function(z,lfdr,...){
-    h=hist(z, freq=FALSE,col=nullcol,nclass=ncz,...)
-    avlfdr = unlist(lapply(split(lfdr,cut(z,h$breaks),drop=FALSE),mean))
-    h$density = (1-avlfdr) * h$density
-    plot(h,add=TRUE,col=altcol,freq=FALSE)
-  }
-  
-#this one puts the null on the bottom
-  altnullhist = function(z,lfdr,...){
-    h=hist(z, freq=FALSE,col=altcol,nclass=ncz,...)
-    avlfdr = unlist(lapply(split(lfdr,cut(z,h$breaks),drop=FALSE),mean))
-    h$density = avlfdr * h$density
-    plot(h,add=TRUE,col=nullcol,freq=FALSE)
-  }
-  
-  plotall_hist=function(sim,iter=1,histfun=nullalthist){
-    hh.zscore=sim$zscore[[iter]]    
-    par(mfcol=c(2,2))
-    histfun(hh.zscore,sim$betahat.fdrtool[[iter]]$lfdr,main="fdrtool")  
-    histfun(hh.zscore,sim$betahat.locfdr[[iter]]$fdr,main="locfdr")
-    histfun(hh.zscore,sim$betahat.mixfdr[[iter]]$fdr,main="mixfdr")
-    histfun(hh.zscore,sim$betahat.ash.n[[iter]]$lfdr,main="ash")
-    par(mfcol=c(1,1))
-  }
-  
+
  # pdf("figures/nullalthist.pdf")
-  plotall_hist(simres1,1,nullalthist)
+  plotall_hist(simres1a,1,nullalthist)
 #  dev.off() 
 
  # pdf("figures/altnullhist.pdf")
-  plotall_hist(simres1,1,altnullhist)
+  plotall_hist(simres1a,1,altnullhist)
 #  dev.off()
 
 ```

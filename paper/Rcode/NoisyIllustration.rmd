@@ -25,13 +25,13 @@ As expected the $p$ values from the poor observations are approximately uniform,
 
 ```{r}
 p= data.frame(pval=pval,type=c(rep("GOOD",500),rep("POOR",500)))
+p2 = data.frame(pval=pval,type=rep("ALL",1000))
 require(ggplot2)
 pdf("figures/good_poor_hist.pdf",height=3,width=6)
-ggplot(p, aes(x=pval)) + facet_grid(.~type)  +
-    geom_histogram(aes(y=..density..),binwidth=.05,
-                   colour="black", fill="white") 
-
-  #old version, using trellis
+ggplot(rbind(p2,p), aes(x=pval)) + facet_grid(.~type)  +
+    #geom_histogram(aes(y=..density..),binwidth=.05,colour="black", fill="white") 
+  geom_histogram(binwidth=.05,colour="black", fill="white")
+  #old version, using lattice
   #histogram(~pval|type,p,layout=c(1,2),xlim=c(0,1),breaks=seq(from=0,to=1,length=20),type="count")
 dev.off()
 ```
