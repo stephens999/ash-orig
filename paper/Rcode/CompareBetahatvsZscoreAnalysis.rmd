@@ -1,5 +1,5 @@
 ---
-title: "CompareBetahatvsZscoreAnalysis"
+title: "Compare Betahat vs Zscore Analysis"
 output: html_document
 ---
 
@@ -11,15 +11,18 @@ A key modelling assumption is that the effects $\beta_j$ are identically distrib
 from a unimodal distribution $g$. 
 In particular, ashr assumes that $\beta_j$ is independent of the standard error $s_j$.
 That is,
-$$\beta_j | s_j \sim g(\cdot).$$
+$$\beta_j | s_j \sim g(\cdot)     (*).$$
 
 Here we consider an alternative modelling assumption:
-$$\beta_j/s_j | s_j \sim g(\cdot).$$
+$$\beta_j/s_j | s_j \sim g(\cdot)    (**).$$
 Under this alternative assumption
 the *standardized effects* $\beta_j/s_j$ are identically distributed from a unimodal
 distribution. Under this assumption the expected size of the *unstandardized* effect $\beta_j$ depends on the standard error $s_j$: the larger $s_j$ is, the larger (in absolute value) $\beta_j$ is expected to be. 
 
-What might motivate this alternative assumption? 
+By analogy with Wen and Stephens (AoAS), we refer to the model (*) as the EE model ("exchangeable effects"), and the model (**)
+as the ES model ("exchangeable standardized effects")
+
+What might motivate the ES model? 
 We can provide two distinct motivations. First, suppose for concreteness that the effects
 $\beta_j$ reflect differences in gene expression between two conditions. One factor that affects
 $s_j$ is the variance of gene $j$ within each condition. One could imagine that genes with a larger variance within each condition are less tightly regulated, and therefore more likely to show a large difference between conditions (i.e. large $\beta_j$) than genes with a small variance. This provides
@@ -31,14 +34,13 @@ More specifically, under this alternative assumption, when
 attempting to identify ``significant" effects, the empirical Bayes approach will rank the genes 
 in the same way as the usual $p$ values computed from $\hat\beta_j/s_j$.
 
-It is straightforward to use the ashr package to perform analysis under this alternative model:
+It is straightforward to use the ashr package to perform analysis under the ES model:
 one simply replaces betahat with the standardized betahat, $\hat\beta_j$, and the standard errors
 for these standarized betahat values with 1. It is also straightforward to compare
-the two competing modelling assumptions by computing the log likelihood ratio, $log[p_1(\hat\beta | s, \hat g_1)/p_2(\hat\beta | s, \hat g_2)]$, where $p_1$ denotes the default ash model,
-and $p_2$ denotes the alternative model discussed here.
+the two competing modelling assumptions (EE vs ES) by computing the log likelihood ratio, $log[p_{EE}(\hat\beta | s, \hat g_{EE})/p_{ES}(\hat\beta | s, \hat g_{ES})]$.
 
-Let's illustrate by a simulated example. We assume that the standard errors come
-from a gamma distribution, and then generate the effects $\beta_j$ under the alternative assumption so that genes with bigger standard errors tend to have bigger effects.
+We now illustrate by a simulated example. We assume that the standard errors come
+from a gamma distribution, and then generate the effects $\beta_j$ under the ES model so that genes with bigger standard errors tend to have bigger effects.
 ```{r}
   set.seed(1234)
   nsamp=1000
@@ -50,32 +52,35 @@ from a gamma distribution, and then generate the effects $\beta_j$ under the alt
   plot(betahat, -log(pval))
 ```
 
-Here is the standard ash analysis.
+Here is the EE analysis.
 ```{r}
   library(ashr)
   ash1.res = ash(betahat, betahat.se,method="fdr")
 ```
 
-And here is how we can perform the analysis under the alternative model,
+And here is how we can perform the ES analysis,
 by replacing betahat with the standardized betahat, and replacing the standard error with 1:
 ```{r}
   ash2.res = ash(betahat/betahat.se, 1,method="fdr")
 ```
+Note that the posterior distributions computed by ash will now be for the standardized
+effects, and not for the effects $\beta_j$. However, the local false sign rate (lfsr) and
+related quantities are unaffected by this because the standardized effect is positive if and only if the effect is positive.
 
-
+Now we compare the EE vs ES models:
 ```{r}
-  loglik1=ashr:::loglik.ash(ash1.res, betahat, betahat.se, zscore=FALSE) 
-  loglik2=ashr:::loglik.ash(ash2.res,betahat, betahat.se, zscore=TRUE)
-  loglik1-loglik2
+  loglikEE=ashr:::loglik.ash(ash1.res, betahat, betahat.se,df=NULL, zscore=FALSE) 
+  loglikES=ashr:::loglik.ash(ash2.res,betahat, betahat.se, df=NULL, zscore=TRUE)
+  loglikEE-loglikES
 ```
 
-Then the log likelihood ratio is loglik1-loglik2=-93.9. This highly negative
+Then the log likelihood ratio is loglikEE-loglikES=`r loglikEE-loglikES`. This highly negative
 loglikelihood indicate that the data strongly favor 
-the alternative model 2, which is expected because the data were generated under this model.
+the ES model, which is expected because the data were generated under this model.
 (One might be tempted to ask whether the log likelihood ratio is ``significant". We don't 
-know how to address this question, but suggest in practice it doesn't matter: if the loglikelihood ratio is positive then use the default analysis, if it is negative then use the alternative analysis.)
+know how to address this question, but suggest in practice it doesn't matter: if the loglikelihood ratio is positive then use EE, if it is negative then use ES.)
 
-To finish, we illustrate that if we generate data under the original model then that model
+To finish, we illustrate that if we generate data under the EE model then that model
 is preferred by the log likelihood:
 ```{r}
   set.seed(1234)
@@ -87,9 +92,9 @@ is preferred by the log likelihood:
   pval = pchisq(zscore^2,df=1,lower.tail=FALSE)
   ash1.res = ash(betahat, betahat.se,method="fdr")
   ash2.res = ash(betahat/betahat.se, 1,method="fdr")
-  loglik1=ashr:::loglik.ash(ash1.res, betahat, betahat.se, zscore=FALSE) 
-  loglik2=ashr:::loglik.ash(ash2.res,betahat, betahat.se, zscore=TRUE)
-  loglik1-loglik2
+  loglikEE=ashr:::loglik.ash(ash1.res, betahat, betahat.se, df=NULL,zscore=FALSE) 
+  loglikES=ashr:::loglik.ash(ash2.res,betahat, betahat.se, df=NULL,zscore=TRUE)
+  loglikEE-loglikES
 ```
-
+So here the log likelihood ratio is positive, indicating that the EE model is preferred.
 
