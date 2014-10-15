@@ -35,8 +35,9 @@ attempting to identify ``significant" effects, the empirical Bayes approach will
 in the same way as the usual $p$ values computed from $\hat\beta_j/s_j$.
 
 It is straightforward to use the ashr package to perform analysis under the ES model:
-one simply replaces betahat with the standardized betahat, $\hat\beta_j$, and the standard errors
-for these standarized betahat values with 1. It is also straightforward to compare
+simply specify model="ES". (Internally, this causes ash to 
+simply replaces betahat with the standardized betahat, $\hat\beta_j$, and the standard errors
+for these standarized betahat values with 1.) It is also straightforward to compare
 the two competing modelling assumptions (EE vs ES) by computing the log likelihood ratio, $log[p_{EE}(\hat\beta | s, \hat g_{EE})/p_{ES}(\hat\beta | s, \hat g_{ES})]$.
 
 We now illustrate by a simulated example. We assume that the standard errors come
@@ -55,13 +56,13 @@ from a gamma distribution, and then generate the effects $\beta_j$ under the ES 
 Here is the EE analysis.
 ```{r}
   library(ashr)
-  ash1.res = ash(betahat, betahat.se,method="fdr")
+  ash1.res = ash(betahat, betahat.se,method="fdr",model="EE")
 ```
 
 And here is how we can perform the ES analysis,
 by replacing betahat with the standardized betahat, and replacing the standard error with 1:
 ```{r}
-  ash2.res = ash(betahat/betahat.se, 1,method="fdr")
+  ash2.res = ash(betahat, betahat.se,method="fdr", model="ES")
 ```
 Note that the posterior distributions computed by ash will now be for the standardized
 effects, and not for the effects $\beta_j$. However, the local false sign rate (lfsr) and
@@ -69,8 +70,8 @@ related quantities are unaffected by this because the standardized effect is pos
 
 Now we compare the EE vs ES models:
 ```{r}
-  loglikEE=ashr:::loglik.ash(ash1.res, betahat, betahat.se,df=NULL, zscore=FALSE) 
-  loglikES=ashr:::loglik.ash(ash2.res,betahat, betahat.se, df=NULL, zscore=TRUE)
+  loglikEE=ashr:::loglik.ash(ash1.res, betahat, betahat.se,df=NULL, model="EE") 
+  loglikES=ashr:::loglik.ash(ash2.res,betahat, betahat.se, df=NULL, model="ES")
   loglikEE-loglikES
 ```
 
@@ -80,8 +81,8 @@ the ES model, which is expected because the data were generated under this model
 (One might be tempted to ask whether the log likelihood ratio is ``significant". We don't 
 know how to address this question, but suggest in practice it doesn't matter: if the loglikelihood ratio is positive then use EE, if it is negative then use ES.)
 
-To finish, we illustrate that if we generate data under the EE model then that model
-is preferred by the log likelihood:
+The above illustrates these ideas on simulations from the ES model. For comparison,
+we now provide results for simulations under the EE model.
 ```{r}
   set.seed(1234)
   nsamp=1000
@@ -90,11 +91,18 @@ is preferred by the log likelihood:
   betahat = rnorm(nsamp,beta,betahat.se)
   zscore = betahat/betahat.se
   pval = pchisq(zscore^2,df=1,lower.tail=FALSE)
-  ash1.res = ash(betahat, betahat.se,method="fdr")
-  ash2.res = ash(betahat/betahat.se, 1,method="fdr")
-  loglikEE=ashr:::loglik.ash(ash1.res, betahat, betahat.se, df=NULL,zscore=FALSE) 
-  loglikES=ashr:::loglik.ash(ash2.res,betahat, betahat.se, df=NULL,zscore=TRUE)
+  ash1.res = ash(betahat, betahat.se,method="fdr",model="EE")
+  ash2.res = ash(betahat, betahat.se, method="fdr",model="ES")
+  loglikEE=ashr:::loglik.ash(ash1.res, betahat, betahat.se, df=NULL,model = "EE") 
+  loglikES=ashr:::loglik.ash(ash2.res,betahat, betahat.se, df=NULL,model = "ES")
   loglikEE-loglikES
 ```
-So here the log likelihood ratio is positive, indicating that the EE model is preferred.
+So here the log likelihood ratio is positive, indicating that the EE model is preferred
+(which is expected since the data were generated under that model).
+
+Finally, note that the likelihood should always be computed under the same
+model as was used when applying ash. You'll get a warning if you do this wrong, although it will still run:
+```{r}
+  ashr:::loglik.ash(ash2.res,betahat, betahat.se, df=NULL,model = "EE")
+```
 
