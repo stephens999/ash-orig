@@ -1,5 +1,5 @@
 ---
-title: "Compare Betahat vs Zscore Analysis"
+title: "Comparing Exchangeable Effects (EE) and Exchangeable Standardized Effects (ES) models"
 output: html_document
 ---
 
@@ -11,10 +11,10 @@ A key modelling assumption is that the effects $\beta_j$ are identically distrib
 from a unimodal distribution $g$. 
 In particular, ashr assumes that $\beta_j$ is independent of the standard error $s_j$.
 That is,
-$$\beta_j | s_j \sim g(\cdot)     (*).$$
+$$\beta_j | s_j \sim g(\cdot)     \quad (*).$$
 
 Here we consider an alternative modelling assumption:
-$$\beta_j/s_j | s_j \sim g(\cdot)    (**).$$
+$$\beta_j/s_j | s_j \sim g(\cdot)   \quad (**).$$
 Under this alternative assumption
 the *standardized effects* $\beta_j/s_j$ are identically distributed from a unimodal
 distribution. Under this assumption the expected size of the *unstandardized* effect $\beta_j$ depends on the standard error $s_j$: the larger $s_j$ is, the larger (in absolute value) $\beta_j$ is expected to be. 
@@ -25,7 +25,7 @@ as the ES model ("exchangeable standardized effects")
 What might motivate the ES model? 
 We can provide two distinct motivations. First, suppose for concreteness that the effects
 $\beta_j$ reflect differences in gene expression between two conditions. One factor that affects
-$s_j$ is the variance of gene $j$ within each condition. One could imagine that genes with a larger variance within each condition are less tightly regulated, and therefore more likely to show a large difference between conditions (i.e. large $\beta_j$) than genes with a small variance. This provides
+$s_j$ is the variance of gene $j$ within each condition. One could imagine that, perhaps, genes with a larger variance within each condition are less tightly regulated, and therefore more likely to show a large difference between conditions (i.e. large $\beta_j$) than genes with a small variance. This provides
 a biological motivation for the possibility that larger $s_j$ might 
 correlate with larger $\beta_j$ (although of course not for the exact functional form above).
 A second motivation is more statistical: it turns out that this assumption is in some sense
@@ -36,7 +36,7 @@ in the same way as the usual $p$ values computed from $\hat\beta_j/s_j$.
 
 It is straightforward to use the ashr package to perform analysis under the ES model:
 simply specify model="ES". (Internally, this causes ash to 
-simply replaces betahat with the standardized betahat, $\hat\beta_j$, and the standard errors
+replaces betahat with the standardized betahat, $\hat\beta_j/s_j$, and the standard errors
 for these standarized betahat values with 1.) It is also straightforward to compare
 the two competing modelling assumptions (EE vs ES) by computing the log likelihood ratio, $log[p_{EE}(\hat\beta | s, \hat g_{EE})/p_{ES}(\hat\beta | s, \hat g_{ES})]$.
 
@@ -56,13 +56,13 @@ from a gamma distribution, and then generate the effects $\beta_j$ under the ES 
 Here is the EE analysis.
 ```{r}
   library(ashr)
-  ash1.res = ash(betahat, betahat.se,method="fdr",model="EE")
+  ashEE.res = ash(betahat, betahat.se,method="fdr",model="EE")
 ```
 
 And here is how we can perform the ES analysis,
 by replacing betahat with the standardized betahat, and replacing the standard error with 1:
 ```{r}
-  ash2.res = ash(betahat, betahat.se,method="fdr", model="ES")
+  ashES.res = ash(betahat, betahat.se,method="fdr", model="ES")
 ```
 Note that the posterior distributions computed by ash will now be for the standardized
 effects, and not for the effects $\beta_j$. However, the local false sign rate (lfsr) and
@@ -70,12 +70,10 @@ related quantities are unaffected by this because the standardized effect is pos
 
 Now we compare the EE vs ES models:
 ```{r}
-  loglikEE=ashr:::loglik.ash(ash1.res, betahat, betahat.se,df=NULL, model="EE") 
-  loglikES=ashr:::loglik.ash(ash2.res,betahat, betahat.se, df=NULL, model="ES")
-  loglikEE-loglikES
+  ashEE.res$loglik-ashES.res$loglik
 ```
 
-Then the log likelihood ratio is loglikEE-loglikES=`r loglikEE-loglikES`. This highly negative
+Then the log likelihood ratio is loglikEE-loglikES=`r ashEE.res$loglik-ashES.res$loglik`. This highly negative
 loglikelihood indicate that the data strongly favor 
 the ES model, which is expected because the data were generated under this model.
 (One might be tempted to ask whether the log likelihood ratio is ``significant". We don't 
@@ -91,18 +89,11 @@ we now provide results for simulations under the EE model.
   betahat = rnorm(nsamp,beta,betahat.se)
   zscore = betahat/betahat.se
   pval = pchisq(zscore^2,df=1,lower.tail=FALSE)
-  ash1.res = ash(betahat, betahat.se,method="fdr",model="EE")
-  ash2.res = ash(betahat, betahat.se, method="fdr",model="ES")
-  loglikEE=ashr:::loglik.ash(ash1.res, betahat, betahat.se, df=NULL,model = "EE") 
-  loglikES=ashr:::loglik.ash(ash2.res,betahat, betahat.se, df=NULL,model = "ES")
-  loglikEE-loglikES
+  ashEE.res = ash(betahat, betahat.se,method="fdr",model="EE")
+  ashES.res = ash(betahat, betahat.se, method="fdr",model="ES")
+  ashEE.res$loglik-ashES.res$loglik
 ```
 So here the log likelihood ratio is positive, indicating that the EE model is preferred
 (which is expected since the data were generated under that model).
 
-Finally, note that the likelihood should always be computed under the same
-model as was used when applying ash. You'll get a warning if you do this wrong, although it will still run:
-```{r}
-  ashr:::loglik.ash(ash2.res,betahat, betahat.se, df=NULL,model = "EE")
-```
 
