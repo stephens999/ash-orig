@@ -266,6 +266,10 @@ q_j := \FDR(t_j).
 \end{equation}
 That is, the $q$ value for observation $j$ is the FDR if we reject the null for all observations that are at least as significant as observation $j$.
 
+Mention correspondance between fdr and FDR?
+Tidy to deal with fact that definitions I give here implicitly assume $\fdr(t)$ etc don't depend on $j$.
+Mention that Frequentist and Bayesian alignment depends on assumptions?
+
 One standard genomics analysis pipeline is to take the $p$ values $p_1,\dots,p_J$ and convert them to (estimated) $q$ values $q_1,\dots,q_J$
  using the R package \qvalue. Figure \ref{fig:qvalue} shows a graphical illustration of the procedure implemented in \qvalue. 
  In brief, the idea is that the overall distribution of $p$ values can be decomposed into two constitutive
@@ -299,7 +303,8 @@ Another method for FDR estimation, and perhaps the one most closely related to o
 work here, is due to \cite{muralidharan.xx}, implemented in the R package \mixfdr.
 Like \locfdr, \mixfdr works with $z$ scores, but it differs in that it {\it explicitly} models the alternative
 distribution of $z$ scores (using a mixture of normal distributions). In principle this approach also differs from \qvalue and \locfdr in
-that it does not explicitly make the Zero Assumption. However, the fitting procedure used means that the approach often comes close to making the ZA in practice.
+that it does not explicitly make the Zero Assumption. However, we have found that in practice the results often approximately satisfy the ZA,
+which we believe to be due to details in the fitting procedure used.
 
 Figure \ref{fig:qvalue} illustrates these three methods in a simple simulated setting. 
 
@@ -310,7 +315,6 @@ Note that incorporating differential errors messes up the EM algorithm?
 Efron models the overall distribution of $z$ scores using a non-parametric regression approach, and then ``subtracts out" the
 null component, leaving the remainder to be the alternative component. 
 
-Mention correspondance between fdr and FDR?
 
 
  %The details of how this decomposition is performed vary among methods, but they share one important element in common with \qvalue: just as \qvalue assumes that the $p$ values near 1 are from the null, so \locfdr assumes that the $z$ scores near 0 are from the null; Efron calls this assumption the ``Zero Assumption" (ZA). 
@@ -337,7 +341,7 @@ so the FDR is estimated by $B/(A+B)$ which in this case is 0.28.} \label{fig:qva
 
 \begin{figure}
 \center \includegraphics[height=6in]{Rcode/figures/decomp_ZA.pdf}
-\caption{Comparison of the way that different methods decompose $p$ values (left) and $z$ scores (right) into a null component (dark blue) and an alternative component (light blue). In the $z$ score space the alternative distribution is placed on the bottom to make its shape easy to see.
+\caption{Comparison of the way that different methods decompose $p$ values (left) and $z$ scores (right) into a null component (dark blue) and an alternative component (light blue). In the $z$ score space the alternative distribution is placed on the bottom to highlight the differences in its shape among methods.
 The three existing methods (\qvalue, \locfdr, \mixfdr) all effectively make the Zero Assumption, which results in a ``hole" in the alternative $z$ score distribution around 0.
 In contrast the method introduced here (\ashr) assumes that the effect sizes (and thus the $z$ scores) have a unimodal distribution about 0, resulting in a very different decomposition that in this case is much closer to the truth. (These data were simulated under a model where all of the effects are non-zero, so the ``true" decomposition would make everything light blue.)} \label{fig:ZA}
 \end{figure}
@@ -357,16 +361,22 @@ In contrast the method introduced here (\ashr) assumes that the effect sizes (an
  Intuitively, the poor measurements tell us nothing, and any sane analysis should effectively ignore them. However, in a standard FDR-type analysis, these poor measurements add ``noise" and affect estimated FDRs. This is because the $p$ values from the poor measurements will be effectively uniformly distributed, and some will be significant at any given threshold. 
  
 To give a concrete example, we performed a simple simulation in which half the observations have
-good precision ($s_j = 0.5$) and half the observations have very poor precision ($s_j=10$). In both cases,
+reasonably good precision ($s_j = 1$) and half the observations have very poor precision ($s_j=10$). In both cases,
 we assume that half the effects are null ($\beta_j=0$)
-and the other half are normally distributed with standard deviation 2 ($\beta_j \sim N(0,2)$). 
+and the other half are normally distributed with standard deviation 1 ($\beta_j \sim N(0,1)$). 
 That is, we simulate $\beta_j$ from a mixture 
 \begin{equation}
-p(\beta) = 0.5 \delta_0(\beta) + 0.5 N(\beta; 0,2)
+p(\beta) = 0.5 \delta_0(\beta) + 0.5 N(\beta; 0,1)
 \end{equation}
 where $\delta_0(\cdot)$ denotes a point mass at 0.
 
-Illustration (Figure).
+
+\begin{figure}
+\center \includegraphics[width=6.5in]{Rcode/figures/GOODPOOReg_hist.pdf}
+\caption{Illustration of the way that high-noise observations can contaminate signal from low-noise observations.} \label{fig:GOODPOOR}
+\end{figure}
+
+
 
 Note that the problem could be reduced by discarding measurements that are too noisy. However,
 note limitation of this.

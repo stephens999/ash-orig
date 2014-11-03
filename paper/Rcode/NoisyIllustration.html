@@ -105,11 +105,15 @@ print(c(qq.good$pi0, qq.all$pi0))</code></pre>
 ## Loading required package: SQUAREM</code></pre>
 <pre class="r"><code>library(&quot;locfdr&quot;)</code></pre>
 <pre><code>## Loading required package: splines</code></pre>
-<pre class="r"><code>beta.ash.all = ash(betahat,s,method=&quot;fdr&quot;)
-beta.ash.good = ash(betahat[p$type==&quot;GOOD&quot;],s[p$type==&quot;GOOD&quot;],method=&quot;fdr&quot;)
-beta.ash.all.z = ash(betahat/s,1,method=&quot;fdr&quot;)
-beta.ash.good.z = ash(betahat[p$type==&quot;GOOD&quot;]/s[p$type==&quot;GOOD&quot;],1,method=&quot;fdr&quot;)
-beta.locfdr.all.z = locfdr(betahat/s,nulltype=0,plot=0)
+<pre class="r"><code>beta.ash.all = ash(betahat,s,method=&quot;fdr&quot;)</code></pre>
+<pre><code>## [1] &quot;Function ashci() is provided for computing the credible interval(HPD),see documentation for usage and example.&quot;</code></pre>
+<pre class="r"><code>beta.ash.good = ash(betahat[p$type==&quot;GOOD&quot;],s[p$type==&quot;GOOD&quot;],method=&quot;fdr&quot;)</code></pre>
+<pre><code>## [1] &quot;Function ashci() is provided for computing the credible interval(HPD),see documentation for usage and example.&quot;</code></pre>
+<pre class="r"><code>beta.ash.all.z = ash(betahat/s,1,method=&quot;fdr&quot;)</code></pre>
+<pre><code>## [1] &quot;Function ashci() is provided for computing the credible interval(HPD),see documentation for usage and example.&quot;</code></pre>
+<pre class="r"><code>beta.ash.good.z = ash(betahat[p$type==&quot;GOOD&quot;]/s[p$type==&quot;GOOD&quot;],1,method=&quot;fdr&quot;)</code></pre>
+<pre><code>## [1] &quot;Function ashci() is provided for computing the credible interval(HPD),see documentation for usage and example.&quot;</code></pre>
+<pre class="r"><code>beta.locfdr.all.z = locfdr(betahat/s,nulltype=0,plot=0)
 beta.locfdr.good.z = locfdr(betahat[p$type==&quot;GOOD&quot;]/s[p$type==&quot;GOOD&quot;],nulltype=0,plot=0)
 res = rbind(data.frame(x=beta.ash.good$lfsr,y=beta.ash.all$lfsr[p$type==&quot;GOOD&quot;],type=&quot;ash&quot;), 
             #data.frame(x=beta.ash.good.z$lfsr,y=beta.ash.all.z$lfsr[p$type==&quot;GOOD&quot;],type='ash, z scores'),
