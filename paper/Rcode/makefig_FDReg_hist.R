@@ -88,7 +88,7 @@ axis(side=1, labels=TRUE,tck=-0.01,cex.axis=0.8)
 dev.off()
 
 ################################### GOODPOOReg_hist.pdf ###############################
-#
+
 #simple simulated example to illustrate high and low signal
 ntest = 10000
 set.seed(112)
@@ -115,5 +115,47 @@ plot_FDReg_hist(pval,1,type=1,title="Combined",yaxt='n',ylab="",nc=20,cex.axis=1
 axis(side=2, labels=FALSE,tck=-0.01)
 dev.off()
 
+################################### GOODPOOReg_scatterplot.pdf ###############################
+
+#apply the different methods
+res.qvalue = qvalue(pval)
+res.locfdr = locfdr(zscore,nulltype=0,plot=0)
+res.ash = ash(betahat,sebetahat,method="fdr")
+
+res.qvalue.good = qvalue(pval[GOOD])
+res.locfdr.good = locfdr(zscore[GOOD],nulltype=0,plot=0)
+res.ash.good = ash(betahat[GOOD],sebetahat[GOOD],method="fdr")
+
+pdf("figures/GOODPOOReg_scatter.pdf",width=6.5,height=3)
+par(mai=c(0.3,0.3,0.2,0.2),mgp = c(3, 0.5, 0))
+layout(matrix(1:3,ncol=3,byrow=TRUE))
+plot(res.qvalue.good$q,res.qvalue$q[GOOD],main="qvalue",xlim=c(0,1),ylim=c(0,1),axes=F)
+axis(side=2)
+axis(side=1)
+abline(a=0,b=1,col=2)
+plot(res.locfdr.good$fdr,res.locfdr$fdr[GOOD],main="locfdr",xlim=c(0,1),ylim=c(0,1),axes=F)
+axis(side=1)
+abline(a=0,b=1,col=2)
+plot(res.ash.good$lfsr,res.ash$lfsr[GOOD],main="ash",xlim=c(0,1),ylim=c(0,1),axes=F)
+axis(side=1)
+abline(a=0,b=1,col=2)
+dev.off()
+
+res = rbind(data.frame(x=res.ash.good$lfsr,y=res.ash$lfsr[GOOD],type="ash"), 
+            data.frame(x=res.locfdr.good$fdr,y=res.locfdr$fdr[GOOD],type='locfdr'), 
+            data.frame(x= res.qvalue.good$qvalues, y = res.qvalue$qvalues[GOOD],type="qvalue") )
+
+library("ggplot2")
+pdf("figures/GOODPOOReg_scatter.pdf",height=3,width=6.5)
+pp= ggplot(data=res,aes(x,y)) +geom_point(shape=1) +
+  facet_grid(. ~ type) +
+  geom_abline(colour = "red") +
+  xlab("Analysing low-noise data only") +
+  ylab("Analysing combined data")
 
 
+print(pp +scale_y_continuous(limits=c(0,1)) +
+        scale_x_continuous(limits=c(0,1))  +
+        coord_equal(ratio=1))
+
+dev.off()
