@@ -1,7 +1,9 @@
-#This file makes two figures:
+#This file makes three figures:
 #FDReg_hist.pdf: illustrates basic idea of way q value does FDR analysis in p value space
-#decomp_ZA.pdf: compares methods in the way they
-#decompose p values and z scores into two groups 
+#decomp_ZA.pdf: compares methods in the way they decompose p values and z scores into two groups 
+#GOODPOOReg_hist.pdf: illustrates how high-noise measurements can pollute signal
+
+
 require(ashr)
 require(qvalue)
 require(locfdr)
