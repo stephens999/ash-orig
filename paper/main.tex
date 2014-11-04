@@ -21,6 +21,7 @@
 % include graphics with the command \includegraphics
 \usepackage{graphicx}
 
+
 % cite package, to clean up citations in the main text. Do not remove.
 \usepackage{cite}
 
@@ -57,6 +58,7 @@
 \pagestyle{myheadings}
 %% ** EDIT HERE **
 \usepackage{enumerate}
+\usepackage{subfig}
 \usepackage{multirow} 
 \usepackage{url}
 \usepackage{xr} %for cross-referencing
@@ -185,7 +187,7 @@ Many tools have been developed for this problem \cite{}, and several are widely 
 Here we argue that these existing tools have sub-optimal features that can be improved on, at least in some circumstances.
 In particular we argue that existing tools i) fail to take proper account of variations in the measurement precision of different effects;
 ii) make, implicitly, unrealistic assumptions about the distribution of the non-zero effects. We provide methods
-to address these problems, implemented in an R package {\tt ashr} (short for ``Adaptive Shrinkage") and demonstrate that these methods can lead to a substantial reduction in estimated FDRs (or, equivalently,
+to address these problems, implemented in an R package \ashr (short for ``Adaptive Shrinkage") and demonstrate that these methods can lead to a substantial reduction in estimated FDRs (or, equivalently,
 a substantial increase in the number of discoveries at a given FDR).  
 
 Although we motivate our tools by FDR, we are providing generic tools for shrinkage, and
@@ -208,7 +210,7 @@ have two key properties in mind. First, the appropriate amount of shrinkage is d
 
 Given that shrinkage estimation is widely recognized as a powerful tool, there are surprisingly few software packages for performing the simplest type of shrinkage estimation considered here. (There are more packages for the more complex setting of covariance estimation, where shrinkage is perhaps still more important.)
 The only package we have found that provides anything similar
-to the functionality provided here is \mixfdr \cite{muralidharan2010empirical}. Compared with \mixfdr, the key features of ashr are that it
+to the functionality provided here is \mixfdr \cite{muralidharan2010empirical}. Compared with \mixfdr, the key features of \ashr are that it
 i) focuses on allowing for variation in the standard deviation of each observation; ii) constrains the underlying density to be unimodal (and possibly symmetric).
 NOTE: should emphasize these differences in the examples.
 
@@ -317,6 +319,27 @@ null component, leaving the remainder to be the alternative component.
 
 
 
+we start by noting that the $p$ values in Figure \ref{} were actually generated under a scenario where
+{\it no tests were null}! Thus the qvalue procedure, which estimates the proportion of nulls to be xx\%, is acting very conservatively in this case.
+However, it could be argued that some degree of conservativeness is inevitable, and that nonetheless the procedure is acting sensibly.
+Therefore, to illustrate this point we really want to focus on the fact that, at least in some settings, the assumption is {\it unrealistic}.
+Specifically, we want to argue that the implied distribution of the alternative $p$ values is unrealistic. In fact, this is hard to see in $p$ value space,
+and so instead we translate these $p$ values back to the $z$ scores that lead to these $p$ values.
+
+
+
+The second issue is that directly modeling the p values, or z scores, say via non-parametric methods, 
+can lead to unrealistic distributions being fitted. Put another way, because z scores are the result of adding noise to some
+distribution, the range of distributions they can take is limited Using entirely non-parametric methods loses this information.
+The solution is to model beta hat as a convolution of some distribution g and an error component.
+
+
+It should be noted that existing methods were perhaps developed with the expectation that they would typically 
+be applied in settings where the vast majority of all tests are null, and under such circumstances
+the problems caused by this assumption are less severe. However, it seems desirable to have methods that
+also perform well in settings where  this assumptions does not hold, and this motivates the methods developed here.
+
+
  %The details of how this decomposition is performed vary among methods, but they share one important element in common with \qvalue: just as \qvalue assumes that the $p$ values near 1 are from the null, so \locfdr assumes that the $z$ scores near 0 are from the null; Efron calls this assumption the ``Zero Assumption" (ZA). 
 
   
@@ -330,7 +353,6 @@ null component, leaving the remainder to be the alternative component.
  if there are no strong signals then the FDR at the same threshold may be high, even if relatively few tests were performed. 
  In other words, FDR corrects for the {\it results} of all tests performed, not the {\it number} of all tests performed.
  
-Possibly show two situations in figure - a high signal and low signal situation?
 
 \begin{figure}
 \includegraphics{Rcode/figures/FDReg_hist.pdf}
@@ -352,7 +374,7 @@ In contrast the method introduced here (\ashr) assumes that the effect sizes (an
 \subsection*{Problems with existing methods}
 
  There are two issues with existing approaches to FDR estimation and control that I would like to address here. 
- The first is that they do not take proper account of differences in measurement precision across units (i.e. differences in $\shat_j$). 
+ The first is that they may do not take proper account of differences in measurement precision across units (i.e. differences in $\shat_j$). 
  The second is that the Zero Assumption, although initially appealing as a ``conservative" assumption,
   is often an unrealistic and unnecessarily conservative assumption. As we shall see, both factors can cause the FDR to be overestimated.
  
@@ -361,7 +383,7 @@ In contrast the method introduced here (\ashr) assumes that the effect sizes (an
  Intuitively, the poor measurements tell us nothing, and any sane analysis should effectively ignore them. However, in a standard FDR-type analysis, these poor measurements add ``noise" and affect estimated FDRs. This is because the $p$ values from the poor measurements will be effectively uniformly distributed, and some will be significant at any given threshold. 
  
 To give a concrete example, we performed a simple simulation in which half the observations have
-reasonably good precision ($s_j = 1$) and half the observations have very poor precision ($s_j=10$). In both cases,
+reasonably good precision (standard error $s_j = 1$) and half the observations have very poor precision ($s_j=10$). In both cases,
 we assume that half the effects are null ($\beta_j=0$)
 and the other half are normally distributed with standard deviation 1 ($\beta_j \sim N(0,1)$). 
 That is, we simulate $\beta_j$ from a mixture 
@@ -370,42 +392,33 @@ p(\beta) = 0.5 \delta_0(\beta) + 0.5 N(\beta; 0,1)
 \end{equation}
 where $\delta_0(\cdot)$ denotes a point mass at 0.
 
+Figure \ref{fig:goodpoor-hist} shows the distribution of the resulting $p$ values for the good-precision and poor-precision measurements, as
+well as the combined distribution. As expected, the poor-precision measurements lead to almost-uniform $p$ values, and when combined
+with the good-precision measurements they dilute the overall signal in the $p$ values (e.g. they reduce the density of $p$ values near 0).
+This is reflected in the results of FDR methods like $\qvalue$ and $\locfdr$, which work with the $p$ values and $Z$ scores respectively:
+the estimated error rates ($q$-values, or lfdr values) for the good-precision observations increase when the low-precision observations are included in the analysis
+(Figure \ref{fig:goodpoor-scatter}). In contrast, the methods described here ($\ashr$) take account of the precision of each measurement, and so
+the estimated error rates for the good-precision observations are unaffected by including the low-precision observations in the analysis.
+(A key assumption of this simulation is that the distribution of the effects $\beta$ is the same for the good-precision and poor-precision measurements;
+we return to discuss this assumption in more detail in section \ref{xx})
+
 
 \begin{figure}
-\center \includegraphics[width=6.5in]{Rcode/figures/GOODPOOReg_hist.pdf} \\
-\center \includegraphics[width=6.5in]{Rcode/figures/GOODPOOReg_scatter.pdf}
-\caption{Illustration of the way that high-noise observations can contaminate signal from low-noise observations.} \label{fig:GOODPOOR}
+\centering
+\subfloat[][Histograms of $p$ values for good-precision, poor-precision, and combined observations]{
+\includegraphics[width=6.5in]{Rcode/figures/GOODPOOReg_hist.pdf} 
+    \label{fig:goodpoor-hist}
+} \\
+\subfloat[][Comparison of results of different methods applied to good-precision observations only ($x$ axis) and combined data ($y$ axis). Each point shows the estimated error rate ($q$ value, lfdr, or lfsr) for a good-precision observation under the two different analyses.]{
+\includegraphics[width=6.5in]{Rcode/figures/GOODPOOReg_scatter.pdf}
+    \label{fig:goodpoor-scatter}
+}
+\caption{Simulated illustration how poor-precision observations can contaminate signal from good-precision observations. The top panel (a) illustrates that when 
+$p$ values from good-precision observations (left) and from poor-precision observations (center) are combined (right), they produce
+a distribution of $p$ values with less overall signal - and so, by conventional methods, will give a higher estimated FDR at any given threshold.
+The bottom panel (b) illustrates this behaviour directly for the methods \qvalue and \locfdr: the $q$-values from \qvalue and the lfdr estimates from \locfdr are higher when applied to all data than when applied to good-precision observations only. In contrast the methods described here (\ashr) produce effectively the same results (here, the lfsr) in the good-precision and combined data analyses.} \label{fig:goodpoor}
 \end{figure}
 
-
-
-Note that the problem could be reduced by discarding measurements that are too noisy. However,
-note limitation of this.
-
-To illustrate the second issue, it is helpful to go back from the $p$ values in Figure \ref{}
-
-
-we start by noting that the $p$ values in Figure \ref{} were actually generated under a scenario where
-{\it no tests were null}! Thus the qvalue procedure, which estimates the proportion of nulls to be xx\%, is acting very conservatively in this case.
-However, it could be argued that some degree of conservativeness is inevitable, and that nonetheless the procedure is acting sensibly.
-Therefore, to illustrate this point we really want to focus on the fact that, at least in some settings, the assumption is {\it unrealistic}.
-Specifically, we want to argue that the implied distribution of the alternative $p$ values is unrealistic. In fact, this is hard to see in $p$ value space,
-and so instead we translate these $p$ values back to the $z$ scores that lead to these $p$ values.
-
-
-
-
-The second issue is that directly modeling the p values, or z scores, say via non-parametric methods, 
-can lead to unrealistic distributions being fitted. Put another way, because z scores are the result of adding noise to some
-distribution, the range of distributions they can take is limited Using entirely non-parametric methods loses this information.
-The solution is to model beta hat as a convolution of some distribution g and an error component.
-
-Illustration (Figure).
-
-It should be noted that existing methods were perhaps developed with the expectation that they would typically 
-be applied in settings where the vast majority of all tests are null, and under such circumstances
-the problems caused by this assumption are less severe. However, it seems desirable to have methods that
-also perform well in settings where  this assumptions does not hold, and this motivates the methods developed here.
 
 
 

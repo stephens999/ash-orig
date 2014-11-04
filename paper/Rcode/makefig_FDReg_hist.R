@@ -108,8 +108,8 @@ pval = pchisq(zscore^2,df=1,lower.tail=F)
 pdf("figures/GOODPOOReg_hist.pdf",width=6.5,height=3)
 par(mai=c(0.3,0.3,0.2,0.2),mgp = c(3, 0.5, 0))
 layout(matrix(1:3,ncol=3,byrow=TRUE))
-plot_FDReg_hist(pval[GOOD],1,type=1,title="Low-noise observations",ylab="",nc=20,cex.axis=1,cex.main=1.2,ylim=c(0,2.5))
-plot_FDReg_hist(pval[-GOOD],1,type=1,title="High-noise observations",ylab="",nc=20,yaxt='n',cex.axis=1,cex.main=1.2,ylim=c(0,2.5))
+plot_FDReg_hist(pval[GOOD],1,type=1,title="Good-precision observations",ylab="",nc=20,cex.axis=1,cex.main=1.2,ylim=c(0,2.5))
+plot_FDReg_hist(pval[-GOOD],1,type=1,title="Poor-precision observations",ylab="",nc=20,yaxt='n',cex.axis=1,cex.main=1.2,ylim=c(0,2.5))
 axis(side=2, labels=FALSE,tck=-0.01)
 plot_FDReg_hist(pval,1,type=1,title="Combined",yaxt='n',ylab="",nc=20,cex.axis=1,cex.main=1.2,ylim=c(0,2.5))
 axis(side=2, labels=FALSE,tck=-0.01)
@@ -136,21 +136,21 @@ abline(a=0,b=1,col=2)
 plot(res.locfdr.good$fdr,res.locfdr$fdr[GOOD],main="locfdr",xlim=c(0,1),ylim=c(0,1),axes=F)
 axis(side=1)
 abline(a=0,b=1,col=2)
-plot(res.ash.good$lfsr,res.ash$lfsr[GOOD],main="ash",xlim=c(0,1),ylim=c(0,1),axes=F)
+plot(res.ash.good$lfsr,res.ash$lfsr[GOOD],main="ashr",xlim=c(0,1),ylim=c(0,1),axes=F)
 axis(side=1)
 abline(a=0,b=1,col=2)
 dev.off()
 
-res = rbind(data.frame(x=res.ash.good$lfsr,y=res.ash$lfsr[GOOD],type="ash"), 
+res = rbind(data.frame(x= res.qvalue.good$qvalues, y = res.qvalue$qvalues[GOOD],type="qvalue"),
             data.frame(x=res.locfdr.good$fdr,y=res.locfdr$fdr[GOOD],type='locfdr'), 
-            data.frame(x= res.qvalue.good$qvalues, y = res.qvalue$qvalues[GOOD],type="qvalue") )
+            data.frame(x=res.ash.good$lfsr,y=res.ash$lfsr[GOOD],type="ashr"))
 
 library("ggplot2")
 pdf("figures/GOODPOOReg_scatter.pdf",height=3,width=6.5)
 pp= ggplot(data=res,aes(x,y)) +geom_point(shape=1) +
   facet_grid(. ~ type) +
   geom_abline(colour = "red") +
-  xlab("Analysing low-noise data only") +
+  xlab("Analysing good-precision data only") +
   ylab("Analysing combined data")
 
 
