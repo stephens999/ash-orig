@@ -1,0 +1,38 @@
+---
+title: "ash with one observation"
+output: html_document
+---
+
+At http://andrewgelman.com/2013/11/21/hidden-dangers-noninformative-priors/
+Andrew Gelman considers some of the danters of so-called ``non-informative" priors.
+Here's a quote:
+
+``Finally, the simplest example yet, and my new favorite: we assign a flat noninformative prior to a continuous parameter theta. We now observe data, y ~ N(theta,1), and the observation is y=1. This is of course completely consistent with being pure noise, but the posterior probability is 84% that theta>0. I don’t believe that 84%. I think (in general) that it is too high."
+
+I agree with him: although there is no single ``right" answer to the posterior probability
+that theta>0 in this situation, 84% seems too high in general.
+
+Here we examine what ash would do, under various settings, with this observation.
+
+```{r}
+library(ashr)
+res.ash=list()
+res.ash$ns = ash(1,1,mixcompdist="normal",method="shrink")$lfsr[1]
+res.ash$nf = ash(1,1,mixcompdist="normal",method="fdr")$lfsr[1]
+res.ash$us = ash(1,1,mixcompdist="uniform",method="shrink")$lfsr[1]
+res.ash$uf = ash(1,1,mixcompdist="uniform",method="fdr")$lfsr[1]
+res.ash$hus = ash(1,1,mixcompdist="halfuniform",method="shrink")$lfsr[1]
+res.ash$huf = ash(1,1,mixcompdist="halfuniform",method="fdr")$lfsr[1]
+res.ash
+```
+
+So what is going on here? With the method="fdr" ash uses a penalized likelihood to
+encourages the estimate of g() to be ``null" if that is (somewhat) consistent with the data. 
+In this case, we have a single observation, z=1, which is consistent with the null. Ash then
+estimates g to be a point mass on 0, and the lfsr is 1.
+
+For method=``shrink" there is no penalty on the likelihood, and the symmetric models (uniform and normal) end up producing false sign rates of about 50%. The asymmetric model (halfuniform) decides,
+on the basis of this single observation, that everything is positive, and so lfsr is 0. This is clearly wrong!
+
+I don't think we really learn a whole lot from this example, but I do think the results for
+the symmetric models with method="shrink" are at least somewhat sensible.
