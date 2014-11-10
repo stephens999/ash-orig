@@ -1,0 +1,75 @@
+---
+title: "Assess Null Behavior"
+output: html_document
+---
+
+
+```{r}
+  library(ashr)
+  library(qvalue)
+  set.seed(112)
+  res.qvalue=list()
+  res.ash.hu=list()
+  res.ash.u=list()
+  res.ash.n=list()
+  res.ash.s.hu=list()
+  res.ash.s.u=list()
+  res.ash.s.n=list()
+  nsamp = 1000
+  nset=100
+  for(i in 1:nset){
+    z=rnorm(nsamp)
+    pval = pchisq(z^2,df=1,lower.tail=F)
+    res.qvalue[[i]]=qvalue(pval)
+    res.ash.hu[[i]]=ash(z,1,method="fdr",mixcompdist="halfuniform")
+    res.ash.u[[i]]=ash(z,1,method="fdr",mixcompdist="uniform")
+    res.ash.n[[i]]=ash(z,1,method="fdr",mixcompdist="normal")
+    
+    res.ash.s.hu[[i]]=ash(z,1,method="shrink",mixcompdist="halfuniform")
+    res.ash.s.u[[i]]=ash(z,1,method="shrink",mixcompdist="uniform")
+    res.ash.s.n[[i]]=ash(z,1,method="shrink",mixcompdist="normal")
+    
+    
+  }
+
+```
+
+```{r}
+  getpi0.qvalue=function(q){return(q$pi0)}
+  pi0.qvalue=lapply(res.qvalue,getpi0.qvalue)
+  pi0.ash.hu =lapply(res.ash.hu,get_pi0)
+  pi0.ash.u =lapply(res.ash.u,get_pi0)
+  pi0.ash.n =lapply(res.ash.n,get_pi0)
+  par(mfcol=c(4,1))
+  hist(as.numeric(pi0.qvalue),xlim=c(0.8,1.0),breaks=seq(0.8,1,length=21))
+  hist(as.numeric(pi0.ash.hu),xlim=c(0.8,1.0),breaks=seq(0.8,1,length=21))
+  hist(as.numeric(pi0.ash.n),xlim=c(0.8,1.0),breaks=seq(0.8,1,length=21))
+  hist(as.numeric(pi0.ash.u),xlim=c(0.8,1.0),breaks=seq(0.8,1,length=21))
+
+```
+
+
+```{r}
+  getnd.qvalue=function(q){return(sum(q$qvalue<0.05))}
+  getnd.ash = function(a){return(sum(a$lfsr<0.05))} #number of discoveries at 5% lfsr
+  
+#note: should perhaps in principle switch to tail FSR rather than lfsr for this assessment?
+  nd.qvalue = lapply(res.qvalue,getnd.qvalue)
+  nd.ash.hu=lapply(res.ash.hu,getnd.ash)
+  nd.ash.u=lapply(res.ash.u,getnd.ash)  
+  nd.ash.n=lapply(res.ash.n,getnd.ash)
+  nd.ash.s.hu=lapply(res.ash.s.hu,getnd.ash)
+  nd.ash.s.u=lapply(res.ash.s.u,getnd.ash)  
+  nd.ash.s.n=lapply(res.ash.s.n,getnd.ash)
+  
+  summary(as.numeric(nd.qvalue))
+  summary(as.numeric(nd.ash.hu))
+  summary(as.numeric(nd.ash.u))
+  summary(as.numeric(nd.ash.n))
+   summary(as.numeric(nd.ash.s.hu))
+  summary(as.numeric(nd.ash.s.u))
+  summary(as.numeric(nd.ash.s.n))
+```
+
+This shows that, except for the combination "shrink,halfuniform" there are very few observations with lfsr>0.05. For the shrink,halfuniform combination what is going on? Remember that in the shrink
+method there is no point mass at 0. So all the components are positive or negative. Turns out that in this case it is quite common for the method to converge to a situation where nearly all the weight is on one (nearly-null) component. When that happens the lfsr is estimated near 0 for all the observations... so this combination should probably be avoided. 
