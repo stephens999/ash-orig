@@ -4,15 +4,8 @@ source("parammaker.R")
 source("datamaker.R")
 source("score.R")
 library("plyr")
+library("ashr")
 
-system("mkdir param")
-system("mkdir data")
-system("mkdir output")
-system("mkdir output/ash")
-system("mkdir output/qvalue")
-system("mkdir results")
-system("mkdir results/ash")
-system("mkdir results/qvalue")
 
 #read in methods
 methods = system("ls methods",intern=TRUE)
@@ -20,18 +13,31 @@ for(m in 1:length(methods)){
   source(file.path("methods",methods[m]))
 }
 
-seed = 1:50
+seedA = 1:10
+seedB= 101:111
+scenario_seedlist = list(A=seedA,B=seedB)
+methods=list()
+ashflavorlist = list(hu=list(mixcompdist="halfunif",method="fdr")
+                     ,u=list(mixcompdist="uniform",method="fdr"))
+methods$ash=list(name="ash",fn="ash.wrapper",flavorlist = ashflavorlist)
+methods$qval = list(name="qvalue",fn="qvalue.wrapper")
 
-l_ply(seed,parammaker)
-l_ply(seed,datamaker)
 
-ashmethod=list(name="ash",fn="ash.wrapper")
-qvalmethod = list(name="qvalue",fn="qvalue.wrapper")
 
-apply_method(seed, ashmethod)
-apply_method(seed, qvalmethod)
 
-score_method(seed, ashmethod,score)
-score_method(seed, qvalmethod,score)
+make_directories(methods,names(scenario_seedlist))
+make_params(parammaker,scenario_seedlist)
+make_data(datamaker,scenario_seedlist)
 
-aggregate_results(list(ashmethod,qvalmethod),seed)
+
+apply_method(scenario_seedlist, methods$ash,"hu")
+apply_method(scenario_seedlist, methods$ash,"u")
+apply_method(scenario_seedlist, methods$qval)
+
+score_method(scenario_seedlist, methods$ash,score,"hu")
+score_method(scenario_seedlist, methods$ash,score, "u")
+score_method(scenario_seedlist, methods$qval,score)
+
+res=aggregate_results(methods,scenario_seedlist)
+aggregate(td~method+flavor+scenario,res,mean)
+aggregate(fd~method+flavor+scenario,res,mean)

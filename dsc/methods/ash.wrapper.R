@@ -4,13 +4,18 @@
 #' @details None
 #' 
 #' @param input a list with elements betahat and sebetahat
+#' @param add.args a list containing other additional arguments to ash
 #' 
 #' @return output a list with the following elements
 #' \item{qvalue}{vector of qvalues, with jth element being the q value corresponding to (betahat_j,sebetahat_j)
 #'
 library(ashr)
 
-ash.wrapper=function(input){
-  res = ash(input$betahat,input$sebetahat,mixcompdist="halfuniform",method="fdr")
-  return(list(qvalue=res$qvalue))
+ash.wrapper=function(input,add.args=NULL){
+  if(is.null(add.args)){
+    add.args=list(mixcompdist="halfuniform",method="fdr")
+  }
+  res = do.call(ash, args= c(list(betahat=input$betahat,sebetahat=input$sebetahat),
+                             add.args))
+  return(list(qvalue=res$qvalue,pi0=get_pi0(res)))
 }
