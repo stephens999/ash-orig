@@ -1,8 +1,9 @@
-source("dsc.R")
+install.packages("/Users/stephens/Dropbox/Documents/git/dscr_0.1.tar.gz",repos=NULL,type="source")
 
 source("parammaker.R")
 source("datamaker.R")
 source("score.R")
+library("dscr")
 library("plyr")
 library("ashr")
 
