@@ -47,7 +47,7 @@ After saving the file somewhere on your computer, you can install the package as
 ```
 Here `/path/to/` indicates where on your computer you have saved the file.
 
-## Running Adaptive SHrinkage
+## Running Adaptive Shrinkage
 
 
 The main function in the ashr package is `ash`. To get minimal help:
