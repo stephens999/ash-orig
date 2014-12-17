@@ -12,7 +12,7 @@
 #'
 library(qvalue)
 
-qvalue.wrapper = function(input,add.args=NULL){
+qvalue.wrapper = function(input,args=NULL){
   zscore = input$betahat/input$sebetahat
   pvalue = pchisq(zscore^2,df=1,lower.tail=F)
   res = qvalue(pvalue)

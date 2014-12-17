@@ -12,7 +12,7 @@
 #' \item{td}{number of true discoveries}
 #'
 #'
-score = function(param, data, output){
+score = function(data, output){
   return(list(fd=sum(output$qvalue[data$meta$beta==0]<0.05),
               td = sum(output$qvalue[data$meta$beta!=0]<0.05),
               pi0 = output$pi0))
