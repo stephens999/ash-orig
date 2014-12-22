@@ -1,6 +1,7 @@
 This repository contains ongoing work on Bayesian FDR and Adaptive Shrinkage.
 
 # The ashr R Package 
+[![Build Status](https://travis-ci.org/daichaoxing/ash.svg?branch=master)](https://travis-ci.org/daichaoxing/ash)
 
 The (in development) ashr package is in the `package` subdirectory.
 
