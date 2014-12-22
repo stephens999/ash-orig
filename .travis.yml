@@ -5,7 +5,6 @@ language: c
 before_install:
   - curl -OL http://raw.github.com/craigcitro/r-travis/master/scripts/travis-tool.sh
   - chmod 755 ./travis-tool.sh
-  - cp scripts/travis-tool.sh package/ashr
   - cd package/ashr
   - ./travis-tool.sh bootstrap
 
