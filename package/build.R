@@ -1,7 +1,7 @@
 #put all files (R and cpp files) in a directory and cd into that directory
 #in R:
 library(Rcpp)
-Rcpp.package.skeleton("ashr", path=".", code_files=c("ash.oldversion.R", "ash.R", "mix.R"), cpp_files="MixEM.cpp", example_code = FALSE, attributes = TRUE)
+Rcpp.package.skeleton("ashr", path=".", code_files=c("ashutility.R", "ash.R", "mix.R"), cpp_files="MixEM.cpp", example_code = FALSE, attributes = TRUE)
 
 #require(roxygen2)
 #require(devtools)
