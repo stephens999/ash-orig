@@ -4,7 +4,7 @@ require(ggplot2)
 rmse = function(x,y){sqrt(mean((x-y)^2))}
 get_rmse.ash = function(a,b){rmse(a$PosteriorMean,b)}
 get_rmse.mixfdr = function(a,b){rmse(a$effectSize,b)}
-get_loglik.mixfdr = function(a,betahat,betahatsd){loglik_conv(normalmix(a$pi,a$mu,a$sigma-1),betahat,betahatsd)}
+get_loglik.mixfdr = function(a,betahat,betahatsd){loglik_conv(normalmix(a$pi,a$mu,a$sigma-1),betahat,betahatsd,NULL)}
 cdf.mixfdr = function(a,x){mixcdf(normalmix(a$pi,a$mu,a$sigma-1),x)}
 
 plot_loglik_boxplot = function(sims){
@@ -38,7 +38,7 @@ plot_rmse = function(sims,inczero=FALSE,incbetahat=FALSE){
     err.ash.u = mapply(get_rmse.ash,sims[[i]]$fit.ash.u,sims[[i]]$beta)
     err.ash.hu = mapply(get_rmse.ash,sims[[i]]$fit.ash.hu,sims[[i]]$beta)
     err.mixfdr=mapply(get_rmse.mixfdr,sims[[i]]$fit.mixfdr,sims[[i]]$beta)
-    err.mixfdr.enull = mapply(get_rmse.mixfdr,sims[[i]]$fit.mixfdr,sims[[i]]$beta)
+    err.mixfdr.enull = mapply(get_rmse.mixfdr,sims[[i]]$fit.mixfdr.enull,sims[[i]]$beta)
     err.mixfdr.J10 = mapply(get_rmse.mixfdr,sims[[i]]$fit.mixfdr.J10,sims[[i]]$beta)
     #err.mixfdr.J100 = mapply(get_rmse.mixfdr,sims[[i]]$fit.mixfdr.J100,sims[[i]]$beta)
     err.ash.fdr.n = mapply(get_rmse.ash,sims[[i]]$fit.ash.fdr.n,sims[[i]]$beta)
@@ -75,12 +75,12 @@ plot_rmse_boxplot = function(sims,inczero=FALSE,incbetahat=FALSE,incmixfdr=FALSE
   res=list()
   
   for(i in 1:length(sims)){
-    err.bayes = mapply(get_rmse.ash,sims[[i]]$fit.ash.true,sims[[i]]$beta)
+    err.bayes = 1; #mapply(get_rmse.ash,sims[[i]]$fit.ash.true,sims[[i]]$beta)
     err.ash.n= mapply(get_rmse.ash,sims[[i]]$fit.ash.n,sims[[i]]$beta)
     err.ash.u = mapply(get_rmse.ash,sims[[i]]$fit.ash.u,sims[[i]]$beta)
     err.ash.hu = mapply(get_rmse.ash,sims[[i]]$fit.ash.hu,sims[[i]]$beta)
     err.mixfdr=mapply(get_rmse.mixfdr,sims[[i]]$fit.mixfdr,sims[[i]]$beta)
-    err.mixfdr.enull = mapply(get_rmse.mixfdr,sims[[i]]$fit.mixfdr,sims[[i]]$beta)
+    err.mixfdr.enull = mapply(get_rmse.mixfdr,sims[[i]]$fit.mixfdr.enull,sims[[i]]$beta)
     err.mixfdr.J10 = mapply(get_rmse.mixfdr,sims[[i]]$fit.mixfdr.J10,sims[[i]]$beta)
     #       err.mixfdr.J100 = mapply(get_rmse.mixfdr,sims[[i]]$fit.mixfdr.J100,sims[[i]]$beta)
     err.ash.fdr.n = mapply(get_rmse.ash,sims[[i]]$fit.ash.fdr.n,sims[[i]]$beta)         

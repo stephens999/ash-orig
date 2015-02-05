@@ -166,13 +166,14 @@ as a key concept in modern statistics, and the primary tool by which most practi
 Here we consider one setting in which FDR-based methods are widely used:
 an experimenter has measured a large numbers of ``effects", each with an associated
 measurement precision (standard error), 
-and the goal is to identify which of the effects we can declare to be non-zero (with some prescribed level of confidence), and also
-to provide estimates -- both point estimates and interval estimates -- for these effects.
+and the goal is to identify which of the effects we can declare to be non-zero, with some prescribed level of confidence.
+Although the usual focus of FDR-based methods is on distinguishing zero and non-zero effects,
+here we also focus on providing estimates -- both point estimates and interval estimates -- for these effects.
 This setting arises commonly in many areas of statistics, and particularly in genomics applications.
 For example, in genomics
 a common goal is to identify ``differentially-expressed genes" -- that is, genes
 whose mean expression (activity) level differs in two conditions. Here the ``effect" of interest is the difference in (log) 
-expression level between the two conditions, often referred to as the ``log-fold change". 
+mean expression level between the two conditions, often referred to as the ``log-fold change". 
 %Measurement precision will often vary among genes --  for example, log-fold change estimate for highly expressed genes may have greater precision than those for lower-expressed genes -- and one goal  of our methods is to allow for thiis variation. 
 
 %Let $\mu^0_j$ and $\mu^1_j$ denote the mean expression 
@@ -184,8 +185,8 @@ expression level between the two conditions, often referred to as the ``log-fold
 %in estimates of $\beta_j$ still greater.
 %
 
-Many tools have been developed for estimating or controlling the FDR and related quantities \cite{}, and several are widely used.
-Here we present new tools that bring two important new ideas to bear on the problem.
+Many tools have been developed for estimating or controlling the FDR and related quantities \cite{}, and some are widely used.
+Here we present new tools that bring two important ideas to bear on the problem.
 First, these tools are designed to take account of variations in the {\it measurement precision} of different effects, reducing the influence of low-precision measurements.
 For example, in the example of detecting differentially expressed genes, measurements of log fold change for high-expressed genes 
 may have better precision than those for low-expressed genes; by incorporating this information our methods can avoid the tendancy for 
@@ -203,7 +204,7 @@ However, in contrast to FDR methods, shrinkage methods are not so widely used in
 of genomics settings I am familiar with. One possible reason for this is that most work on shrinkage-based estimation has focussed
 on point estimates, rather than on interval estimates which are often of more direct practical relevance. Another contributing
 factor may be the paucity of general-purpose software packages for this kind of shrinkage estimation.
- (There are, perhaps, more packages for shrinkage esitmation in the more complex setting of covariance estimation, where shrinkage is perhaps still more important.)
+% (There are, perhaps, more packages for shrinkage estimation in the more complex setting of covariance estimation, where shrinkage is perhaps still more important.)
 Our work here addresses both these issues, providing a general-purpose software tool that uses shrinkage ideas to improve both
 point and interval estimates.
 
@@ -388,7 +389,7 @@ so the FDR is estimated by $B/(A+B)$ which in this case is 0.28.} \label{fig:qva
 \center \includegraphics[height=6in]{Rcode/figures/decomp_ZA.pdf}
 \caption{Comparison of the way that different methods decompose $p$ values (left) and $z$ scores (right) into a null component (dark blue) and an alternative component (light blue). In the $z$ score space the alternative distribution is placed on the bottom to highlight the differences in its shape among methods.
 The three existing methods (\qvalue, \locfdr, \mixfdr) all effectively make the Zero Assumption, which results in a ``hole" in the alternative $z$ score distribution around 0.
-In contrast the method introduced here (\ashr) assumes that the effect sizes (and thus the $z$ scores) have a unimodal distribution about 0, resulting in a very different decomposition that in this case is much closer to the truth. (These data were simulated under a model where all of the effects are non-zero, so the ``true" decomposition would make everything light blue.)} \label{fig:ZA}
+In contrast the method introduced here (\ashr) assumes that the effect sizes (and thus the $z$ scores) have a unimodal distribution about 0, resulting in a very different decomposition that in this case is much closer to the truth. (These data were simulated under a model where all of the effects are non-zero -- specifically, $\beta_j \sim N(0,1)$, $s_j=1$, resulting in $z_j \sim N(0,2)$ -- so the ``true" decomposition would make everything light blue.)} \label{fig:ZA}
 \end{figure}
 
 
@@ -428,7 +429,7 @@ we return to discuss this assumption in more detail in section \ref{xx})
 
 \begin{figure}
 \centering
-\subfloat[][Histograms of $p$ values for good-precision, poor-precision, and combined observations]{
+\subfloat[][Density histograms of $p$ values for good-precision, poor-precision, and combined observations]{
 \includegraphics[width=6.5in]{Rcode/figures/GOODPOOReg_hist.pdf} 
     \label{fig:goodpoor-hist}
 } \\
@@ -436,7 +437,7 @@ we return to discuss this assumption in more detail in section \ref{xx})
 \includegraphics[width=6.5in]{Rcode/figures/GOODPOOReg_scatter.pdf}
     \label{fig:goodpoor-scatter}
 }
-\caption{Simulated illustration how poor-precision observations can contaminate signal from good-precision observations. The top panel (a) illustrates that when 
+\caption{Simulation illustrating how poor-precision observations can contaminate signal from good-precision observations. The top panel (a) illustrates that when 
 $p$ values from good-precision observations (left) and from poor-precision observations (center) are combined (right), they produce
 a distribution of $p$ values with less overall signal - and so, by conventional methods, will give a higher estimated FDR at any given threshold.
 The bottom panel (b) illustrates this behaviour directly for the methods \qvalue and \locfdr: the $q$-values from \qvalue and the lfdr estimates from \locfdr are higher when applied to all data than when applied to good-precision observations only. In contrast the methods described here (\ashr) produce effectively the same results (here, the lfsr) in the good-precision and combined data analyses.} \label{fig:goodpoor}
@@ -673,14 +674,8 @@ Note: we'd like to make sure it behaves ok in the case where most observations a
 Perhaps simulate with 999 null and 1 alternative?
 Also maybe look at performance for small sample sizes - e.g. n=1?
 
-\begin{figure}[!ht] \label{fig:good_poor_hist}
-\begin{center}
-\includegraphics[height=3in]{Rcode/figures/good_poor_hist.pdf}
-\includegraphics[width=6.5in]{Rcode/figures/good_vs_all.pdf}
-\end{center}
-\caption{}
-\end{figure}
-
+PENN Note: need to fix bug in dscr where when an element of result is null, the data.frame command doesn't work.
+Want to convert it to missing - maybe in the scoring function.
 
 \subsection*{Improved conservative estimation of $\pi_0$}
 
@@ -773,7 +768,7 @@ g(\cdot) =  (2/3) N(\cdot; 0,1) + (1/3) N(\cdot; 0, 2^2)
 \item[Scenario B:]
 A symmetric ``flat-topped" distribution, designed to be difficult to capture by a mixture of zero-centered normals 
 \begin{equation}
-g(\cdot) = (1/7) [N(\cdot; -1.5, 0.5^2) + N(\cdot; -1, 0.5^2) + N(\cdot; 0.5, 0.5^2) + N(\cdot; 0, 0.5^2) + N(\cdot; 0.5, 0.5^2) + N(\cdot; 1, 0.5^2) + N(\cdot; 1.5, 0.5^2)]
+g(\cdot) = (1/7) [N(\cdot; -1.5, 0.5^2) + N(\cdot; -1, 0.5^2) + N(\cdot; -0.5, 0.5^2) + N(\cdot; 0, 0.5^2) + N(\cdot; 0.5, 0.5^2) + N(\cdot; 1, 0.5^2) + N(\cdot; 1.5, 0.5^2)]
 \end{equation}
 \item[Scenario C:]
 An asymmetric distribution, 
@@ -832,7 +827,9 @@ results with random starting points.
 makes allowing different noise levels really easy!
 
 Comparisons with Efron, whose 1-group model is effectively the approach we have taken here.
-He says ``deconvolutioncalculations are notoriously tricky and I have notbeen able to produce a stable general algorithm." Here our claim is that the unimodal constraint is enough to produce that
+He says ``deconvolution
+calculations are notoriously tricky and I have not
+been able to produce a stable general algorithm." Here our claim is that the unimodal constraint is enough to produce that
 general stable algorithm.
 
 
@@ -923,7 +920,7 @@ prepared using \LaTeX. Development of the methods in this paper was greatly enha
 git and github. The {\tt ashr} R package is available from \url{http://github.com/stephens999/ash} , and includes contributions 
 from Chaixing (Rick) Dai, Mengyin Lu, and Tian Sen. 
 
-This work was supported by NIH grant .
+This work was supported by NIH grant xxx and a grant from the Gordon and Betty Moore Foundation.
 
 
 %\section*{References}

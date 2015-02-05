@@ -32,9 +32,14 @@ pdf("figures/rmse_boxplot.pdf",width=6.5,height=2)
 plot_rmse_boxplot(list(simA,simB,simC))
 dev.off()
 
-pdf("figures/rmse_boxplot_extended.pdf",width=6.5,height=2)
+pdf("figures/rmse_boxplot_extended0.pdf",width=6.5,height=2)
 plot_rmse_boxplot(list(simA,simB,simC),TRUE,TRUE,TRUE)
 dev.off()
+
+pdf("figures/rmse_boxplot_extended1.pdf",width=6.5,height=2)
+plot_rmse_boxplot(list(simA,simB,simC),incmixfdr=TRUE)
+dev.off()
+
 
 pdf("figures/loglik_boxplot.pdf",width=6.5,height=2)
 plot_loglik_boxplot(list(simA,simB,simC))
