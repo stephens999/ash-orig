@@ -1,0 +1,10 @@
+sourceDir("methods")
+methods=list()
+methods[[1]] = list(name="ash.hu",fn =ash.wrapper,args=list(mixcompdist="halfunif",method="fdr"))
+methods[[2]] = list(name="ash.u",fn =ash.wrapper,args=list(mixcompdist="unif",method="fdr"))
+methods[[3]] = list(name="ash.n",fn =ash.wrapper,args=list(mixcompdist="normal",method="fdr"))
+
+methods[[4]] = list(name="mixfdr.tnull", fn=mixfdr.wrapper, args = list(theonull=TRUE))
+methods[[5]] = list(name="mixfdr.enull", fn=mixfdr.wrapper, args = list(theonull=FALSE))
+#methods[[6]] = list(name="mixfdr.tnull.J10", fn=mixfdr.wrapper, args = list(theonull=TRUE,J=10))
+#methods[[7]] = list(name="mixfdr.tnull.J10P0", fn=mixfdr.wrapper, args = list(theonull=TRUE,J=10,P=0))
