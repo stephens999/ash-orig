@@ -3,6 +3,8 @@
 *.RData
 *.Rout
 *.png
+locfdr*.gz
+mixfdr*.gz
 scratchwork/*.md
 talks/*.md
 paper/main.pdf
