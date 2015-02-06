@@ -1,8 +1,19 @@
 aggregate(RMSE~method+scenario,res, mean)
 library(ggplot2)
+
+### Plot RMSE boxplot
 ggplot(res,aes(method,RMSE,color=method)) + geom_boxplot() + facet_grid(.~scenario)
 
-p=ggplot(data=res,aes(pi0,pi0_est,colour=method)) +geom_point(shape=1) +
+### Plot RMSE boxplot for subset of methods
+ggplot(filter(res,scenario %in% c("An","Bn","Cn")),aes(method,RMSE,color=method)) + geom_boxplot() + facet_grid(.~scenario)
+
+### or boxplot of elapsed time
+ggplot(filter(res,!(scenario %in% c("hard-b"))),aes(method,elapsed,color=method)) + geom_boxplot() + facet_grid(.~scenario)
+
+
+## plot true pi0 vs estimated pi0
+
+p=ggplot(data=filter(res,scenario %in% c("hard","hard-b","easy")),aes(pi0,pi0_est,colour=method)) +geom_point(shape=1) +
   facet_grid(. ~ scenario) +
   geom_abline(colour = "black") +
   xlab("True pi0") +

@@ -1,0 +1,39 @@
+---
+title: "Graphs"
+runtime: shiny
+output: html_document
+---
+
+Here's a boxplot of results. 
+```{r, echo=FALSE}
+library(ggplot2)
+library(dplyr)
+load("res.RData")
+scenario_names = as.character(unique(res$scenario))
+method_names = as.character(unique(res$method))
+numeric_criteria = names(res)[unlist(lapply(res,is.numeric))]
+
+inputPanel(    
+    # Create the checkboxes and select them all by default
+    checkboxGroupInput("scen.subset", "Choose Scenarios", 
+                        choices  = scenario_names,
+                        selected = scenario_names),
+    
+    checkboxGroupInput("method.subset", "Choose Methods", 
+                        choices  = method_names,
+                        selected = method_names),
+    
+    selectInput("criteria", "Choose Criteria", 
+                        choices  = numeric_criteria,
+                        selected = "RMSE")
+)
+
+
+renderPlot({
+  res.filter = filter(res,scenario %in% input$scen.subset & method %in% input$method.subset)
+  print(input)
+  res.filter$value = res.filter[[input$criteria]]
+  ggplot(res.filter,aes(method,value,color=method)) + geom_boxplot() + facet_grid(.~scenario)
+})
+```
+

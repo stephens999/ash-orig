@@ -95,16 +95,16 @@ scenarios[[8]] = list(name="easy",
 
 
 
-#scenarios[[9]] = list(name="hard-b",
-#                      fn=rnormmix_datamaker,
-#                      args=list(
-#                        g=normalmix(c(.4,.2,.2,.2),c(0,0,0,0),c(.25,.5,1,2)),
-#                        min_pi0=0,
-#                        max_pi0=1,
-#                        nsamp=10000,
-#                        betahatsd=1
-#                      ),
-#                      seed=1:100)
+scenarios[[9]] = list(name="hard-b",
+                      fn=rnormmix_datamaker,
+                      args=list(
+                        g=normalmix(c(.4,.2,.2,.2),c(0,0,0,0),c(.25,.5,1,2)),
+                        min_pi0=0,
+                        max_pi0=1,
+                        nsamp=10000,
+                        betahatsd=1
+                      ),
+                      seed=1:100)
 
 
 #scenarios[[2]]=list(name="2",fn=datamaker,args=list(g=normalmix(c(0.98,0.02),c(0,0),c(0,3)),nsamp=1000,betahatsd=1),seed=1:100)

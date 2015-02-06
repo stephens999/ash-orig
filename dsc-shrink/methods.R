@@ -6,5 +6,6 @@ methods[[3]] = list(name="ash.n",fn =ash.wrapper,args=list(mixcompdist="normal",
 
 methods[[4]] = list(name="mixfdr.tnull", fn=mixfdr.wrapper, args = list(theonull=TRUE))
 methods[[5]] = list(name="mixfdr.enull", fn=mixfdr.wrapper, args = list(theonull=FALSE))
-#methods[[6]] = list(name="mixfdr.tnull.J10", fn=mixfdr.wrapper, args = list(theonull=TRUE,J=10))
-#methods[[7]] = list(name="mixfdr.tnull.J10P0", fn=mixfdr.wrapper, args = list(theonull=TRUE,J=10,P=0))
+methods[[6]] = list(name="mixfdr.tnull.J10", fn=mixfdr.wrapper, args = list(theonull=TRUE,J=10))
+methods[[7]] = list(name="mixfdr.enull.J10", fn=mixfdr.wrapper, args = list(theonull=FALSE,J=10))
+methods[[8]] = list(name="mixfdr.tnull.J10P0", fn=mixfdr.wrapper, args = list(theonull=TRUE,J=10,P=0))
