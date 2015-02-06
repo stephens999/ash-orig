@@ -1,0 +1,140 @@
+DESeq analysis of the Smemo et al heart data
+========================================================
+
+```{r}
+  set.seed(100)
+  opts_chunk$set(cache=TRUE,autodep=TRUE,warning=FALSE)
+  dep_auto()
+```
+
+Read in data
+```{r}
+  x = read.table(paste0("../../stat45800/data/nobrega/expression/counts.txt"), header = TRUE)
+  x.counts = x[,2:5]
+  x = x[rowSums(x.counts)>0,]
+  rownames(x)=1:nrow(x)
+  x.counts = x[,2:5]
+```
+
+Run DESeq on the data, following template in the DESeq vignette.
+```{r}
+  library("DESeq")
+
+  condition=factor(c("left","left","right","right"))
+  cds = newCountDataSet(x.counts, condition )
+  cds = estimateSizeFactors(cds)
+  sizeFactors( cds )
+  cds = estimateDispersions( cds )
+  plotDispEsts( cds )
+  res = nbinomTest( cds, "left", "right" )
+  save("res", file="Smemo_DESeq_res.RData")
+```
+
+Also run it on "null" data created by permuting conditions
+```{r}
+  cds.null = newCountDataSet(x.counts, condition=factor(c("left","right","left","right")))
+  cds.null = estimateSizeFactors(cds.null)
+  sizeFactors( cds.null )
+  cds.null = estimateDispersions( cds.null )
+  plotDispEsts( cds.null )
+  res.null = nbinomTest( cds.null, "left", "right" )
+  save("res.null", file="Smemo_DESeq_res.null.RData")
+```
+
+
+Now examine distribution of p values. Note that it seems that for very low-count genes a lot of 
+p values are equal to 1, so I might choose to remove these.
+```{r}
+  tots = rowSums(x.counts)
+  hist(res$pval[tots<100])
+  hist(res$pval[tots<1000 & tots >=100])
+  hist(res$pval[tots>=1000])
+  hist(tots[res$pval==1],nclass=1000,xlim=c(0,1000))
+```
+
+Compare with simple quasi-binomial glm
+```{r}
+  source("../../stat45800/code/Rcode/PoissonBinomial.funcs.R")  
+  g = c(-0.5, -0.5, 0.5, 0.5)
+  zdat = counts.associate(x.counts, g, 1)
+  save("zdat",file="Smemo_qbinom_zdat.RData")
+```
+
+Also run simple quasi-binomial glm on permuted dat
+```{r}
+  zdat.null = counts.associate(x.counts, c(-0.5,0.5,-0.5,0.5), 1)
+  save("zdat.null",file="Smemo_qbinom_zdat.null.RData")
+```
+
+
+```{r}
+  # two-sided test
+  ttest.pval = function(t, df) {
+    pval = pt(t, df = df, lower.tail = T)
+    pval = 2 * ifelse(pval < 0.5, pval, 1 - pval)
+    return(pval)
+  }
+
+  tscore = zdat[3, ]/zdat[4, ]
+  pval = ttest.pval(tscore, df = 2)
+  #qval = qvalue(pval)
+
+  #highxp = xx>1000 # select high expressed genes
+  #pval.high = pval[highxp]
+  #qval.high = qvalue(pval.high)
+  #cc.assoc.high = counts.associate(cc[highxp,],g,1)
+  #zdat.ash.high = cc.assoc.high$zdat.ash
+  #zdat.high = cc.assoc.high$zdat
+```
+
+```{r}
+  plot(zdat[3,],res$log2FoldChange)
+  plot(pval,res$pval,xlim=c(0,0.1),ylim=c(0,0.1))
+  
+```
+
+```{r}
+  tscore.null = zdat.null[3, ]/zdat.null[4, ]
+  pval.null = ttest.pval(tscore.null, df = 2)
+```
+
+# Example: ASH applied to mouse data
+
+```{r, fig.height=4,echo=FALSE,fig.cap=""}
+hist(zdat[3,],main="Raw effect size estimates",xlab="betahat",xlim=c(-2,2),prob=T,ylim=c(0,3))
+```
+
+# Example: ASH applied to mouse data
+
+```{r, fig.height=4,echo=FALSE,fig.cap=""}
+hist(zdat[3,],main="Raw effect size estimates",xlab="betahat",xlim=c(-2,2),prob=T,ylim=c(0,3))
+t=seq(-2,2,length=201)
+lines(density(zdat.ash,t),type="l")
+```
+
+# Example: ASH applied to mouse data
+
+```{r, fig.height=4,echo=FALSE,fig.cap=""}
+hist(zdat.ash$PosteriorMean,main="Shrunken estimates",xlab="shrunk betahat",prob=T)
+lines(density(zdat.ash,t),type="l")
+```
+
+# Example: ASH applied to mouse data
+
+```{r, fig.height=4,echo=FALSE,fig.cap=""}
+plot(zdat[3,],zdat.ash$PosteriorMean,main="Estimates vs Shrunken estimates",xlab="betahat",ylab="shrunk betahat",xlim=c(-2,2),prob=T)
+abline(a=0,b=1,col=2)
+```
+
+```{r}
+  subset = res$pval<1
+  betahat = res$log2FoldChange
+  #replace the infinite estimates of log2FoldChange with the largest finite fold change
+  betahat[is.infinite(betahat)] = sign(betahat[is.infinite(betahat)]) * max(abs(betahat[is.finite(betahat)]))
+  zscore = sign(betahat) * sqrt(qchisq(res$pval,df=1))
+  betahatsd = betahat/zscore
+  library("ashr")
+  beta.ash = ash(betahat[subset],betahatsd[subset])
+  beta.ash.fdr = ash(betahat[subset],betahatsd[subset],method="fdr")
+```
+

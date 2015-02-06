@@ -1,8 +1,14 @@
+.Rhistory
 *.html
 *.RData
 *.Rout
 *.png
+scratchwork/*.md
+talks/*.md
 paper/main.pdf
+paper/main.bbl
+paper/main.dvi
+paper/main.blg
 paper/main.log
 paper/Rcode/figures/*.pdf
 paper/main.pdf

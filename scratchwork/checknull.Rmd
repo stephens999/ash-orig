@@ -1,0 +1,21 @@
+Check performance of ash under null
+========================================================
+
+Here we simulate all null data sets and look at the 
+estimated values of pi0 
+
+```{r}
+  library(ashr)
+  z.ash=list()
+  for(i in 1:100){
+    set.seed(i)
+    z = rnorm(1000) #c(rnorm(950),rnorm(50,0,3))
+    z.ash[[i]] = ash(z,1,cxx=FALSE,method="fdr")
+    print(i)
+    print(get_pi0(z.ash[[i]]))
+  }
+  
+  nfp = function(a,t=0.05){return(sum(a$lfsr[1:950]<t))} #find number of false positives at threshold t
+  mean(unlist(lapply(z.ash,nfp)))
+```
+

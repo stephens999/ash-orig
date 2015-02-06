@@ -1,0 +1,122 @@
+make new mixVBEM
+========================================================
+
+First our existing implementation
+
+```{r}
+#return the KL-divergence between 2 dirichlet distributions
+#p,q are the vectors of dirichlet parameters of same lengths
+diriKL = function(p,q){
+  p.sum = sum(p)
+  q.sum = sum(q)
+  k = length(q)
+  KL = lgamma(q.sum)-lgamma(p.sum)+sum((q-p)*(digamma(q)-digamma(rep(q.sum,k))))+sum(lgamma(p)-lgamma(q))
+  return(KL)
+}
+
+#helper function for VBEM
+VB.update = function(matrix_lik, pipost){
+  avgpipost = matrix(exp(rep(digamma(pipost),n)-rep(digamma(sum(pipost)),k*n)),ncol=k,byrow=TRUE)
+  classprob = avgpipost * matrix_lik
+  classprob = classprob/rowSums(classprob) # n by k matrix
+  B = sum(classprob*log(avgpipost*matrix_lik),na.rm=TRUE) - diriKL(prior,pipost) - sum(classprob*log(classprob)) #negative free energy
+  return(list(classprob=classprob,B=B))
+}
+
+mixVBEM = function(matrix_lik, prior, post.init=NULL, tol=0.0001, maxiter=5000){
+  n=nrow(matrix_lik)
+  k=ncol(matrix_lik)
+  B = rep(0,maxiter)
+  pipost = post.init
+  if(is.null(post.init)){
+    pipost = prior # Dirichlet posterior on pi
+  }
+  avgpipost = matrix(exp(rep(digamma(pipost),n)-rep(digamma(sum(pipost)),k*n)),ncol=k,byrow=TRUE)
+  classprob = avgpipost * matrix_lik
+  classprob = classprob/rowSums(classprob) # n by k matrix  
+  B[1] = sum(classprob*log(avgpipost*matrix_lik),na.rm=TRUE) - diriKL(prior,pipost) - sum(classprob*log(classprob))  #negative free energy
+  i=1
+  
+  if(maxiter>=2){
+    for(i in 2:maxiter){  
+      pipost = colSums(classprob) + prior
+    
+      #Now re-estimate pipost
+      avgpipost = matrix(exp(rep(digamma(pipost),n)-rep(digamma(sum(pipost)),k*n)),ncol=k,byrow=TRUE)
+      classprob = avgpipost*matrix_lik
+      classprob = classprob/rowSums(classprob) # n by k matrix
+    
+      B[i] = sum(classprob*log(avgpipost*matrix_lik),na.rm=TRUE) - diriKL(prior,pipost) - sum(classprob*log(classprob)) 
+    
+      if(abs(B[i]-B[i-1])<tol) break;
+    } 
+    if(i>maxiter){i=maxiter}
+  }
+
+  converged=(abs(B[i]-B[i-1])<tol)
+  if(!converged){
+      warning("EM algorithm in function mixVBEM failed to converge. Results may be unreliable. Try increasing maxiter and rerunning.")
+  }
+  
+   
+  return(list(pihat = pipost/sum(pipost), B=B[1:i], niter = i, converged=converged,post=pipost))
+}
+
+```
+
+
+Now the squarem version
+```{r}
+require(SQUAREM)
+
+VBfixpoint = function(pipost, matrix_lik, prior){  
+  n=nrow(matrix_lik)
+  k=ncol(matrix_lik)
+  avgpipost = matrix(exp(rep(digamma(pipost),n)-rep(digamma(sum(pipost)),k*n)),ncol=k,byrow=TRUE)
+  classprob = avgpipost*matrix_lik
+  classprob = classprob/rowSums(classprob) # n by k matrix
+  pipostnew = colSums(classprob) + prior
+  return(pipostnew)
+}
+
+VBnegpenloglik = function(pipost, matrix_lik, prior){
+  n=nrow(matrix_lik)
+  k=ncol(matrix_lik)
+  avgpipost = matrix(exp(rep(digamma(pipost),n)-rep(digamma(sum(pipost)),k*n)),ncol=k,byrow=TRUE)
+  classprob = avgpipost*matrix_lik
+  classprob = classprob/rowSums(classprob) # n by k matrix
+    
+  B= sum(classprob*log(avgpipost*matrix_lik),na.rm=TRUE) - diriKL(prior,pipost) - sum(classprob*log(classprob)) 
+  return(-B)
+}
+
+mixVBEM2 = function(matrix_lik, prior, pi.init = NULL,tol=1e-7, maxiter=5000){
+  if(is.null(pi.init)){
+    pi = rep(1/k,k)# Use as starting point for pi
+  } 
+  res = squarem(par=pi.init,fixptfn=VBfixpoint, objfn=VBnegpenloglik,matrix_lik=matrix_lik, prior=prior, control=list(maxiter=maxiter,tol=tol))
+  return(list(pihat = res$par, B=res$value.objfn, 
+              niter = res$iter, converged=res$convergence))
+}
+```
+
+Now simulate some data
+```{r}
+  set.seed(100)
+  sampsize=100000
+  sd = c(1,1.1,1.2)
+  z = rnorm(sampsize,0,sample(sd,sampsize,replace=TRUE))
+  lik = t(vapply(z,dnorm,sd,sd=sd))
+  prior=c(1,1,1)
+  pi.init=c(0.3,0.2,0.5)
+```
+
+```{r}
+  system.time(res1<-mixVBEM(lik,prior,pi.init))
+  system.time(res2<-mixVBEM2(lik,prior,pi.init))
+  options(digits=13)
+  res1
+  res2
+```
+
+

@@ -1,0 +1,52 @@
+Try testing whether gradient of pi0 is negative at pi0=1 (null)
+========================================================
+
+The kth element of this vector is the derivative 
+of the loglik for $\pi=(\pi_0,...,1-\pi_0,...)$ with respect to $\pi_0$ at $\pi_0=1$.
+```{r}
+gradient = function(matrix_lik){
+  n = nrow(matrix_lik)
+  grad = n - colSums(matrix_lik/matrix_lik[,1]) 
+  return(grad)
+}
+```
+
+Simulate some data
+```{r}
+ set.seed(100)
+  sampsize=10000
+  sd = c(1,1.1,1.2)
+  z0 = rnorm(sampsize,0,1)
+  lik0 = t(vapply(z0,dnorm,sd,sd=sd))
+  z1 = rnorm(sampsize,0,sample(sd,sampsize,replace=TRUE))
+  lik1 = t(vapply(z1,dnorm,sd,sd=sd))
+
+```
+
+```{r}
+  gradient(lik0)
+  gradient(lik1)
+```
+
+```{r}
+  for(i in 1:100){
+    set.seed(i)
+    z0 = rnorm(sampsize,0,1)
+  lik0 = t(vapply(z0,dnorm,sd,sd=sd))
+    print(i)
+    print(gradient(lik0))
+  }
+```
+
+```{r}
+  set.seed(96)
+  z0 = rnorm(sampsize,0,1)
+  lik0 = t(vapply(z0,dnorm,sd,sd=sd))
+  print(gradient(lik0))
+  temp=lik0/lik0[,1]
+
+```
+
+
+
+
