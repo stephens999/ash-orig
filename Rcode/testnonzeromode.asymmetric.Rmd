@@ -1,0 +1,25 @@
+---
+title: "Test non-zero mode in asymmetric case"
+output: html_document
+---
+
+
+This example comes from Efron (2008) p16 when examining the false coverage rate (FCR).
+It is clearly asymmetric. However, the strongest mode is at 0 (there's a point mass there). I'm hoping the nonzeromode option picks that up.
+
+```{r}
+  set.seed(100)
+  nsamp=10000
+  mu0 = rep(0,nsamp)
+  mu1 = rnorm(nsamp,-3,1)
+  comp = rbinom(nsamp,1,0.1)
+  mu = ifelse(comp==0,mu0,mu1)
+  z = rnorm(nsamp,mu,1)
+```
+
+```{r}
+  library(ashr)
+  res.ash = ash(z,1,mixcompdist="halfuniform",method="fdr",nonzeromode=TRUE)
+  res.ash
+```
+

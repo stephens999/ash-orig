@@ -7,6 +7,8 @@ locfdr*.gz
 mixfdr*.gz
 scratchwork/*.md
 talks/*.md
+examples/*.md
+tests/*.md
 paper/main.pdf
 paper/main.bbl
 paper/main.dvi
@@ -16,8 +18,11 @@ paper/Rcode/figures/*.pdf
 paper/main.pdf
 paper/main.aux
 paper/main.log
-talks/cache
-Rcode/cache
-paper/Rcode/cache
+package/*.Rcheck
+scratchwork/*cache
+talks/*cache
+talks/*.md
+Rcode/*cache
+paper/Rcode/*cache
 Rcode/figure
 .Rproj.user
