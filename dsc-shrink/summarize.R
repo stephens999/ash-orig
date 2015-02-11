@@ -1,11 +1,12 @@
 aggregate(RMSE~method+scenario,res, mean)
 library(ggplot2)
+library(dplyr)
 
 ### Plot RMSE boxplot
-ggplot(res,aes(method,RMSE,color=method)) + geom_boxplot() + facet_grid(.~scenario)
+ggplot(res,aes(method,RMSE,color=method)) + geom_violin() + facet_grid(.~scenario)
 
 ### Plot RMSE boxplot for subset of methods
-ggplot(filter(res,scenario %in% c("An","Bn","Cn")),aes(method,RMSE,color=method)) + geom_boxplot() + facet_grid(.~scenario)
+ggplot(filter(res,scenario %in% c("An","Bn","Cn")),aes(method,RMSE,color=method)) + geom_violin() + facet_grid(.~scenario)
 
 ### or boxplot of elapsed time
 ggplot(filter(res,!(scenario %in% c("hard-b"))),aes(method,elapsed,color=method)) + geom_boxplot() + facet_grid(.~scenario)
