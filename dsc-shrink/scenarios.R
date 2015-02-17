@@ -107,6 +107,7 @@ scenarios[[9]] = list(name="hard-b",
                       seed=1:100)
 
 
+
 #scenarios[[2]]=list(name="2",fn=datamaker,args=list(g=normalmix(c(0.98,0.02),c(0,0),c(0,3)),nsamp=1000,betahatsd=1),seed=1:100)
 #scenarios[[3]]=list(name="3",fn=datamaker,args=list(g=normalmix(c(0.98,0.02),c(0,0),c(0,3)),nsamp=1000,betahatsd=1),seed=1:100)
 #scenarios[[4]]]=list(name="1b",fn=datamaker,args=list(g=normalmix(c(0.5,0.5),c(0,0),c(0,3)),nsamp=10000,betahatsd=1),seed=1:100)
