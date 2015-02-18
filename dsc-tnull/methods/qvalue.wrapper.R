@@ -16,5 +16,5 @@ qvalue.wrapper = function(input,args=NULL){
   tscore = input$betahat/input$sebetahat
   pvalue = 2*pt(-abs(tscore),df=input$df,lower.tail=TRUE)
   res = qvalue(pvalue)
-  return(list(beta_est=NA,pi0_est=res$pi0))  
+  return(list(beta_est=NA,pi0_est=res$pi0,q=res$q))  
 }

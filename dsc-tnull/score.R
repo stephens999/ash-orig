@@ -14,6 +14,7 @@
 score = function(data, output){
   return(list(RMSE=sqrt(mean((data$meta$beta-output$beta_est)^2)),
               MAE = median(abs(data$meta$beta-output$beta_est)),
+              fp = sum(output$lfsr<0.05),
               pi0 = data$meta$pi0,
               pi0_est = output$pi0_est)
   )
