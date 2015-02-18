@@ -25,4 +25,6 @@ talks/*.md
 Rcode/*cache
 paper/Rcode/*cache
 Rcode/figure
+package/ashr/src/*.so
+package/ashr/src/*.o
 .Rproj.user
