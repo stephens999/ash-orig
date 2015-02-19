@@ -1,0 +1,63 @@
+---
+title: "test nonparam"
+output: html_document
+---
+
+```{r}
+#Following tests nonparam estimation
+library("ashr")
+set.seed(100)
+# First, try fixing g to a true g (but not unimodal)
+beta = c(rnorm(1000,0,1),rnorm(1000,5,1))
+betahatsd = 1
+betahat = rnorm(length(beta),mean=beta,sd=betahatsd)
+g = normalmix(c(0.5,0.5),c(0,5),c(1,1))
+res.1=ash(betahat,betahatsd,g=g,control=list(maxiter=0)) # use the mixture components in g, and also the mixture proportions since don't iterate!
+res.2=ash(betahat,betahatsd,g=g) # use the mixture components in g, but iterate!
+```
+
+
+Now try non-parametric version by setting guni to be piecewise uniform
+```{r}
+K=100
+bins=seq(-10,10,length=K+1)
+binc = (bins[-1]+bins[-(K+1)])/2 # bincenters
+guni = unimix(rep(1,K)/K, bins[-(K+1)],bins[-1])
+
+res.nonp=ash(betahat,betahatsd,g=guni) # use the mixture components in g, but iterate!
+res.nonp2=ash(betahat,betahatsd,g=guni,randomstart=TRUE) 
+
+plot(binc,get_density(res.1,binc)$y,type="l")
+lines(binc,get_density(res.2,binc)$y,col=2)
+lines(binc,get_density(res.nonp,binc)$y,type="s",col=3)
+lines(binc,get_density(res.nonp2,binc)$y,type="s",col=4)
+```
+
+Check likelihoods
+```{r}
+get_loglik(res.1)
+get_loglik(res.2)
+get_loglik(res.nonp)
+get_loglik(res.nonp2)
+```
+
+
+Now try VB to avoid overfitting?
+```{r}
+res.VB=ash(betahat,betahatsd,g=guni,randomstart=TRUE,VB = TRUE,prior=rep(1,K)) 
+res.VB2=ash(betahat,betahatsd,g=guni,randomstart=TRUE,VB = TRUE,prior=rep(1/2,K)) 
+res.VB3=ash(betahat,betahatsd,g=guni,randomstart=TRUE,VB = TRUE,prior=rep(1/K,K)) 
+
+plot(binc,get_density(res.1,binc)$y,type="l")
+lines(binc,get_density(res.VB,binc)$y,col=2)
+lines(binc,get_density(res.VB2,binc)$y,col=3)
+lines(binc,get_density(res.VB3,binc)$y,col=4)
+```
+
+compare evidence
+```{r}
+  get_loglik(res.VB)
+  get_loglik(res.VB2)
+  get_loglik(res.VB3)
+```
+

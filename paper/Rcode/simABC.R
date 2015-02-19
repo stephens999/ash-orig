@@ -36,7 +36,7 @@ ashsim=function(mixmean,mixsd,mixpi,bsd=1,seedval = 100,nsamp=1000,niter=50){
     fit.ash.u[[i]] = ash(betahat[[i]],betahatsd[[i]],mixcompdist="uniform", method="shrink")
     fit.ash.hu[[i]] = ash(betahat[[i]],betahatsd[[i]],mixcompdist="halfuniform", method="shrink")
     fit.ash.hu.vb[[i]] = ash(betahat[[i]],betahatsd[[i]],mixcompdist="halfuniform",method="shrink",VB=TRUE)
-    fit.ash.true[[i]] = ash(betahat[[i]],betahatsd[[i]],g=normalmix(mixpi,mixmean,mixsd))
+    fit.ash.true[[i]] = ash(betahat[[i]],betahatsd[[i]],g=normalmix(mixpi,mixmean,mixsd),control=list(maxiter=0))
     fit.mixfdr[[i]] = mixFdr(betahat[[i]]/betahatsd[[i]],noiseSD=1,theonull=TRUE,plot=FALSE)
     
     fit.ash.fdr.n[[i]] = ash(betahat[[i]],betahatsd[[i]],mixcompdist="normal",method="fdr")

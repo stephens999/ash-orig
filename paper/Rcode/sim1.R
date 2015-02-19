@@ -38,7 +38,7 @@ basicsim=function(mixsd,mixpi_alt,bsd=1,minpi0=0,seedval = 100,nsamp=1000,niter=
     betahat.ash.u[[i]] = ash(betahat[[i]],betahatsd[[i]],pointmass=TRUE,prior="uniform",gridmult=2)
     betahat.ash.ur[[i]] = ash(betahat[[i]],betahatsd[[i]],pointmass=TRUE,prior="uniform",randomstart=TRUE,gridmult=2)
     betahat.ash.npm[[i]] = ash(betahat[[i]],betahatsd[[i]],pointmass=FALSE,prior="uniform",gridmult=2)
-    betahat.ash.true[[i]] = ash(betahat[[i]],betahatsd[[i]],g=normalmix(mixpi,rep(0,length(mixpi)),mixsd))
+    betahat.ash.true[[i]] = ash(betahat[[i]],betahatsd[[i]],g=normalmix(mixpi,rep(0,length(mixpi)),mixsd),control=list(maxiter=0))
     
     cat("applying q value\n")
     betahat.qval[[i]] = qvalue(pval[[i]])
