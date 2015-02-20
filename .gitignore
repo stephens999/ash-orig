@@ -1,3 +1,4 @@
+tests/test_nonparam_cache
 package/ashr/src/*.o
 package/ashr/src/*.so
 .Rhistory
