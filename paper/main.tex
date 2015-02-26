@@ -161,7 +161,33 @@ $\ast$ E-mail: Corresponding mstephens@uchicago.edu
 
 Since its introduction in 1995 by Benjamini and Hochberg 
 \cite{benjamini1995controlling}, the ``False Discovery Rate" (FDR) has quickly established itself
-as a key concept in modern statistics, and the primary tool by which most practitioners handle large-scale multiple testing.
+as a key concept in modern statistics, and the primary tool by which most practitioners handle large-scale multiple testing
+in which the goal is to identify the non-zero ``effects" among a large number of imprecisely-measured effects.
+
+Here we consider an Empirical Bayes (EB) approach to FDR. This idea is, of course, far from new:
+EB approaches to this problem have been quite extensively studied by several authors, 
+especially B.~Efron and co-authors 
+\cite{efron2001empirical, efron2002empirical,efron2003robbins,efron2008microarrays,efron2010large}; 
+see also \cite{kendziorski2003parametric,newton2004detecting, 
+datta2005empirical,muralidharan2010empirical} for example.
+So what is the ``New Deal" here? We introduce two simple new ideas that can substantially improve
+inference. The first idea is to {\it assume that the distribution of the non-zero effects is unimodal}, and to perform
+non-parametric inference under this assumption. This idea has the twin benefits of both simplifying and
+improving inference, at least when the assumption is correct. And even when the assumption is incorrect, we show
+that the approach can be relatively robust to this. The second idea is to use two numbers (effect sizes, and their standard errors), rather than just one ($p$ values, or $z$ scores)
+ to summarize each measurement. This idea allows any differences in the precision of different measurements to be taken into account,
+ and in particular avoids the problem that poor-precision measurements can contaminate high-precision measurements, resulting in inflated FDR values.
+
+In addition to these two new ideas, we highlight a third idea that is old, but which remains under-used in practice:
+the idea that it may be preferable to focus on estimation rather than on testing.
+In principle Bayesian approaches, including EB, can naturally unify testing and estimation into a single framework -- testing is
+simply estimation but with a point mass of some weight on the null hypothesis that an effect is exactly zero.
+However, despite ongoing interest in this area from both frequentist \cite{benjamini2005false} and Bayesian \cite{zhao2012empirical,gelman2012we} 
+perspectives, in practice, large-scale studies that assess many effects almost invariably focus on testing significance, and
+controlling the FDR, rather than on estimating the sizes of the effect. 
+The two new ideas highlighted above 
+help facilitate estimation as well as testing, and by providing simple software to implement our methods
+we hope to promote and accelerate the shift in this direction. 
 
 Here we consider one setting in which FDR-based methods are widely used:
 an experimenter has measured a large numbers of ``effects", each with an associated
@@ -223,7 +249,6 @@ previously, including \cite{greenland1991empirical},
 \cite{efron2008microarrays} and \cite{gelman2012we}. [Note, check also Louis, JASA, 1984] 
 Furthermore, 
 
-
 The initial goal of the ASH (Adaptive SHrinkage) project is to provide simple, generic, and flexible methods to derive ``shrinkage-based" estimates and credible intervals for unknown quantities $\beta=(\beta_1,\dots,\beta_J)$, given only estimates of those quantities ($\bhat=(\bhat_1,\dots, \bhat_J)$) and their corresponding estimated standard errors ($s=(s_1,\dots,s_J)$). 
 
 
@@ -251,53 +276,87 @@ uncertainty in each measurement $\bhat_j$ can be more fully accounted for, reduc
 
  \section*{Methods}
  
- \subsection*{Notation, and existing methods}
+ \subsection*{Notation}
  
 Suppose that we are interested in the values of $J$ ``effects" $\beta_j$ ($j=1,\dots,J$). In some contexts our interest may focus on which of the $\beta_j$ are ``significantly" different from zero, whereas in other contexts our interest may focus on estimating their values; the methods described here are suited to both these contexts.
- We assume that we have obtained data $D_1,\dots,D_J$ that provide independent estimates $\bhat_1,\dots,\bhat_J$ of these effects,
- with corresponding (estimated) standard errors $\shat_1,\dots,\shat_J$. For our purposes, these estimates and standard errors could be obtained from the data
- using any method, provided they (approximately) satisfy 
- \begin{equation} \label{eqn:betahat-t}
- \bhat_j \big{|} \, \beta_j, \shat_j \sim t_\nu(\beta_j,\shat_j),
+ We assume that we have obtained data $D=(D_1,\dots,D_J)$ that provide independent estimates $\bhat_1,\dots,\bhat_J$ of these effects,
+ with corresponding (estimated) standard errors $\shat_1,\dots,\shat_J$. Let $H_j$ denote the event that the $j$th null hypothesis holds, and $t_j$ denote
+ the $t$ statistic testing this null:
+ \begin{gather}
+ H_j: \beta_j = 0 \\  
+ t_j :=\bhat_j/\shat_j. 
+ \end{gather}
+ The $t$ statistics, of course, have a $t$ distribution under the null:
+ \begin{equation} \label{eqn:tstat}
+ t_j | H_j \sim T_\nu
  \end{equation}
-for some known degrees of freedom (\df) $\nu$, where $t_\nu(\mu,\sigma)$ denotes the generalized $t$ distribution on $\nu$ \df, with mean $\mu$ and scale parameter $\sigma$. (Equivalently, $(\bhat_j-\beta_j)/\shat_j \big{|} \, \beta_j \sim t_\nu$, where $t_\nu$ denotes the standard $t$ distribution on $\nu$ \df.)
-In the special case $\nu \rightarrow \infty$ this includes the situation where the $\bhat$ can be considered normally distributed:
-  \begin{equation} \label{eqn:betahat-norm}
- \bhat_j  \big{|} \, \beta_j, \shat_j \sim N(\beta_j,\shat^2_j).
+ where $T_\nu$ denotes the $t$ distribution on $\nu$ \df, with $\nu$ assumed known. 
+ Let $p_j$ denote the $p$ value obtained by comparing $t_j$ with its null distribution,
+ \begin{equation}
+ p_j := \Pr(|T_\nu| > |t_j| ).
  \end{equation}
- Assuming (\ref{eqn:betahat-t}), the $t$-statistics defined by
- \begin{equation} 
- t_j:=\bhat_j/\shat_j
- \end{equation}
- have a $t_\nu$ distribution under the $j$th null hypothesis $H_j:\beta_j=0$, and this fact can be used to compute a $p$ value $p_j$ testing $H_j$.
-Some methods for FDR analysis require $z$ scores instead of $t$ statistics or $p$ values; these methods can be applied by translating each $t_j$ into a corresponding
-$z$ score, $z_j$.
+Some methods for FDR analysis require $z$ scores instead of $t$ statistics or $p$ values;
+ these methods can be applied by translating each $t_j$ into a corresponding
+$z$ score, which we denote $z_j$.
 
 
-One nice feature of the False Discovery Rate (FDR) is that Frequentist and Bayesian definitions are closely aligned.
-Here we provide Bayesian definitions, and refer the reader to \cite{storey.03}, particularly his Theorem 1,  for connections with frequentist definitions.
-The (tail) FDR at threshold $T$ is defined as
-\begin{equation}
-\FDR(T) := \Pr(\text{$H_j$ false} | t_j \geq T).
+ %For our purposes, these estimates and standard errors could be obtained from the data
+%using any method, provided they (approximately) satisfy 
+% \begin{equation} \label{eqn:betahat-t}
+% \bhat_j \big{|} \, \beta_j, \shat_j \sim t_\nu(\beta_j,\shat_j),
+% \end{equation}
+%for some known degrees of freedom (\df) $\nu$, where $t_\nu(\mu,\sigma)$ denotes the generalized $t$ distribution on $\nu$ \df, with mean $\mu$ and scale parameter $\sigma$. (Equivalently, $(\bhat_j-\beta_j)/\shat_j \big{|} \, \beta_j \sim t_\nu$, where $t_\nu$ denotes the standard $t$ distribution on $\nu$ \df.)
+%In the special case $\nu \rightarrow \infty$ this includes the situation where the $\bhat$ can be considered normally distributed:
+%  \begin{equation} \label{eqn:betahat-norm}
+% \bhat_j  \big{|} \, \beta_j, \shat_j \sim N(\beta_j,\shat^2_j).
+% \end{equation}
+% Assuming (\ref{eqn:betahat-t}), the $t$-statistics defined by
+ 
+
+Let $\Gamma$ denote a subset of the tests $1,\dots,J$ declared ``significant" by some procedure. 
+We define the FDR for $\Gamma$ as the proportion of these tests that are ``false discoveries" in that $H_j$ is true:
+\begin{equation} \label{eqn:FDR}
+\FDR(\Gamma) := \frac{\#\{j: H_j \cap j \in \Gamma\}}{\#\{j: j \in \Gamma\}},
 \end{equation}
-The local FDR at $t$ is defined \cite{efron2008microarrays} as
-\begin{equation}
-\fdr(t) := \Pr(\text{$H_j$ is false} | t_j = t).
+taken to be 0 if both numerator and denominator are 0. Frequentist approaches to controlling the FDR attempt to control
+the expectation of $\FDR(\Gamma)$ where the expecation is taken over the sampling distribution of $\Gamma$ (which is a function of the procedure
+used, considered fixed, and the data $D$, considered random). Bayesian approaches, in contrast, condition on the observed data, and compute
+the posterior distribution for the $H_j$ given the data, which induces a posterior distribution on $\FDR(\Gamma)$. This posterior
+distribution can be used to obtain a point estimate for $\FDR(\Gamma)$, for example using the posterior mean. 
+To be more explicit, Bayesian (and EB) approaches give the posterior probability that $H_j$ holds, which
+analagous to \cite{efron2008microarrays} we refer to as the ``local FDR", and denote $\fdr_j$:
+%\begin{equation} \label{eqn:FDR}
+%\FDR(T) := \Pr(\text{$H_j$ false} | t_j \geq T).
+%\end{equation}
+\begin{equation} \label{eqn:fdr}
+\fdr_j := \Pr(H_j | D).
 \end{equation}
-The local FDR is perhaps more relevant than the tail FDR, but less widely used, perhaps because
-it is harder to estimate (density estimation is harder than tail area estimation). 
-The $q$ value for observation $j$ is defined \cite{storey.03} as:
-\begin{equation}
-q_j := \FDR(t_j).
+The FDR can be estimated by the posterior mean for $\FDR(\Gamma)$, given by
+\begin{equation} 
+\widehat\FDR(\Gamma) := \frac{\sum_{j \in \Gamma} \fdr_j }{\#\{j: j \in \Gamma\}}.
 \end{equation}
-That is, the $q$ value for observation $j$ is the FDR if we reject the null for all observations that are at least as significant as observation $j$.
 
-Mention correspondance between fdr and FDR?
-Tidy to deal with fact that definitions I give here implicitly assume $\fdr(t)$ etc don't depend on $j$.
-Mention that Frequentist and Bayesian alignment depends on assumptions?
+The $q$ value for observation $j$ is defined \cite{storey.03} as, roughly, the FDR for the set of observations that are at least as significant as observation $j$.
+In a Bayesian analysis it is natural to order the significance of the hypotheses by $\fdr_j$, so we define
+\begin{equation}
+q_j := \FDR(\{k:\fdr_k \leq \fdr_j\}).
+\end{equation}
+For existing EB methods (but not for our method), typically $\fdr_j$ is a monotonic function of the $p$ value $p_j$, and so
+\begin{equation}
+q_j = \FDR(\{k:p_k \leq p_j\})
+\end{equation}
+which is close to the definition in \cite{storey.03}.
 
-One standard genomics analysis pipeline is to take the $p$ values $p_1,\dots,p_J$ and convert them to (estimated) $q$ values $q_1,\dots,q_J$
- using the R package \qvalue. Figure \ref{fig:qvalue} shows a graphical illustration of the procedure implemented in \qvalue. 
+One nice feature of FDR procedures is that Frequentist and Bayesian procedures are often closely aligned, at least under certain assumptions; see
+for example \cite{storey.03}, particularly his Theorem 1. 
+
+\subsection{Existing methods}
+
+\subsubsection{qvalue}
+
+One standard genomics analysis pipeline is to take the $p$ values $p_1,\dots,p_J$ and use them to estimate $q$ values $q_1,\dots,q_J$
+ using the R package \qvalue.
+  Figure \ref{fig:qvalue} shows a graphical illustration of the procedure implemented in \qvalue. 
  In brief, the idea is that the overall distribution of $p$ values can be decomposed into two constitutive
  components: one component corresponding to the ``null" tests, and a second component corresponding to the ``alternative" tests. 
 To perform this decomposition, \qvalue makes two key assumptions:
@@ -307,77 +366,39 @@ To perform this decomposition, \qvalue makes two key assumptions:
  line defines the uniform component that is due to the null $p$ values, with the remainder necessarily corresponding to
  the alternative $p$ values. Now, for any given threshold, although we do not know {\it which} $p$ values correspond
  to  null tests  and which to alternative tests, the areas of the two components indicate {\it how many} $p$ values correspond to each,
- allowing the FDR to be estimated (Figure \ref{fig:qvalue}).
+ allowing the FDR to be estimated (Figure \ref{fig:qvalue}). 
  
- Of course \qvalue is not the only approach to estimating False Discovery Rates. Indeed, there is such a large
- literature on FDR methods that we do not attempt a comprehensive review. Instead we highlight the two methods that
- seem most relevant to our work here. The first is due to \cite{efron.xx}, implemented in the R package \locfdr.
+\subsubsection{EB approaches: \locfdr and \mixfdr}
+ 
+The fundamental
+ idea of EB procedures is similar to that of \qvalue: to attempt to partition the observations into null and alternative components.
+Here we highlight two EB methods that
+ seem most relevant to our work here and which had good software implementations at the time of writing. 
+ The first is due to \cite{efron2008microarrays}, implemented in the R package \locfdr.
  This method differs from \qvalue in that, instead of working with $p$ values, it works with $z$ scores.
- Analagous to \qvalue, \locfdr attempts to decompose the overall distribution of $z$ scores into two constitutive components,
- one corresponding to the null tests, and the other corresponding to the alternative tests. 
+ %Analagous to \qvalue, \locfdr attempts to decompose the overall distribution of $z$ scores into two constitutive components,
+ %one corresponding to the null tests, and the other corresponding to the alternative tests. 
  In the simplest case
  \locfdr  makes assumptions analogous to the two key assumptions of \qvalue: i) the null $z$ scores have a $N(0,1)$ distribution,
- and ii) the $z$ scores near 0 are from the null, which Efron
-calls the ``Zero Assumption" (ZA). Under these assumptions, \locfdr can decompose the
-overall distribution of $z$ scores into a null and alternative component, and estimate the local FDR for each observation. 
- (An important focus of Efron's work \cite{}, also implemented in \locfdr, 
+ and ii) all the $z$ scores near 0 are from the null, which Efron
+calls the ``Zero Assumption" (ZA).  
+The \locfdr package first estimates the overall distribution of $z$ scores using a non-parametric regression approach, and then, using the two assumptions,  ``subtracts out" the
+null component, leaving the remainder to be the alternative component. In this way \locfdr, like \qvalue, avoids explicit modelling of the alternative component.
+ (An important focus of Efron's work, also implemented in \locfdr, 
  is to relax the assumption that the null $z$ scores are $N(0,1)$, to allow for empirical deviations from this
 theoretical null distribution. Although important, this issue is largely orthogonal to the issues we focus on here, which arise
 even if the theoretical null distribution holds precisely in the empirical data, and so we consider it just briefly in the Discussion.) 
 
-Another method for FDR estimation, and perhaps the one most closely related to our
-work here, is due to \cite{muralidharan.xx}, implemented in the R package \mixfdr.
+Another EB method, and perhaps the one most closely related to our
+work here, is due to \cite{muralidharan2010empirical}, implemented in the R package \mixfdr.
 Like \locfdr, \mixfdr works with $z$ scores, but it differs in that it {\it explicitly} models the alternative
-distribution of $z$ scores (using a mixture of normal distributions). In principle this approach also differs from \qvalue and \locfdr in
+distribution of $z$ scores, using a mixture of normal distributions. In principle this approach also differs from \qvalue and \locfdr in
 that it does not explicitly make the Zero Assumption. However, we have found that in practice the results often approximately satisfy the ZA,
 which we believe to be due to details in the fitting procedure used.
-
-Figure \ref{fig:qvalue} illustrates these three methods in a simple simulated setting. 
-
-
-
-Note that incorporating differential errors messes up the EM algorithm?
-
-Efron models the overall distribution of $z$ scores using a non-parametric regression approach, and then ``subtracts out" the
-null component, leaving the remainder to be the alternative component. 
-
-
-
-we start by noting that the $p$ values in Figure \ref{} were actually generated under a scenario where
-{\it no tests were null}! Thus the qvalue procedure, which estimates the proportion of nulls to be xx\%, is acting very conservatively in this case.
-However, it could be argued that some degree of conservativeness is inevitable, and that nonetheless the procedure is acting sensibly.
-Therefore, to illustrate this point we really want to focus on the fact that, at least in some settings, the assumption is {\it unrealistic}.
-Specifically, we want to argue that the implied distribution of the alternative $p$ values is unrealistic. In fact, this is hard to see in $p$ value space,
-and so instead we translate these $p$ values back to the $z$ scores that lead to these $p$ values.
-
-
-
-The second issue is that directly modeling the p values, or z scores, say via non-parametric methods, 
-can lead to unrealistic distributions being fitted. Put another way, because z scores are the result of adding noise to some
-distribution, the range of distributions they can take is limited Using entirely non-parametric methods loses this information.
-The solution is to model beta hat as a convolution of some distribution g and an error component.
-
-
-It should be noted that existing methods were perhaps developed with the expectation that they would typically 
-be applied in settings where the vast majority of all tests are null, and under such circumstances
-the problems caused by this assumption are less severe. However, it seems desirable to have methods that
-also perform well in settings where  this assumptions does not hold, and this motivates the methods developed here.
-
 
  %The details of how this decomposition is performed vary among methods, but they share one important element in common with \qvalue: just as \qvalue assumes that the $p$ values near 1 are from the null, so \locfdr assumes that the $z$ scores near 0 are from the null; Efron calls this assumption the ``Zero Assumption" (ZA). 
 
   
-  
- Before proceeding, we feel obliged to correct the common misconception
- that the use of FDR methods is to ``correct" for the number of tests performed. In fact the FDR does
- not depend on the number of tests. This is because, as the number of tests increases, both the true positives and false positives increase linearly,
- and the FDR remains the same. (If this intuitve argument does not convince, see \cite{storey.xx}, and note that the FDR does not depend on the number of tests $m$.)
-  A better way to think of it is that the FDR accounts for the {\it amount of signal} in the tests that were performed: 
- if there are lots of strong signals then the FDR at a given threshold may be low, even if a large number of tests were performed; and conversely
- if there are no strong signals then the FDR at the same threshold may be high, even if relatively few tests were performed. 
- In other words, FDR corrects for the {\it results} of all tests performed, not the {\it number} of all tests performed.
- 
-
 \begin{figure}
 \includegraphics{Rcode/figures/FDReg_hist.pdf}
 \caption{Illustration of how FDR is estimated by the \qvalue \, package, by decomposing the overall distribution of $p$ values (left) into a null component and alternative component (right). This is done by estimating the density of $p$ values near 1, and drawing a horizontal line at that height to represent the density of the $p$ values from the null distribution (based on the assumption that all $p$ values near 1 are null).
@@ -385,144 +406,96 @@ At a given threshold (red vertical line at 0.1), the area $A$ corresponds to the
 so the FDR is estimated by $B/(A+B)$ which in this case is 0.28.} \label{fig:qvalue}
 \end{figure}
 
-\begin{figure}
-\center \includegraphics[height=6in]{Rcode/figures/decomp_ZA.pdf}
-\caption{Comparison of the way that different methods decompose $p$ values (left) and $z$ scores (right) into a null component (dark blue) and an alternative component (light blue). In the $z$ score space the alternative distribution is placed on the bottom to highlight the differences in its shape among methods.
-The three existing methods (\qvalue, \locfdr, \mixfdr) all effectively make the Zero Assumption, which results in a ``hole" in the alternative $z$ score distribution around 0.
-In contrast the method introduced here (\ashr) assumes that the effect sizes (and thus the $z$ scores) have a unimodal distribution about 0, resulting in a very different decomposition that in this case is much closer to the truth. (These data were simulated under a model where all of the effects are non-zero -- specifically, $\beta_j \sim N(0,1)$, $s_j=1$, resulting in $z_j \sim N(0,2)$ -- so the ``true" decomposition would make everything light blue.)} \label{fig:ZA}
-\end{figure}
-
-
-
-
-\subsection*{Problems with existing methods}
-
- There are two issues with existing approaches to FDR estimation and control that I would like to address here. 
- The first is that they may do not take proper account of differences in measurement precision across units (i.e. differences in $\shat_j$). 
- The second is that the Zero Assumption, although initially appealing as a ``conservative" assumption,
-  is often an unrealistic and unnecessarily conservative assumption. As we shall see, both factors can cause the FDR to be overestimated.
- 
- To illustrate the first issue - differing measurement precision across units - consider a simplistic
- situation where half the measurements are quite precise, and the other half are really, really, poor. 
- Intuitively, the poor measurements tell us nothing, and any sane analysis should effectively ignore them. However, in a standard FDR-type analysis, these poor measurements add ``noise" and affect estimated FDRs. This is because the $p$ values from the poor measurements will be effectively uniformly distributed, and some will be significant at any given threshold. 
- 
-To give a concrete example, we performed a simple simulation in which half the observations have
-reasonably good precision (standard error $s_j = 1$) and half the observations have very poor precision ($s_j=10$). In both cases,
-we assume that half the effects are null ($\beta_j=0$)
-and the other half are normally distributed with standard deviation 1 ($\beta_j \sim N(0,1)$). 
-That is, we simulate $\beta_j$ from a mixture 
-\begin{equation}
-p(\beta) = 0.5 \delta_0(\beta) + 0.5 N(\beta; 0,1)
-\end{equation}
-where $\delta_0(\cdot)$ denotes a point mass at 0.
-
-Figure \ref{fig:goodpoor-hist} shows the distribution of the resulting $p$ values for the good-precision and poor-precision measurements, as
-well as the combined distribution. As expected, the poor-precision measurements lead to almost-uniform $p$ values, and when combined
-with the good-precision measurements they dilute the overall signal in the $p$ values (e.g. they reduce the density of $p$ values near 0).
-This is reflected in the results of FDR methods like $\qvalue$ and $\locfdr$, which work with the $p$ values and $Z$ scores respectively:
-the estimated error rates ($q$-values, or lfdr values) for the good-precision observations increase when the low-precision observations are included in the analysis
-(Figure \ref{fig:goodpoor-scatter}). In contrast, the methods described here ($\ashr$) take account of the precision of each measurement, and so
-the estimated error rates for the good-precision observations are unaffected by including the low-precision observations in the analysis.
-(A key assumption of this simulation is that the distribution of the effects $\beta$ is the same for the good-precision and poor-precision measurements;
-we return to discuss this assumption in more detail in section \ref{xx})
-
-
-\begin{figure}
-\centering
-\subfloat[][Density histograms of $p$ values for good-precision, poor-precision, and combined observations]{
-\includegraphics[width=6.5in]{Rcode/figures/GOODPOOReg_hist.pdf} 
-    \label{fig:goodpoor-hist}
-} \\
-\subfloat[][Comparison of results of different methods applied to good-precision observations only ($x$ axis) and combined data ($y$ axis). Each point shows the estimated error rate ($q$ value, lfdr, or lfsr) for a good-precision observation under the two different analyses.]{
-\includegraphics[width=6.5in]{Rcode/figures/GOODPOOReg_scatter.pdf}
-    \label{fig:goodpoor-scatter}
-}
-\caption{Simulation illustrating how poor-precision observations can contaminate signal from good-precision observations. The top panel (a) illustrates that when 
-$p$ values from good-precision observations (left) and from poor-precision observations (center) are combined (right), they produce
-a distribution of $p$ values with less overall signal - and so, by conventional methods, will give a higher estimated FDR at any given threshold.
-The bottom panel (b) illustrates this behaviour directly for the methods \qvalue and \locfdr: the $q$-values from \qvalue and the lfdr estimates from \locfdr are higher when applied to all data than when applied to good-precision observations only. In contrast the methods described here (\ashr) produce effectively the same results (here, the lfsr) in the good-precision and combined data analyses.} \label{fig:goodpoor}
-\end{figure}
-
-
-Note that if observation precisions are all similar and most observations are null then all the methods likely to give similar results?
 
  \subsection*{Adaptive Shrinkage}
  
  %(See Discussion for ideas on how our methods may be applicable more generally; for example if, in place of $\shat_j$, we have a $p$ value testing $\beta_j=0$.)
- 
- In outline, we use an ``Empirical Bayes" hierarchical model to combine information across measurements and perform inference.
- Here performing inference means obtaining an (approximate) posterior distribution for each effect $\beta_j$,
-which can be used to estimate False Discovery Rates, and to produce both point and interval estimates for $\beta_j$.
- Although ``multiple comparisons" is usually presented as a ``problem", our emphasis here is that the multiple measurements
- actually provide an opportunity: the hierarchical model combines information across measurements to improve both accuracy and precision of estimates. 
- 
+
+ Here we introduce an EB method, which, for reasons discussed below, we call ``adaptive shrinkage" or ``ash".
+ The method provides not only estimated $\fdr_j$ and q values, but also shrinkage point estimates, shrinkage credible intervals,
+ and estimates of the local false sign rate, defined below. It is implemented in the R package \ashr available at \url{http://github.com/stephens999/ashr}.
+  
+  Rather than directly modelling the distributions of the $p$ values, or $z$ scores, our starting point is to model the distribution of the effects $\beta_j$.
  Specifically we assume that the effects $\beta_j$ are independent and identically distributed from some unknown distribution $g(\cdot)$,
- \begin{equation} \label{eqn:beta}
- \beta_j \sim g(\cdot),
+  \begin{equation} \label{eqn:beta}
+ \beta_j \sim g(\cdot).
  \end{equation}
- where $g$ will be estimated from
- the data.   
-  Our methods further make the following key assumptions, which distinguish them from most previous work in this area:
-   \begin{enumerate}
-  \item[A1:] The distribution $g(\cdot)$ is unimodal. (We assume here that the mode is at 0, although 
-this could be relaxed.)  
- \item[A2:] The likelihood $L(\beta) := p(D | \beta)$ can be approximated by $\hat{L}(\beta) := \prod_j \hat{L}_j(\beta_j)$ where
- $\hat{L}_j(\beta_j) := p(\bhat_j | \beta_j, \shat_j)$ is given by (\ref{eqn:betahat-t}).
-Equivalently
+ A key assumption, which distinguishes our approach from previous work, is that $g$ is unimodal. We assume here that the mode is at 0, and allow
+ that $g$ can have a point mass at 0, corresponding to the ``null" effects. 
+ (An addition to our software implementation, due to C.Dai, allows the mode to be estimated from the data.)
+ 
+ \def\dt{\text{dt}}
+ 
+To perform likelihood-based inference for $g,\beta$, we assume that the likelihood $L(\beta) := p(D | \beta)$ can be approximated by 
+$\hat{L}(\beta) := \prod_j \hat{L}_j(\beta_j)$ where
+ $\hat{L}_j(\beta_j) := p(\bhat_j | \beta_j, \shat_j)$ is given by 
   \begin{equation} \label{eqn:lik}
- \hat{L}(\beta) \propto \prod_j t_\nu((\beta_j-\bhat_j)/\shat_j)
+ \hat{L}_j(\beta_j) \propto \dt_\nu(\bhat_j; \beta_j, \shat_j)
  \end{equation}
- where $t_\nu$ denotes the density of the standard $t$ distribution on $\nu$ degrees of freedom.
+ where $\dt_\nu(\cdot; \mu,\sigma)$ denotes the density of the generalized $t$ distribution on $\nu$ degrees of freedom with mean $\mu$ and scale parameter $\sigma$ (i.e. the density of $\mu+\sigma T_\nu$). In the special case $\nu \rightarrow \infty$ this corresponds, of course, to a normal approximation to the likelihood:
+  \begin{equation} \label{eqn:normlik}
+ \hat{L}_j(\beta_j) \propto N(\bhat_j; \beta_j, \shat_j).
+ \end{equation}
 %which, in light of (\ref{eqn:betahat}), is equivalent to
  % \begin{equation} \label{eqn:lik2}
 % L(\beta_j) \propto p(\bhat_j | \beta_j, \shat_j).
  %\end{equation}
- \end{enumerate}
  
- 
+  
  \subsubsection*{Discussion on Assumptions}
  
-Although the unimodal assumption, A1, will not apply to all situations, we argue that it will be reasonable in many practical contexts. 
+Although the unimodal assumption (UA) will not apply to all situations, we argue that it will be reasonable in many practical contexts. 
 For example, in contexts where interest focusses on which $\beta_j$ differ from zero, which suggests that ``$\beta_j=0$" is a plausible null hypothesis,  
 it seems reasonable to expect that ``$\beta_j$ very near 0" is also plausible, and that the distribution of the effects will be unimodal about 0. 
-Alternatively, we can motivate A1 by its effect on point estimates, which is to ``shrink" the estimates towards the mode - 
+Alternatively, we can motivate  the UA by its effect on point estimates, which is to ``shrink" the estimates towards the mode - 
 such shrinkage is desirable from several standpoints for improving estimation accuracy. 
-Note that assumption A1 relates to the distribution of {\it all} effects, and not only the {\it detectable} effects (i.e.~those that are significantly different from zero). It is very likely that the distribution of {\it detectable} non-zero effects will be multimodal, with one mode for detectable positive effects and another for detectable negative effects, and A1 does not contradict this.
+Note that the UA relates to the distribution of {\it all} effects, and not only the {\it detectable} effects (i.e.~those that are significantly different from zero). It is very likely that the distribution of {\it detectable} non-zero effects will be multimodal, with one mode for detectable positive effects and another for detectable negative effects, and the UA does not contradict this.
 
-Interestingly, although the unimodal assumption A1 seems natural, much previous related work on estimating False Discovery Rates  
-has assumed, either explicitly or implicitly, that the distribution of effects is multimodal - see Figure \ref{fig:ZA}. 
-In contrast, almost all analogous work in large-scale regression assumes the effects (regression coefficents) to have a unimodal prior distribution - 
-common choices being the spike and slab, Laplace, $t$, normal-gamma, normal-inverse-gamma, or horseshoe priors.
-One of our aims here is to emphasize the considerable practical benefits of making the unimodal assumption in the FDR context.
+%Interestingly, although the unimodal assumption seems natural, much previous related work on estimating False Discovery Rates  
+%has assumed, either explicitly or implicitly, that the distribution of effects is multimodal - see Figure \ref{fig:ZA}. 
+Note that, although the UA appears novel in this context,
+almost all analogous work in large-scale regression make the UA for the regression coefficents - 
+common choices of uni-modal distribution being the spike and slab, Laplace, $t$, normal-gamma, normal-inverse-gamma, or horseshoe priors \cite{}.
+One of our aims here is to emphasize the considerable practical benefits of making the UA in the FDR context.
 
-Assumption A2 can derived from an assumption of conditional independence of the data on each effect given the true effects, plus two additional assumptions: a) $\bhat_j, \shat_j$ contain most of the information about $\beta_j$ in the data $D_j$ (i.e. they are ``approximately sufficient" for $D_j$); and b) $\shat_j$ alone contains little information about $\beta_j$. The former (a) suggests the approximation $\hat{L}_j(\beta_j) \propto p(\bhat_j, \shat_j | \beta) = p(\bhat | \beta, \shat_j) p(\shat_j | \beta)$, while the latter (b) suggests assuming that $p(\shat_j|\beta_j)$ does not depend on $\beta_j$. Putting these two together yields $\hat{L}_j(\beta_j) \propto p(\bhat_j | \beta, \shat_j)$. If $\bhat_j, \shat_j$ are not sufficient for $D_j$ then there is some loss of efficiency in making this approximation, but all Bayesian inferences remain valid provided they are interpreted as conditional on $\bhat_j,\shat_j$, rather than conditional on $D_j$. See \cite{johnson:2008} and \cite{wakefield:2009} for more general discussion and examples of Bayesian inference based on summary statistics. 
+The $t$ likelihood (\ref{eqn:lik}) can derived from an assumption of conditional independence of the data on each effect given the true effects, plus two additional assumptions: a) $\bhat_j, \shat_j$ contain most of the information about $\beta_j$ in the data $D_j$ (i.e. they are ``approximately sufficient" for $D_j$); and b) $\shat_j$ alone contains little information about $\beta_j$. The former (a) suggests the approximation $\hat{L}_j(\beta_j) \propto p(\bhat_j, \shat_j | \beta) = p(\bhat | \beta, \shat_j) p(\shat_j | \beta)$, while the latter (b) suggests assuming that $p(\shat_j|\beta_j)$ does not depend on $\beta_j$. Putting these two together yields $\hat{L}_j(\beta_j) \propto p(\bhat_j | \beta, \shat_j)$. If $\bhat_j, \shat_j$ are not sufficient for $D_j$ then there is some loss of efficiency in making this approximation, but all Bayesian inferences remain valid provided they are interpreted as conditional on $\bhat_j,\shat_j$, rather than conditional on $D_j$. See \cite{johnson:2008} and \cite{wakefield:2009} for more general discussion and examples of Bayesian inference based on summary statistics. 
 
-Alternatively A2 could be considered definitional for $\bhat_j,\shat_j$: that is, choose $\bhat_j,\shat_j,\nu$ such that A2 holds. 
+This likelihood approximation can be motivated by assuming that i) $\bhat$
+ $(\bhat_j -\beta_j)/\shat_j | \shat_j$ has a $T_\nu$ distribution, and then writing
+ $p(D_j | \beta_j) = p(\bhat_j, \shat_j | \beta) = $ as sufficient for $\beta$. 
+ 
 
-While Assumption A2 has parallels with approaches like \cite{efron2008microarrays, sun2007oracle}
- that model the $Z$ scores $Z_j = \bhat_j/\shat_j$ as normally distributed under the null, 
-there is an important difference: here, observations with a large $\shat_j$ have an essentially flat likelihood (\ref{eqn:lik}), and so do not affect inference for
+
+
+Alternatively (\ref{eqn:lik}) could be considered definitional for $\bhat_j,\shat_j$: that is, choose $\bhat_j,\shat_j,\nu$ such that (\ref{eqn:lik}) holds. 
+
+A key property of the likelihood (\ref{eqn:lik}) is that
+observations with a large $\shat_j$ have an essentially flat likelihood (\ref{eqn:lik}), and so do not affect inference for
 $g$ or the other effects, whereas when modeling the $Z$ scores directly, observations with large $\shat_j$ produce $Z$ scores with an $N(0,1)$ distribution that {\it do} affect inference.  Because of this our approach can take better account of the informativeness of each measurement, as illustrated in Results below.
+%While has parallels with approaches like \cite{efron2008microarrays, sun2007oracle}
+ %that model the $Z$ scores $Z_j = \bhat_j/\shat_j$ as normally distributed under the null, 
+%there is an important difference: here, 
 
 %The choice of normal likelihood seems natural, and indeed it can be motivated in multiple ways. For example, we can write $p(\bhat_j, \shat_j | \beta_j) = p(\bhat_j | \shat_j, \beta_j)p(\shat_j | \beta_j)$. Now, if we are willing to assume that $\shat_j$ alone contains no information about $\beta_j$, or equivalently that $p(\shat_j | \beta_j)$ does not depend on $\beta_j$, then $L(\beta_j) \propto p(\bhat_j | \shat_j, \beta_j)$, and if $\bhat_j | \shat_j, \beta_j \sim N(\beta_j, \shat_j^2)$, as is often asymptotically the case, then we obtain the likelihood (**) above.
 
 \subsubsection*{Implementing the Unimodal assumption}
  
-In practice, we implement the unimodal assumption (A1) by assuming a parametric finite mixture for $g$, 
+In practice, we implement the UA by assuming a parametric finite mixture for $g$, 
 \begin{equation} \label{eqn:g}
 g(\cdot; \pi) = \pi_0 \delta_0(\cdot) + \sum_{k=1}^K \pi_k f_k(\cdot) 
 \end{equation}
 where $\delta_0(\cdot)$ denotes a point mass at 0, $\pi=(\pi_0,\dots,\pi_K)$ are mixture proportions to be estimated (with $\pi_j \geq 0, \sum_j \pi_j=1$), and $f_k$ are pre-specified 
 component distributions with one of the following forms: 
 \begin{enumerate}[i)]
-\item $f_k(\cdot) = N(\cdot; 0, \sigma^2_k)$
-\item $f_k(\cdot) = U[\cdot; -a_k,a_k]$
+\item $f_k(\cdot) = N(\cdot; 0, \sigma^2_k)$,
+\item $f_k(\cdot) = U[\cdot; -a_k,a_k]$,
 \item $f_k(\cdot) = U[\cdot; -a_k,0] \text{ or } U[\cdot; 0,a_k]$,
 \end{enumerate}
 where $N(\cdot; 0,\sigma^2)$ denotes the density of a normal distribution with mean 0 and variance $\sigma^2$ and
 $U[\cdot; a,b]$ denotes the density of a uniform distribution on $[a,b]$.
 That is, the non-zero effects are modeled as either i) a mixture of zero-centered normal distributions; ii) a mixture of zero-centered uniform distributions;
 or iii) a mixture of ``zero-anchored" uniform distributions, which have one end of their range at 0. These approaches closely mirror approaches in \cite{cordy1997deconvolution}.
+[Case i) is implemented only for the special case $\nu \rightarrow \infty$ in (\ref{eqn:like}).]
  
 To see the flexibility of the representation (\ref{eqn:g})
 think of $K$ as being ``large", with the values of $\sigma^2_k$ or $a_k$ 
@@ -534,7 +507,7 @@ with arbitrary accuracy,
 the double exponential (Laplace) distribution, any $t$ distribution, and a very large number of other distributions used in 
 high-dimensional regression settings such as the spike and slab prior, the horseshoe prior \ref{}, or the more general three-parameter beta prior \ref{}.
 \item any symmetric unimodal distribution about 0.
-\item any (asymmetric) unimodal distribution about 0.
+\item any unimodal distribution about 0.
 \end{enumerate}
 The latter two claims are related to characterizations of unimodal distributions due to Khintchine (1938) and  Shepp (1962); see Feller, 1971, page  158. 
 Furthermore, although it is natural for statisticians to worry about ``overfitting" if $K$ is large, 
@@ -618,6 +591,7 @@ Specifically $\lfdr_j$ is the probability that, if we reject $H_j$,
 it is a  "false discovery".  
 
 
+
 As pointed out by \cite{gelman2012we}, there are settings where
 $\beta_j=0$ is implausible, in which case the lfdr is not useful: if every $\beta_j$ is non-zero then there
 is no such thing as a false discovery and the lfdr will always be identically 0. 
@@ -667,8 +641,148 @@ yields a simple EM algorithm
 for estimating $\pi$ in Step 1, and simple analytic forms for the conditional
 distributions in Step 2.
 
+Note use of SQUAREM.
+
+Note penalty preferring $\pi_0$.
+
+\subsection{various notes...}
+
+Here performing inference means obtaining an (approximate) posterior distribution for each effect $\beta_j$,
+which can be used to estimate False Discovery Rates, and to produce both point and interval estimates for $\beta_j$.
+ Although ``multiple comparisons" is usually presented as a ``problem", our emphasis here is that the multiple measurements
+ actually provide an opportunity: the hierarchical model combines information across measurements to improve both accuracy and precision of estimates. 
+ 
+ 
+Note that incorporating differential errors messes up the EM algorithm?
+
+we start by noting that the $p$ values in Figure \ref{} were actually generated under a scenario where
+{\it no tests were null}! Thus the qvalue procedure, which estimates the proportion of nulls to be xx\%, is acting very conservatively in this case.
+However, it could be argued that some degree of conservativeness is inevitable, and that nonetheless the procedure is acting sensibly.
+Therefore, to illustrate this point we really want to focus on the fact that, at least in some settings, the assumption is {\it unrealistic}.
+Specifically, we want to argue that the implied distribution of the alternative $p$ values is unrealistic. In fact, this is hard to see in $p$ value space,
+and so instead we translate these $p$ values back to the $z$ scores that lead to these $p$ values.
+
+
+
+The second issue is that directly modeling the p values, or z scores, say via non-parametric methods, 
+can lead to unrealistic distributions being fitted. Put another way, because z scores are the result of adding noise to some
+distribution, the range of distributions they can take is limited Using entirely non-parametric methods loses this information.
+The solution is to model beta hat as a convolution of some distribution g and an error component.
+
+
+It should be noted that existing methods were perhaps developed with the expectation that they would typically 
+be applied in settings where the vast majority of all tests are null, and under such circumstances
+the problems caused by this assumption are less severe. However, it seems desirable to have methods that
+also perform well in settings where  this assumptions does not hold, and this motivates the methods developed here.
+
+
+
 
 \section*{Results}
+
+
+\subsection*{Effects of the Unimodal Assumption}
+
+
+Here we consider several effects of making the UA. To isolate these effects we consider the simplest case, where every observation has the same
+standard error, $s_j=1$, and we consider the normal limit (\ref{eqn:normallik}). That
+is,
+\begin{equation} \label{eqn:bhatgivenbz}
+\bhat_j | \beta_j \sim N(0,s^2_j=1)
+\end{equation}
+so $z_j:=\bhat_j/s_j$ are standard normal if $H_j$ holds.
+
+To briefly summarize the results in this section:
+\begin{enumerate}
+\item The UA can produce very different inferences compared with existing methods, and is generally less conservative.
+\item The UA can still yield conservative estimates of the proportion of nulls that hold, $\pi_0$, and hence conservative estimates of FDR and fdr.
+\item The UA results in a numerically highly-stable procedure, especially compared with a fully non-parametric approach.
+\item The UA is somewhat robust to deviations from unimodality.
+\end{enumerate}
+
+
+\subsubsection{The UA can produce very different inferences compared with existing methods}
+
+To illustrate that the UA can have a big impact on inference 
+we simulate data where the true $\beta_j$ are distributed as $N(0,1)$ (and then $\bhat_j | \beta_j \sim N(\beta_j,1)$.
+We feed the resulting $z$ scores to the R packages \locfdr and \mixfdr, and to our package \ashr, and the corresponding $p$ values to the R package \qvalue.
+
+TODO: put FDRs on graph? Simulate with 50\% null?
+
+\begin{figure}
+\center \includegraphics[height=6in]{Rcode/figures/decomp_ZA.pdf}
+\caption{Comparison of the way that different methods decompose $p$ values (left) and $z$ scores (right) into a null component (dark blue) and an alternative component (light blue). In the $z$ score space the alternative distribution is placed on the bottom to highlight the differences in its shape among methods.
+The three existing methods (\qvalue, \locfdr, \mixfdr) all effectively make the Zero Assumption, which results in a ``hole" in the alternative $z$ score distribution around 0.
+In contrast the method introduced here (\ashr) assumes that the effect sizes (and thus the $z$ scores) have a unimodal distribution about 0, resulting in a very different decomposition that in this case is much closer to the truth. (These data were simulated under a model where all of the effects are non-zero -- specifically, $\beta_j \sim N(0,1)$, $s_j=1$, resulting in $z_j \sim N(0,2^2)$ -- so the ``true" decomposition would make everything light blue.)} \label{fig:ZA}
+\end{figure}
+
+\subsubsection*{Conservative estimates of $\pi_0$}
+
+One concern, given the 
+
+
+\subsubsection*{Robustness to deviations from UA}
+
+Show that the q values are driven by changes in pi_0; even when not unimodal pretty close...
+
+\subsubsection*{The UA produces stable estimates}
+
+The EM algorithm is notorious for convergence to local optima. 
+But in this case, over hundreds of applications of the procedure, we have observed no serious problems 
+caused by potential multimodality. 
+
+
+
+
+
+
+\subsection*{Differing measurement precision across units}
+
+ To illustrate the first issue - differing measurement precision across units - consider a simplistic
+ situation where half the measurements are quite precise, and the other half are really, really, poor. 
+ Intuitively, the poor measurements tell us nothing, and any sane analysis should effectively ignore them. However, in a standard FDR-type analysis, these poor measurements add ``noise" and affect estimated FDRs. This is because the $p$ values from the poor measurements will be effectively uniformly distributed, and some will be significant at any given threshold. 
+ 
+To give a concrete example, we performed a simple simulation in which half the observations have
+reasonably good precision (standard error $s_j = 1$) and half the observations have very poor precision ($s_j=10$). In both cases,
+we assume that half the effects are null ($\beta_j=0$)
+and the other half are normally distributed with standard deviation 1 ($\beta_j \sim N(0,1)$). 
+That is, we simulate $\beta_j$ from a mixture 
+\begin{equation}
+p(\beta) = 0.5 \delta_0(\beta) + 0.5 N(\beta; 0,1)
+\end{equation}
+where $\delta_0(\cdot)$ denotes a point mass at 0.
+
+Figure \ref{fig:goodpoor-hist} shows the distribution of the resulting $p$ values for the good-precision and poor-precision measurements, as
+well as the combined distribution. As expected, the poor-precision measurements lead to almost-uniform $p$ values, and when combined
+with the good-precision measurements they dilute the overall signal in the $p$ values (e.g. they reduce the density of $p$ values near 0).
+This is reflected in the results of FDR methods like $\qvalue$ and $\locfdr$, which work with the $p$ values and $Z$ scores respectively:
+the estimated error rates ($q$-values, or lfdr values) for the good-precision observations increase when the low-precision observations are included in the analysis
+(Figure \ref{fig:goodpoor-scatter}). In contrast, the methods described here ($\ashr$) take account of the precision of each measurement, and so
+the estimated error rates for the good-precision observations are unaffected by including the low-precision observations in the analysis.
+(A key assumption of this simulation is that the distribution of the effects $\beta$ is the same for the good-precision and poor-precision measurements;
+we return to discuss this assumption in more detail in section \ref{xx})
+
+
+\begin{figure}
+\centering
+\subfloat[][Density histograms of $p$ values for good-precision, poor-precision, and combined observations]{
+\includegraphics[width=6.5in]{Rcode/figures/GOODPOOReg_hist.pdf} 
+    \label{fig:goodpoor-hist}
+} \\
+\subfloat[][Comparison of results of different methods applied to good-precision observations only ($x$ axis) and combined data ($y$ axis). Each point shows the estimated error rate ($q$ value, lfdr, or lfsr) for a good-precision observation under the two different analyses.]{
+\includegraphics[width=6.5in]{Rcode/figures/GOODPOOReg_scatter.pdf}
+    \label{fig:goodpoor-scatter}
+}
+\caption{Simulation illustrating how poor-precision observations can contaminate signal from good-precision observations. The top panel (a) illustrates that when 
+$p$ values from good-precision observations (left) and from poor-precision observations (center) are combined (right), they produce
+a distribution of $p$ values with less overall signal - and so, by conventional methods, will give a higher estimated FDR at any given threshold.
+The bottom panel (b) illustrates this behaviour directly for the methods \qvalue and \locfdr: the $q$-values from \qvalue and the lfdr estimates from \locfdr are higher when applied to all data than when applied to good-precision observations only. In contrast the methods described here (\ashr) produce effectively the same results (here, the lfsr) in the good-precision and combined data analyses.} \label{fig:goodpoor}
+\end{figure}
+
+
+Note that if observation precisions are all similar and most observations are null then all the methods likely to give similar results?
+
+
 
 Note: we'd like to make sure it behaves ok in the case where most observations are null.
 Perhaps simulate with 999 null and 1 alternative?
@@ -711,8 +825,8 @@ except that for this scenario the ash estimates of $\pi_0$ are quite accurate (m
 are very different from zero).
 
 These simulations illustrate two key points: i) although $\pi_0$ is not identifiable, the penalized likelihood approach
-provides conservative estimates for $\pi_0$; ii) replacing the ``zero assumption" with the unimodal assumption can produce
-less conservative, more accurate, estimates of $\pi_0$ (provided of course that the unimodal assumption holds, as it does in these simulations).
+provides conservative estimates for $\pi_0$; ii) replacing the ``zero assumption" with the UA can produce
+less conservative, more accurate, estimates of $\pi_0$ (provided of course that the UA holds, as it does in these simulations).
 
 \begin{figure}[!ht] \label{fig:pi0}
 \begin{center}
@@ -896,6 +1010,22 @@ seen as an approximation.
 
 
 \subsection{Discussion}
+
+Before proceeding, we feel obliged to correct the common misconception
+ that the use of FDR methods is to ``correct" for the number of tests performed. In fact the FDR does
+ not depend on the number of tests. This is because, as the number of tests increases, both the true positives and false positives increase linearly,
+ and the FDR remains the same. (If this intuitve argument does not convince, see \cite{storey.xx}, and note that the FDR does not depend on the number of tests $m$.)
+  A better way to think of it is that the FDR accounts for the {\it amount of signal} in the tests that were performed: 
+ if there are lots of strong signals then the FDR at a given threshold may be low, even if a large number of tests were performed; and conversely
+ if there are no strong signals then the FDR at the same threshold may be high, even if relatively few tests were performed. 
+ In other words, FDR corrects for the {\it results} of all tests performed, not the {\it number} of all tests performed.
+ 
+
+ There are two issues with existing approaches to FDR estimation and control that I would like to address here. 
+ The first is that they may do not take proper account of differences in measurement precision across units (i.e. differences in $\shat_j$). 
+ The second is that the Zero Assumption, although initially appealing as a ``conservative" assumption,
+  is often an unrealistic and unnecessarily conservative assumption. As we shall see, both factors can cause the FDR to be overestimated.
+ 
 
 \cite{efron2008microarrays} states the Zero Assumption as the assumption that ``most of the z-values near zero come from null genes".
 His main aim in making this assumption is to estimate an empirical null though (not assume N(0,1) for the null)

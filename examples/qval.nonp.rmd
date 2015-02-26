@@ -48,6 +48,7 @@ a mixture of 0 and non-zero (normally-distributed) beta values.
   library(qvalue)
   library(locfdr)
   library(mixfdr)
+  library(knitr)
 ```
 
 In our first simulation, half the $\beta_j$ are null, and the other half are $\beta_j \sim N(0,2^2)$. Then $\hat\beta_j \sim N(\beta_j, 1)$. We apply `qvalue`,`ash`,`locfdr` and `mixFdr` to estimate the $q$-values. (The last three methods all estimate local fdr values; we convert these to corresponding estimated $q$ values using the `ashr` function `qval.from.lfdr`, which, for each observation $j$, computes the $q$ value as the average of the lfdr values more significant than observation $j$.)
