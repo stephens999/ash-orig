@@ -13,8 +13,10 @@
 #'
 score = function(data, output){
   return(list(RMSE=sqrt(mean((data$meta$beta-output$beta_est)^2)),
-              MAE = median(abs(data$meta$beta-output$beta_est)),
-              pi0 = data$meta$pi0,
-              pi0_est = output$pi0_est)
-  )
+              MAE = median(abs(data$meta$beta-output$beta_est))))
+}
+
+score2 = function(data, output){
+  return(list(pi0 = data$meta$pi0,
+              pi0_est = output$pi0_est))
 }

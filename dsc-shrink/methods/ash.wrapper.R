@@ -15,6 +15,16 @@ ash.wrapper=function(input,args=NULL){
   if(is.null(args)){
     args=list(mixcompdist="halfuniform",method="fdr")
   }
-  res = do.call(ash, args= c(list(betahat=input$betahat,sebetahat=input$sebetahat),args))
-  return(list(beta_est=res$PosteriorMean,pi0_est=get_pi0(res)))
+  res = do.call(ash, args= c(list(betahat=input$betahat,sebetahat=input$sebetahat,df=input$df),args))
+  return(res)
 }
+
+ash2beta_est =function(output){
+  return (list(beta_est=output$PosteriorMean))
+} 
+
+ash2pi0_est =function(output){
+  return (list(pi0_est=get_pi0(output)))
+} 
+
+
