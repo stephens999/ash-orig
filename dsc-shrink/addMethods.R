@@ -1,0 +1,10 @@
+sourceDir("methods")
+addMethod(dsc_shrink,name="ash.hu",fn =ash.wrapper,args=list(mixcompdist="halfunif"),outputtype = "ash_output")
+addMethod(dsc_shrink,name="ash.u",fn =ash.wrapper,args=list(mixcompdist="unif"),outputtype = "ash_output")
+addMethod(dsc_shrink,name="ash.n",fn =ash.wrapper,args=list(mixcompdist="normal"),outputtype = "ash_output")
+
+addMethod(dsc_shrink,name="mixfdr.tnull", fn=mixfdr.wrapper, args = list(theonull=TRUE),outputtype = "mixfdr_output")
+addMethod(dsc_shrink,name="mixfdr.enull", fn=mixfdr.wrapper, args = list(theonull=FALSE),outputtype = "mixfdr_output")
+#addMethod(dsc_shrink,name="mixfdr.tnull.J10", fn=mixfdr.wrapper, args = list(theonull=TRUE,J=10),outputtype = "mixfdr_output")
+#addMethod(dsc_shrink,name="mixfdr.enull.J10", fn=mixfdr.wrapper, args = list(theonull=FALSE,J=10),outputtype = "mixfdr_output")
+#addMethod(dsc_shrink,name="mixfdr.tnull.J10P0", fn=mixfdr.wrapper, args = list(theonull=TRUE,J=10,P=0),outputtype = "mixfdr_output")
