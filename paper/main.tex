@@ -789,6 +789,20 @@ Perhaps simulate with 999 null and 1 alternative?
 Also maybe look at performance for small sample sizes - e.g. n=1?
 
 
+\subsection*{False Coverage Rates}
+
+To summarize the False Coverage Rate problem, we can do no better than quote Efron, who says
+``An insightful and ingenious paper by Benjamini andYekutieli (2005) discusses the following problem in simultaneoussignificance testing: having applied falsediscovery rate methods to select a set of nonnull cases,how can confidence intervals be assigned to the trueeffect size for each selected case?" \cite{efron2008} notes the potential for EB approaches to tackle this problem,
+but also notes the difficulties of implementing a stable general algorithm.
+%deconvolution%calculations are notoriously tricky and I have not%been able to produce a stable general algorithm. ; see also 
+Zhao+Hwang consider in detail the case where the non-null effects are normally distributed.
+
+Results in efron.fcr.rmd suggests that lower CI is OK; upper is more problematic because of difficulty in accurately estimating tail?
+
+To do: implement methods to compute posterior cdf of each observation at given points. 
+Then compute these for the simulation studies. Check whether issue with upper bound is due to non-unimodal distribution.
+
+
 \subsection*{Improved conservative estimation of $\pi_0$}
 
 To illustrate estimation of $\pi_0$ we provide simulation results for two scenarios:

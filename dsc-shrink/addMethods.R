@@ -1,4 +1,6 @@
 sourceDir("methods")
+
+addMethod(dsc_shrink,name="ash.hu.cxx",fn =ash.wrapper,args=list(mixcompdist="halfunif",cxx=TRUE),outputtype = "ash_output")
 addMethod(dsc_shrink,name="ash.hu",fn =ash.wrapper,args=list(mixcompdist="halfunif"),outputtype = "ash_output")
 addMethod(dsc_shrink,name="ash.u",fn =ash.wrapper,args=list(mixcompdist="unif"),outputtype = "ash_output")
 addMethod(dsc_shrink,name="ash.n",fn =ash.wrapper,args=list(mixcompdist="normal"),outputtype = "ash_output")

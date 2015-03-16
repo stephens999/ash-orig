@@ -20,4 +20,5 @@ res=run_dsc(dsc_shrink)
 save(res,file="res.RData")
 
 
-
+xtabs(pi0_est ~ method+scenario,res$pi0_score)
+xtabs(user.self ~ method+scenario,res$pi0_score)
