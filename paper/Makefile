@@ -22,15 +22,18 @@ figures: figures/egcdf.pdf figures/mean_cdf.pdf figures/pi0_est.pdf figures/scen
 # RUN EVERY R FILE
 $(RDIR)/%.Rout: $(RDIR)/%.R 
 	R CMD BATCH $<
+
+../dsc-shrink/res.RData:
+	cd ../dsc-shrink; R CMD BATCH run_dsc.R
  
 # CROP EVERY PDF FIG FILE
-figures/egcdf.pdf:
+figures/egcdf.pdf: ../dsc-shrink/res.RData
 	cd ../dsc-shrink; R CMD BATCH plot_cdf_eg.R
-figures/mean_cdf.pdf:
+figures/mean_cdf.pdf: ../dsc-shrink/res.RData
 	cd ../dsc-shrink; R CMD BATCH plot_cdf_eg.R
-figures/scenarios_density.pdf:
+figures/scenarios_density.pdf: ../dsc-shrink/res.RData
 	cd ../dsc-shrink; R CMD BATCH plot_egdens.R
-figures/pi0_est.pdf:
+figures/pi0_est.pdf: ../dsc-shrink/res.RData
 	cd ../dsc-shrink; R CMD BATCH plot_pi0_est.R
 
 $(FIGDIR)/%.pdfcrop: $(FIGDIR)/%.pdf
