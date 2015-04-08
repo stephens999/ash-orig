@@ -364,9 +364,15 @@ To perform this decomposition, \qvalue makes two key assumptions:
  tests where the null is true. Under these assumptions performing the decomposition boils down to 
  drawing the horizontal line on the $p$ value histogram that intersects with the distribution at $p=1$: the area under this horizontal
  line defines the uniform component that is due to the null $p$ values, with the remainder necessarily corresponding to
- the alternative $p$ values. Now, for any given threshold, although we do not know {\it which} $p$ values correspond
+ the alternative $p$ values. In particular, the height of the horizontal line is an estimate of $\pi_0$, the proportion of $p$ values that come from the null.
+  Now, for any given threshold, although we do not know {\it which} $p$ values correspond
  to  null tests  and which to alternative tests, the areas of the two components indicate {\it how many} $p$ values correspond to each,
- allowing the FDR to be estimated (Figure \ref{fig:qvalue}). 
+ allowing the FDR to be estimated (Figure \ref{fig:qvalue}). Specifically, at threshold $\gamma$, and given an estimate $\hat\pi_0$ for $\pi_0$,  a
+ natural non-parametric estimate of the FDR is
+ \begin{equation} \label{eqn:FDRest}
+\hat{\FDR}(\gamma) = J \hat\pi_0 \gamma / \#\{ j: p_j \leq \gamma \}.
+ \end{equation}
+ See \cite{storey:2002direct}, equation (8).
  
 \subsubsection{EB approaches: \locfdr and \mixfdr}
  
@@ -393,7 +399,7 @@ Another EB method, and perhaps the one most closely related to our
 work here, is due to \cite{muralidharan2010empirical}, implemented in the R package \mixfdr.
 Like \locfdr, \mixfdr works with $z$ scores, but it differs in that it {\it explicitly} models the alternative
 distribution of $z$ scores, using a mixture of normal distributions. In principle this approach also differs from \qvalue and \locfdr in
-that it does not explicitly make the Zero Assumption. However, we have found that in practice the results often approximately satisfy the ZA,
+that it does not explicitly make the ZA. However, we have found that in practice the results often approximately satisfy the ZA,
 which we believe to be due to details in the fitting procedure used.
 
  %The details of how this decomposition is performed vary among methods, but they share one important element in common with \qvalue: just as \qvalue assumes that the $p$ values near 1 are from the null, so \locfdr assumes that the $z$ scores near 0 are from the null; Efron calls this assumption the ``Zero Assumption" (ZA). 
@@ -421,8 +427,9 @@ so the FDR is estimated by $B/(A+B)$ which in this case is 0.28.} \label{fig:qva
  \beta_j \sim g(\cdot).
  \end{equation}
  A key assumption, which distinguishes our approach from previous work, is that $g$ is unimodal. We assume here that the mode is at 0, and allow
- that $g$ can have a point mass at 0, corresponding to the ``null" effects. 
- (An addition to our software implementation, due to C.Dai, allows the mode to be estimated from the data.)
+ that $g$ can have a point mass at 0, corresponding to the ``null" effects.
+(An addition to our software implementation, due to C.Dai, allows the mode to be estimated from the data.)
+ 
  
  \def\dt{\text{dt}}
  
@@ -484,7 +491,7 @@ In practice, we implement the UA by assuming a parametric finite mixture for $g$
 \begin{equation} \label{eqn:g}
 g(\cdot; \pi) = \pi_0 \delta_0(\cdot) + \sum_{k=1}^K \pi_k f_k(\cdot) 
 \end{equation}
-where $\delta_0(\cdot)$ denotes a point mass at 0, $\pi=(\pi_0,\dots,\pi_K)$ are mixture proportions to be estimated (with $\pi_j \geq 0, \sum_j \pi_j=1$), and $f_k$ are pre-specified 
+where $\delta_0(\cdot)$ denotes a point mass at 0, $\pi=(\pi_0,\dots,\pi_K)$ are mixture proportions to be estimated (with $\pi_k \geq 0, \sum_k \pi_k=1$), and $f_k$ are pre-specified 
 component distributions with one of the following forms: 
 \begin{enumerate}[i)]
 \item $f_k(\cdot) = N(\cdot; 0, \sigma^2_k)$,
@@ -495,7 +502,9 @@ where $N(\cdot; 0,\sigma^2)$ denotes the density of a normal distribution with m
 $U[\cdot; a,b]$ denotes the density of a uniform distribution on $[a,b]$.
 That is, the non-zero effects are modeled as either i) a mixture of zero-centered normal distributions; ii) a mixture of zero-centered uniform distributions;
 or iii) a mixture of ``zero-anchored" uniform distributions, which have one end of their range at 0. These approaches closely mirror approaches in \cite{cordy1997deconvolution}.
-[Case i) is implemented only for the special case $\nu \rightarrow \infty$ in (\ref{eqn:like}).]
+[Case i) is implemented only for the special case $\nu \rightarrow \infty$ in (\ref{eqn:like}).] 
+
+
  
 To see the flexibility of the representation (\ref{eqn:g})
 think of $K$ as being ``large", with the values of $\sigma^2_k$ or $a_k$ 
@@ -683,58 +692,291 @@ also perform well in settings where  this assumptions does not hold, and this mo
 
 \subsection*{Effects of the Unimodal Assumption}
 
-
-Here we consider several effects of making the UA. To isolate these effects we consider the simplest case, where every observation has the same
+Here we consider the effects of making the UA. To isolate these effects we consider the simplest case, where every observation has the same
 standard error, $s_j=1$, and we consider the normal limit (\ref{eqn:normallik}). That
 is,
 \begin{equation} \label{eqn:bhatgivenbz}
-\bhat_j | \beta_j \sim N(0,s^2_j=1)
+\bhat_j | \beta_j \sim N(\beta_j,s^2_j=1)
 \end{equation}
-so $z_j:=\bhat_j/s_j$ are standard normal if $H_j$ holds.
+so $z_j:=\bhat_j/s_j=\bhat_j$ are standard normal if $H_j$ holds.
 
 To briefly summarize the results in this section:
 \begin{enumerate}
-\item The UA can produce very different inferences compared with existing methods, and is generally less conservative.
-\item The UA can still yield conservative estimates of the proportion of nulls that hold, $\pi_0$, and hence conservative estimates of FDR and fdr.
-\item The UA results in a numerically highly-stable procedure, especially compared with a fully non-parametric approach.
+\item The UA can produce very different inferences compared with the ZA.
+\item The UA can yield conservative estimates of the proportion of nulls that hold, $\pi_0$, and hence conservative estimates of FDR and fdr.
+\item The UA results in a stable procedure, both numerically and statistically.
 \item The UA is somewhat robust to deviations from unimodality.
 \end{enumerate}
 
 
-\subsubsection{The UA can produce very different inferences compared with existing methods}
-
-To illustrate that the UA can have a big impact on inference 
-we simulate data where the true $\beta_j$ are distributed as $N(0,1)$ (and then $\bhat_j | \beta_j \sim N(\beta_j,1)$.
-We feed the resulting $z$ scores to the R packages \locfdr and \mixfdr, and to our package \ashr, and the corresponding $p$ values to the R package \qvalue.
-
-TODO: put FDRs on graph? Simulate with 50\% null?
+\subsubsection{The UA compared with the ZA}
 
 \begin{figure}
 \center \includegraphics[height=6in]{Rcode/figures/decomp_ZA.pdf}
 \caption{Comparison of the way that different methods decompose $p$ values (left) and $z$ scores (right) into a null component (dark blue) and an alternative component (light blue). In the $z$ score space the alternative distribution is placed on the bottom to highlight the differences in its shape among methods.
 The three existing methods (\qvalue, \locfdr, \mixfdr) all effectively make the Zero Assumption, which results in a ``hole" in the alternative $z$ score distribution around 0.
-In contrast the method introduced here (\ashr) assumes that the effect sizes (and thus the $z$ scores) have a unimodal distribution about 0, resulting in a very different decomposition that in this case is much closer to the truth. (These data were simulated under a model where all of the effects are non-zero -- specifically, $\beta_j \sim N(0,1)$, $s_j=1$, resulting in $z_j \sim N(0,2^2)$ -- so the ``true" decomposition would make everything light blue.)} \label{fig:ZA}
+In contrast the method introduced here (\ashr) assumes that the effect sizes (and thus the $z$ scores) have a unimodal distribution about 0, resulting in a very different decomposition. (In this case the \ashr decomposition is closer to the truth: the data were simulated under a model where all of the effects are non-zero -- specifically, $\beta_j \sim N(0,1^2)$, $s_j=1$, resulting in $z_j \sim N(0,2^2)$ -- so the ``true" decomposition would make everything light blue.)} \label{fig:ZA}
 \end{figure}
 
-\subsubsection*{Conservative estimates of $\pi_0$}
 
-One concern, given the 
+Figure \ref{fig:ZA} graphically illustrates the difference between the ZA made by existing methods,
+and the UA made by our method. The effects of the ZA are visually clear, producing a ``hole" 
+ in the alternative $z$ score distribution around 0 for \qvalue, \locfdr and \mixfdr; in contrast, the UA 
+ fills in this hole to produce a peak at 0.  Of course the null distribution also has a peak at 0, and the local fdr 
+ under the UA is still smallest for $z$ scores that are far from zero (i.e. large $z$ scores remain the ``most significant")
+ as one would hope.
+ 
+ How do these differences influence estimates of the FDR? To address this, we note that 
+ the primary driver of differences in FDR estimates among methods is {\it differences in their estimates
+ of $\pi_0$}, the proportion of nulls (at least in this simple case where the 
+ $s_i$ are all identical). To see why, observe that, given an estimate $\hat\pi_0$ for $\pi_0$, equation (\ref{eqn:FDRest}) provides a 
+ strikingly natural non-parametric estimate for the FDR (provided the denominator is not very small). Thus, 
+ although the methods considered here differ from one another in many ways, having estimated $\pi_0$
+ they should, if sensible, produce estimates of FDR that agree closely with (\ref{eqn:FDRest}). And, indeed, our limited
+ empirical checks suggest that this is indeed the case (\url{https://www.github.com/stephens999/ash/examples/qvalue.nonp.rmd}).
+ 
+Thus, differences in FDR estimates among methods are driven primarily by differences in their estimates of $\pi_0$,
+ and so to assess differences in FDR estimates among methods we focus on assessing differences in estimates of $\pi_0$.
+Figure \ref{fig:ZA} suggests that, compared with the ZA, the UA will tend to reduce the estimate of $\pi_0$. 
+At the same time, provided the UA holds, we hope still to provide ``conservative" estimates of $\pi_0$ (that is,
+overestimates of $\pi_0$, which will yield overestimates of the FDR).
+
+To confirm this we performed comprehensive simulation experiments across a range of alternative scenarios (i.e. values for the distribution of non-zero effects,
+which we denote $g_1$), and values
+for $\pi_0$. The alternative distributions are shown in Figure \ref{fig:pi0sims}a, with details in Table \ref{table:scenarios}.
+They range from a ``spiky" distribution -- where many non-zero $\beta$ are
+too close to  zero to be reliably detected, making reliable estimation of $\pi_0$ essentially impossible -- to a much
+flatter distribution, which is a normal distribution with large variance (``bignorm") -- where most non-zero $\beta$ are easily detected
+making reliable estimation of $\pi_0$ much easier. We also include one asymmetric distribution (``skew"), and one clearly bimodal distribution (``bimodal"),
+which, although we view as generally unrealistic, we include to assess robustness of our methods to deviations from the UA.
 
 
-\subsubsection*{Robustness to deviations from UA}
+\begin{figure} \label{fig:pi0sims}
+\begin{center}
+\includegraphics[height=2in]{figures/scenarios_density.pdf} 
+\includegraphics[height=2in]{figures/pi0_est.pdf}
+\end{center}
+\caption{a) Summary of the alternative distributions used for different simulation scenarios. b) Comparison of true and estimated values of $\pi_0$ in these simulated scenarios. In general $\pi_0$ is impossible to estimate accurately, and all methods yield conservative (over-)estimates for $\pi_0$ (deliberately so, to ensure conservative estimates of FDR). As expected, when the UA holds, the \ashr method is least conservative, and hence most accurate. When the UA assumption does not hold (``bimodal" scenario) the \ashr estimates are slightly anti-conservative, but quite accurate, particularly when using a mixture of uniforms to model the unimodal distribution.}
+\end{figure}
 
-Show that the q values are driven by changes in $\pi_0$; even when not unimodal pretty close...
+\begin{table}[!ht]
+\begin{tabular}{c c } \toprule
+Scenario & Alternative distribution, $g_1$  \\ \midrule
+spiky & $0.4 N(0,0.25^2) + 0.2 N(0,0.5^2) + 0.2 N(0,1^2), 0.2 N(0,2^2) $\\
+near normal & $2/3 N(0,1^2) + 1/3 N(0,2^2)$ \\
+flattop& $(1/7) [N(-1.5,.5^2) + N(-1,.5^2) + N(-.5,.5^2) +$ \\
+ &  $N(0,.5^2) +N(0.5,.5^2)  +N(1.0,.5^2) + N(1.5,.5^2)]$  \\
+skew & $(1/4) N(-2,2^2) + (1/4) N(-1,1.5^2) +  (1/3) N(0,1^2) + (1/6) N(1,1^2) $\\
+bignormal & $N(0,4^2)$ \\ 
+bimodal & $0.5 N(-2,1^2) + 0.5 N(2,1^2)$ \\ \bottomrule
+\end{tabular}
+\caption{Summary of simulation scenarios considered} \label{table:scenarios}
+\end{table}
 
-\subsubsection*{The UA produces stable estimates}
+%In the results section we sometimes find it notationally convenient to rewrite (\ref{eqn:g}) as a mixture of a ``null" component $\delta_0$, and a non-null component, which we denote $g_1$:
+%\begin{equation} \label{eqn:g1}
+%g(\cdot; \pi) = \pi_0 \delta_0(\cdot) + (1-\pi_0) g_1(\cdot).
+%\end{equation}
 
-The EM algorithm is notorious for convergence to local optima. 
-But in this case, over hundreds of applications of the procedure, we have observed no serious problems 
-caused by potential multimodality. 
+For each simulation scenario we simulated 100 independent data sets, each with $J=1000$ observations. For each data set we simulated
+data as follows:
+\begin{enumerate}
+\item Simulate $\pi_0  \sim U[0,1]$.
+\item For $j=1,\dots,J$, simulate $\beta_j \sim \pi_0 \delta_0 + (1-\pi_0) g_1(\cdot)$.
+\item For $j=1,\dots,J$, simulate $\bhat_j | \beta_j \sim N(\beta_j,1)$.
+\end{enumerate}
+Thus these simulations assume the same
+precision $(s_j=1)$ for each measurement. 
 
+We applied the methods implemented in the R packages \qvalue, \locfdr, \mixfdr and \ashr to
+estimate $\pi_0$ for each data set. For \ashr we show results for $g$ modelled as a mixture of normal components (``ash.n") 
+and a mixture of uniform components (``ash.u"). (Results using a mixture of ``half-uniforms" are generally similar to the uniforms and omitted for clarity.)
+
+Figure \ref{fig:pi0} compares estimated and true values of $\pi_0$ under each Scenario. 
+For most scenarios no method reliably estimates $\pi_0$. This is expected because most scenarios include
+an appreciable fraction of ``small non-null effects" that are essentially indistinguishable from 0, making accurate
+estimation of$\pi_0$ impossible. This is particularly true for the ``spiky" scenario, for example.  The
+exception is the ``bignorm" scenario, where the \ashr estimates of $\pi_0$ are quite accurate - made possible by the fact that, in this scenario, most non-zero effects
+are very different from zero. 
+
+Although accurate estimation of $\pi_0$ is impossible in general, the simulation results demonstrate
+that, when the UA holds, \ashr consistently provides substantially smaller, more accurate, estimates of $\pi_0$, than existing methods. 
+As noted above, this means that estimates of FDR from \ashr will also be smaller and more accurate under these scenarios (while
+remaining conservative).
+When the UA assumption does not hold (``bimodal" scenario) the \ashr estimates are slightly anti-conservative, although quite accurate.
+We view such a strong bimodal scenario as rather unlikely in most applications where FDR methods
+are used; nonetheless, users may find it reassuring that even in this case the results from \ashr should not be horribly misleading.
+
+
+%\subsubsection{The UA produces less conservative estimates of $\pi_0$}
+%
+%The data in Figure \ref{fig:ZA} were simulated assuming that the true effects are standard normal, $\beta_j \sim N(0,1)$,
+%and so all effects are non-zero and no nulls hold. This scenario is rather different
+%from the ``mostly null" scenarios that originally motivated FDR methods, where most tests are null,
+%and relatively few are non-null. It could be argued that the existing FDR methods are not well adapted to the 
+%``mostly non-null"
+%scenario, and we would agree! On the other hand, the distribution of $p$ values
+%in Figure \ref{fig:ZA} looks like data that, before this work, we would have been happy to apply
+%existing FDR methods to. Further, we believe that both ``mostly non-null" and ``mostly null" scenarios likely occur in practical applications.
+%Thus it seems desirable to have methods that perform well in both cases, and this is
+%an important feature of the methods we introduce here.
+%
+%TODO: put FDRs on graph? Simulate with 50\% null?
+
+
+\subsubsection*{Numerical Stability}
+
+The EM algorithm, which we use here to fit our model, is notorious for convergence to local optima. 
+However, in this case, over hundreds of applications of the procedure, we observed no obvious serious problems 
+caused by this behaviour. To quantify this, we ran \ashr 10 times on each of XX simulated datasets using a random initialization for $\pi$,
+in addition running it using our default initialization procedure (XX need to specify in methods?). We then compared the largest
+log-likelihood achieved across all 11 runs with the log-likelihood achieved by our default run.
+When using a mixture of normals (ash.n) the results were extremely stable: 95\% showed a negligible log-likelihood difference (< 0.02), 
+and the largest difference was 0.8. When using mixtures of uniforms (ash.u,ash.hu) results were slightly less stable: 80\% showed a negligible log-likelihood difference (<0.02),
+and 9\% of runs showed an appreciable log-likelihood difference (>1), with the largest difference being 5.2. However, perhaps suprisingly, 
+even for this largest difference results from the default run (e.g. the lfsrs, and the posterior means) were in other ways virtually indistinguishable from the results from the run with the highest log-likelihood \url{github.com/stephens999/ash/dsc-stability/check_convergence.rmd}.
+
+\subsubsection*{The UA helps provide reliable estimates of $g$}
+
+Although we have focussed up to now on estimating the FDR, an important advantage of
+an empirical Bayes approach like ours, compared with less-model-based alternatives like \qvalue, is that the EB 
+approach can provide
+measures of the uncertainty in the {\it size} of each effect $\beta_j$.
+Specifically, the
+EB approach provides a posterior distribution for each $\beta_j$, which can be used
+to address any question about the effect sizes, including, for example, ``which effects likely exceed $T$'', where
+$T$ is some effect threshold of interest (and ``likely" can be quantified by whatever probability threshold is desired). 
+Further, because the posterior distribution is, by definition,
+conditional on the observed data, inferences based on posterior distributions are also valid Bayesian inferences for any subset of the effects that have
+been selected based on the observed data. %(This kind of ``post-selection" validity is much harder to achieve in the frequentist paradigm.)
+In particular the posterior distribution solves the (Bayesian analogue of the) ``False Coverage Rate" problem posed by
+\cite{benjamini.yekutieli:2005} which \cite{efron2008} summarizes as follows: ``having applied FDR methods to select a set of nonnull cases,
+how can confidence intervals be assigned to the true
+effect size for each selected case?". \cite{efron2008} notes the potential for EB approaches to tackle this problem.
+%but also notes the difficulties of implementing a stable general algorithm. 
+
+These features of the EB approach are extremely attractive in principle.
+But their usefulness in practice
+depends on reliably estimating the distribution $g$. Estimating $g$ is a ``deconvolution problem",
+which is notoriously difficult to solve in general. Indeed, Efron emphasises
+the difficulties of implementing a stable general algorithm, noting in his rejoinder
+``the effort foundered on practical difficulties involving the perils of deconvolution... Maybe I am trying
+to be overly nonparametric in constructing the empirical
+Bayes Fdr estimates, but it is hard to imagine a
+generally satisfactory parametric formulation..." (Efron, rejoinder, p46).
+The key point we want to emphasise here is that a stable non-parametric
+approach is not only possible, but in fact quite straightforward, {\it provided we restrict ourselves
+to settings where we can assume that $g$ is unimodal}.
+While not meeting Efron's desire for an entirely general nonparametric approach, we nonetheless believe 
+that these settings include many cases of practical interest.
+
+To illustrate this, Figure \ref{fig:egcdf} compares
+the estimated $g$ from our method for each of the simulation scenarios above with the 
+estimated $g$ from mixFdr which does not make the UA (and which models $g$ as a mixture of $J$ normal distributions, with $J=3$ by default).
+Even with only one simulated example for each scenario, the greater reliability of estimates afforded
+by the UA is immediately apparent.
+
+%making the UA provides an attractive and simple way to achieve estimating $g$  large
+%subset of cases of interest (those where the UA can reasonably be assumed to hold).
+
+%In practice, the utility of the posterior distributions noted above depends primarily on the accuracy
+%of the estimate of the distribution $g(\cdot)$. 
+ 
+ %quote from efron rejoinder , p46:
+%Morris’ Section 3 is especially pertinent. His formula
+%for p(?|z) is related to my discussion of the
+%Benjamini–Yekutieli False Coverage Rate method in
+%Section 7, particularly (7.2)–(7.4). Originally I had
+%hoped to develop an empirical Bayes method for estimating
+%such models, but the effort foundered on practical
+%difficulties involving the perils of deconvolution.
+%Section 6 on the “one-group model” is the ugly duckling
+%of the current paper, but it bears on some important
+%points raised in the discussion. Figure 7 concerns
+%a fuzzy version of simultaneous hypothesis testing,
+%where, as in Morris’ hospital example, the usual singlepoint
+%null hypotheses seem unequal to the task. The
+%development from (6.6) onwards, particularly (6.12),
+%bears on the possibility of nonnormal null distributions,
+%and is about as far as I can go in answering Professors
+%Rice and Spiegelhalter’s penultimate question.
+%With g(?) a normal distribution, model (6.1) returns
+%us to the realm of Stein estimation, the scene of my
+%happy collaborations with Carl Morris. I continue to
+%be surprised at how much harder bumpy, nonnormal
+%models like (7.1) are to deal with. James–Stein estimation
+%works fine with, say, N = 10 component problems,
+%while the Robbins’ form of empirical Bayes appropriate
+%to (7.1) seems to require hundreds or thousands.
+%The information calculations in Efron (2008)
+%reinforce this gloomy assessment. Maybe I am trying
+%to be overly nonparametric in constructing the empirical
+%Bayes Fdr estimates, but it is hard to imagine a
+%generally satisfactory parametric formulation for (6.1).
+%Or perhaps it is just that hypothesis testing is more demanding
+%than estimation.
+%My Note: (6.1) is the general model (mu \sim g()).
+%7.1 is the case where the effects are a mixture of zero and N(-3,1).
+
+%deconvolution
+%calculations are notoriously tricky and I have not
+%been able to produce a stable general algorithm. ; see also 
+Zhao+Hwang consider in detail the case where the non-null effects are normally distributed.
+
+Results in efron.fcr.rmd suggests that lower CI is OK; upper is more problematic because of difficulty in accurately estimating tail?
+
+To do: implement methods to compute posterior cdf of each observation at given points. 
+Then compute these for the simulation studies. Check whether issue with upper bound is due to non-unimodal distribution.
+
+
+\begin{figure} \label{fig:egcdf}
+\includegraphics[height=2in]{figures/egcdf.pdf}
+\includegraphics[height=2in]{figures/mean_cdf.pdf}
+\end{figure}
 
 
 \subsubsection*{Reverse asymptotics}
 
+
+
+Note that if observation precisions are all similar and most observations are null then all the methods likely to give similar results?
+
+
+
+Note: we'd like to make sure it behaves ok in the case where most observations are null.
+Perhaps simulate with 999 null and 1 alternative?
+Also maybe look at performance for small sample sizes - e.g. n=1?
+
+Note that, even though the exact value of the point mass $\pi_0$ cannot, in general, be reliably estimated, the actual underlying distribution $g$ 
+can be quite accurately estimated from the data, provided we assess accuracy by a metric that is not sensitive to $\pi_0$: for example
+by measuring the difference between the true and estimated cumulative distribution function (cdf). See supplementary Figure \ref{} for examples.
+
+
+
+\subsection*{Improved conservative estimation of $\pi_0$}
+\subsection*{Local False Sign Rate}
+
+There are two reasons to use the lfsr instead of the lfdr: it is more generally meaningful (e.g. it applies
+whether or not zero effects exist),  and estimation of lfsr is more robust to modeling assumptions and estimation of $\pi_0$. 
+To illustrate this, we compared estimated and true values of both lfdr and lfsr for the simulated data (where the true
+values are computed by Bayes Theorem using the true value of $g$ FILL IN THESE DETAILS?). 
+
+
+
+\begin{figure}[!ht]
+\begin{center}
+\includegraphics[height=320px,width=540px]{Rcode/figures/lfsdr_sim1sim2_blowup.png}
+\end{center}
+\caption{Figure showing lfsr is more robust than lfdr}
+\end{figure}
+
+- Illustration that estimated lfsr is more robust.
+
+- Illustration that adjusted estimate of lfsr is still more robust..
+
+- Compare estimated lfsr with true lfsr for difficult simulation case, to show nearly achieves Bayes Risk?
+
+%\subsection{Accounting for measurement precision improves estimates of FDR/fsr}
 
 \subsection*{Differing measurement precision across units}
 
@@ -778,107 +1020,6 @@ $p$ values from good-precision observations (left) and from poor-precision obser
 a distribution of $p$ values with less overall signal - and so, by conventional methods, will give a higher estimated FDR at any given threshold.
 The bottom panel (b) illustrates this behaviour directly for the methods \qvalue and \locfdr: the $q$-values from \qvalue and the lfdr estimates from \locfdr are higher when applied to all data than when applied to good-precision observations only. In contrast the methods described here (\ashr) produce effectively the same results (here, the lfsr) in the good-precision and combined data analyses.} \label{fig:goodpoor}
 \end{figure}
-
-
-Note that if observation precisions are all similar and most observations are null then all the methods likely to give similar results?
-
-
-
-Note: we'd like to make sure it behaves ok in the case where most observations are null.
-Perhaps simulate with 999 null and 1 alternative?
-Also maybe look at performance for small sample sizes - e.g. n=1?
-
-
-\subsection*{False Coverage Rates}
-
-To summarize the False Coverage Rate problem, we can do no better than quote Efron, who says
-``An insightful and ingenious paper by Benjamini andYekutieli (2005) discusses the following problem in simultaneoussignificance testing: having applied falsediscovery rate methods to select a set of nonnull cases,how can confidence intervals be assigned to the trueeffect size for each selected case?" \cite{efron2008} notes the potential for EB approaches to tackle this problem,
-but also notes the difficulties of implementing a stable general algorithm.
-%deconvolution%calculations are notoriously tricky and I have not%been able to produce a stable general algorithm. ; see also 
-Zhao+Hwang consider in detail the case where the non-null effects are normally distributed.
-
-Results in efron.fcr.rmd suggests that lower CI is OK; upper is more problematic because of difficulty in accurately estimating tail?
-
-To do: implement methods to compute posterior cdf of each observation at given points. 
-Then compute these for the simulation studies. Check whether issue with upper bound is due to non-unimodal distribution.
-
-
-\subsection*{Improved conservative estimation of $\pi_0$}
-
-To illustrate estimation of $\pi_0$ we provide simulation results for two scenarios:
-\begin{enumerate}
-\item[Scenario 1:]
-\begin{equation}
-f_1(\cdot) =  0.4 N(0,0.25^2) + 0.2 N(0,0.5^2) + 0.2 N(0,1^2), 0.2 N(0,2^2)
-\end{equation}
-\item[Scenario 2:]
-\begin{equation}
-f_1(\cdot) = N(0,4^2)
-\end{equation}
-\end{enumerate}
-Scenario 1 represents a ``difficult" case where many non-zero $\beta$ are
-too close to  zero to be reliably detected, making reliable estimation of $\pi_0$ essentially impossible; 
-Scenario 2 represents an ``easier" case where most non-zero $\beta$ are
-sufficiently different from zero that they can be reliably detected. making estimation of $\pi_0$ easier.
-For Scenario 1 we considered datasets of size $n=1000$ (Scenario 1a) and $n=10,000$ (Scenario 1b);
-for Scenario 2 we used $n=1000$.
-
-For each simulation scenario we simulated 200 independent data sets. For each data set we simulated
-the true value of $\pi_0  \sim U[0,1]$, and then simulated $\beta_j \sim \pi_0 \delta_0 + (1-\pi_0) f_1(\cdot)$
-and $\bhat_j | \beta_j = N(\beta_j,1)$ for $j=1,\dots,n$. Thus these simulations assume the same
-precision for each measurement. We applied the methods implemented in the R packages qvalue, fdrtool, locfdr, and \mixfdr
-for estimating $\pi_0$. We also applied our method to estimate $\pi_0$ in two ways, one using a penalty encourage
-$\pi_0$ to be as large as possible (``null-biased"), and the other using the maximum likelihood estimate for $\pi$.
-
-
-Figure \ref{fig:pi0} compares estimated and true values of $\pi_0$ under each Scenario. 
-For Scenario 1, no method reliably estimates $\pi_0$. This is expected since, the scenario was designed to make accurate estimation
-of $\pi_0$ impossible. However, we see that all the methods except for ash (mle) are able to provide a conservative
-estimate for $\pi_0$. Further, among these the estimates from ash (null-biased) are least conservative. Scenario 2 produces similar patterns,
-except that for this scenario the ash estimates of $\pi_0$ are quite accurate (made possible by the fact that most non-zero effects
-are very different from zero).
-
-These simulations illustrate two key points: i) although $\pi_0$ is not identifiable, the penalized likelihood approach
-provides conservative estimates for $\pi_0$; ii) replacing the ``zero assumption" with the UA can produce
-less conservative, more accurate, estimates of $\pi_0$ (provided of course that the UA holds, as it does in these simulations).
-
-\begin{figure}[!ht] \label{fig:pi0}
-\begin{center}
-\includegraphics[height=160px,width=540px]{Rcode/figures/estpi0_sim1sim2.png}
-\end{center}
-\caption{Comparison of true and estimated values of $\pi_0$ for simulation scenarios. Scenarios 1a and 1b represent ``difficult" scenarios where $\pi_0$ is impossible to estimate accurately. However, all methods except the ash mle method are successful in providing conservative estimates for $\pi_0$. The ash (null-biased) method is least conservative, and hence most accurate, due to its additional assumption that the effect size distribution $g$ is unimodal.}
-\end{figure}
-
-Note that, even though the exact value of the point mass $\pi_0$ cannot, in general, be reliably estimated, the actual underlying distribution $g$ 
-can be quite accurately estimated from the data, provided we assess accuracy by a metric that is not sensitive to $\pi_0$: for example
-by measuring the difference between the true and estimated cumulative distribution function (cdf). See supplementary Figure \ref{} for examples.
-
-\subsection*{Local False Sign Rate}
-
-There are two reasons to use the lfsr instead of the lfdr: it is more generally meaningful (e.g. it applies
-whether or not zero effects exist),  and estimation of lfsr is more robust to modeling assumptions and estimation of $\pi_0$. 
-To illustrate this, we compared estimated and true values of both lfdr and lfsr for the simulated data (where the true
-values are computed by Bayes Theorem using the true value of $g$ FILL IN THESE DETAILS?). 
-
-
-
-\begin{figure}[!ht]
-\begin{center}
-\includegraphics[height=320px,width=540px]{Rcode/figures/lfsdr_sim1sim2_blowup.png}
-\end{center}
-\caption{Figure showing lfsr is more robust than lfdr}
-\end{figure}
-
-- Illustration that estimated lfsr is more robust.
-
-- Illustration that adjusted estimate of lfsr is still more robust..
-
-- Compare estimated lfsr with true lfsr for difficult simulation case, to show nearly achieves Bayes Risk?
-
-\subsection{Accounting for measurement precision improves estimates of FDR/fsr}
- 
-- Illustration of effects of contamination on FDR by low-quality data
-comparison with ash.
 
 
 

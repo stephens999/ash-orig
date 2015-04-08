@@ -27,4 +27,6 @@ ash2pi0_est =function(output){
   return (list(pi0_est=get_pi0(output)))
 } 
 
-
+ash2fitted.g = function(output){
+  return (list(fitted.g=output$fitted.g))
+}

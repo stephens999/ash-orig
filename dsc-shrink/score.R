@@ -20,3 +20,28 @@ score2 = function(data, output){
   return(list(pi0 = data$meta$pi0,
               pi0_est = output$pi0_est))
 }
+
+score3 = function(data, output){
+  return(c(S=pcdf_post(output$fitted.g,data$meta$beta,
+              data$input$betahat,data$input$sebetahat,v=NULL)))
+}
+
+score_neg = function(data, output){
+  return(c(S=output$NegativeProb))
+}
+
+score_pos = function(data, output){
+  return(c(S=output$PositiveProb))
+}
+
+score_fdr = function(data, output){
+  return(c(S=output$res$fdr))
+}
+
+score_betahat = function(data, output){
+  return(c(S=data$input$betahat))
+}
+
+score_logLR = function(data,output){
+  return(c(logLR=output$logLR))
+}

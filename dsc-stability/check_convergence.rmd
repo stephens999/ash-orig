@@ -1,0 +1,54 @@
+---
+title: "check_convergence_problems"
+output: html_document
+---
+
+Here I tried to check whether an example that did not converge well 
+actually affected results.
+
+
+```{r}
+  library(dscr)
+  library(ashr)
+  library(ggplot2)
+  library(reshape2)
+  load("dsc_ar.RData")
+  res=dsc_ar$res
+#check out which one showed biggest convergence problem
+  prob = res[which.max(res$diff1),]
+  prob_eg = loadExample(dsc_ar,seed=prob$seed,scenario=as.character(prob$scenario),method=as.character(prob$method))
+```
+
+Now run ash 
+```{r}
+  set.seed(prob$seed+1)
+  ash.res=list()
+  ash.res[[1]] = ash(prob_eg$input$betahat,prob_eg$input$sebetahat,mixcompdist="halfuniform")
+  for(i in 2:11){ash.res[[i]] = ash(prob_eg$input$betahat,prob_eg$input$sebetahat,mixcompdist="halfuniform",randomstart=TRUE)}
+```
+
+```{r}
+  loglik = mapply(get_loglik,ash.res)
+  loglik
+```
+
+```{r}
+  best=which.max(loglik)
+  plot(ash.res[[best]]$lfsr,ash.res[[1]]$lfsr,xlab="lfsr (best run)",ylab="lfsr (default run)",main="Comparison of lfsr (best vs default run)")
+  abline(a=0,b=1,col=2)
+  plot(ash.res[[best]]$PosteriorMean,ash.res[[1]]$PosteriorMean,xlab="Posterior Mean (best run)",ylab="Posterior Mean (default run)",main="Comparison of Posterior Means (best vs default run)")
+  abline(a=0,b=1,col=2)
+
+```
+
+Compare Cdfs:
+```{r}
+  x = seq(-5,5,length=100)
+  cdf_res = data.frame(x=x,
+                       best=as.numeric(cdf.ash(ash.res[[best]],x)$y),
+                       default=as.numeric(cdf.ash(ash.res[[1]],x)$y))
+  cdf_res=melt(cdf_res,id.vars="x",value.name="y",variable.name="run")
+  qplot(x=x,y=y,data=cdf_res,geom="line",colour=run,main="comparison of estimated cdf (best run and default run)")
+```
+
+

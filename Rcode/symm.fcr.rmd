@@ -1,0 +1,90 @@
+---
+title: "FCR in unimodal case"
+output: html_document
+---
+
+Take a look at the calibration of posterior for unimodal case.
+Our exp
+
+```{r}
+  set.seed(100)
+  nsamp=1000
+  altmean=0
+  mu0 = rep(0,nsamp)
+  mu1 = rnorm(nsamp,altmean,2)
+  comp = rbinom(nsamp,1,0.8)
+  mu = ifelse(comp==0,mu0,mu1)
+  z = rnorm(nsamp,mu,1)
+```
+
+```{r}
+  library(ashr)
+  res.ash = ash(z,1,mixcompdist="halfuniform")
+  CImatrix= ashci(res.ash,level=0.95)
+  cobs=vcdf_post(res.ash$fitted.g,mu,z,rep(1,nsamp),NULL)
+  cd = diag(cobs)
+  hist(cd[res.ash$NegativeProb>0.95])
+  hist(cd[res.ash$PositiveProb>0.95])
+```
+
+Compare results with Bayes rule
+```{r}
+  BayesComparePlot=function(altmean=-3){
+    plot(z,mu,xlim=c(-8,0))
+    points(z[CImatrix[,1]],CImatrix[,5],col="red")
+    points(z[CImatrix[,1]],CImatrix[,4],col="red")
+
+    fdr = 0.9*dnorm(z)/(0.9*dnorm(z)+0.1*dnorm(z,altmean,sqrt(2)))
+    o=order(z)
+    upper = ifelse(fdr[o]<0.025,(z[o]+altmean)/2+qnorm(0.975+fdr[o])/sqrt(2),0)
+    lines(z[o],upper,col="green",lwd=2)
+    lines(z[o],(z[o]+altmean)/2-qnorm(0.975)/sqrt(2),col="green",lwd=2)
+    abline(v=max(z[fdr<0.05]))
+  }
+  BayesComparePlot(altmean)
+```
+
+
+It seems the lower 97.5% point is pretty accurate. 
+
+
+Try whole thing again to see if it was a fluke
+```{r}
+  set.seed(101)
+  nsamp=10000
+  mu0 = rep(0,nsamp)
+  mu1 = rnorm(nsamp,-3,1)
+  comp = rbinom(nsamp,1,0.1)
+  mu = ifelse(comp==0,mu0,mu1)
+  z = rnorm(nsamp,mu,1)
+```
+
+```{r}
+   res.ash = ash(z,1,mixcompdist="halfuniform")
+  CImatrix= ashci(res.ash,level=0.95)
+  BayesComparePlot()
+```
+
+And try with normal mixture in ash:
+
+```{r}
+   res.ash = ash(z,1,mixcompdist="normal")
+  CImatrix= ashci(res.ash,level=0.95)
+  BayesComparePlot()
+```
+
+
+And uniform mixture:
+```{r}
+   res.ash = ash(z,1,mixcompdist="uniform")
+  CImatrix= ashci(res.ash,level=0.95)
+  BayesComparePlot()
+```
+
+
+
+
+Things to try:
+- simulation study for coverage?
+- compare with EB FCR methods in JRSS B?
+

@@ -8,7 +8,7 @@ addScenario(dsc_shrink,name="A",
                       g=normalmix(c(2/3,1/3),c(0,0),c(1,2)),
                       min_pi0=0,
                       max_pi0=0,
-                      nsamp=1000,
+                      nsamp=10,
                       betahatsd=1
                       ),
                     seed=1:100)
@@ -19,7 +19,7 @@ addScenario(dsc_shrink,name="B",
                       g=normalmix(rep(1/7,7),c(-1.5,-1,-0.5,0,0.5,1,1.5),rep(0.5,7)),
                       min_pi0=0,
                       max_pi0=0,
-                      nsamp=1000,
+                      nsamp=10,
                       betahatsd=1
                     ),
                     seed=1:100)
@@ -31,7 +31,7 @@ addScenario(dsc_shrink,name="C",
                         g=normalmix(c(1/4,1/4,1/3,1/6),c(-2,-1,0,1),c(2,1.5,1,1)),
                         min_pi0=0,
                         max_pi0=0,
-                        nsamp=1000,
+                        nsamp=10,
                         betahatsd=1
                       ),
                       seed=1:100)
@@ -43,7 +43,7 @@ addScenario(dsc_shrink,name="An",
                       g=normalmix(c(2/3,1/3),c(0,0),c(1,2)),
                       min_pi0=0,
                       max_pi0=1,
-                      nsamp=1000,
+                      nsamp=10,
                       betahatsd=1
                     ),
                     seed=1:100)
@@ -54,7 +54,7 @@ addScenario(dsc_shrink,name="Bn",
                       g=normalmix(rep(1/7,7),c(-1.5,-1,-0.5,0,0.5,1,1.5),rep(0.5,7)),
                       min_pi0=0,
                       max_pi0=1,
-                      nsamp=1000,
+                      nsamp=10,
                       betahatsd=1
                     ),
                     seed=1:100)
@@ -66,7 +66,7 @@ addScenario(dsc_shrink,name="Cn",
                         g=normalmix(c(1/4,1/4,1/3,1/6),c(-2,-1,0,1),c(2,1.5,1,1)),
                         min_pi0=0,
                         max_pi0=1,
-                        nsamp=1000,
+                        nsamp=10,
                         betahatsd=1
                       ),
                       seed=1:100)
@@ -77,7 +77,7 @@ addScenario(dsc_shrink,name="hard",
                         g=normalmix(c(.4,.2,.2,.2),c(0,0,0,0),c(.25,.5,1,2)),
                         min_pi0=0,
                         max_pi0=1,
-                        nsamp=1000,
+                        nsamp=10,
                         betahatsd=1
                       ),
                       seed=1:100)
@@ -88,7 +88,7 @@ addScenario(dsc_shrink,name="easy",
                         g=normalmix(c(1),c(0),c(4)),
                         min_pi0=0,
                         max_pi0=1,
-                        nsamp=1000,
+                        nsamp=10,
                         betahatsd=1
                       ),
                       seed=1:100)
@@ -99,34 +99,10 @@ addScenario(dsc_shrink,name="efron_FCR",
               g=normalmix(c(1),c(-3),c(1)),
               min_pi0=0.9,
               max_pi0=0.9,
-              nsamp=1000,
+              nsamp=10,
               betahatsd=1
             ),
             seed=1:100)
 
 
-addScenario(dsc_shrink,name="bimodal",
-            fn=rnormmix_datamaker,
-            args=list(
-              g=normalmix(c(0.5,0.5),c(-2,2),c(1,1)),
-              min_pi0=0,
-              max_pi0=1,
-              nsamp=1000,
-              betahatsd=1
-            ),
-            seed=1:100)
-
-
-
-
-# addScenario(dsc_shrink,name="hard-b",
-#                       fn=rnormmix_datamaker,
-#                       args=list(
-#                         g=normalmix(c(.4,.2,.2,.2),c(0,0,0,0),c(.25,.5,1,2)),
-#                         min_pi0=0,
-#                         max_pi0=1,
-#                         nsamp=10000,
-#                         betahatsd=1
-#                       ),
-#                       seed=1:100)
 
