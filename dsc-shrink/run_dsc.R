@@ -1,7 +1,9 @@
 library(dscr)
 
 dsc_shrink=new.dsc("shrink","dsc-shrink-files")
-source("addScenarios.R")
+source("addNamedScenarios.R")
+addNamedScenarios(dsc_shrink,c("spiky","near-normal","flat-top","skew","big-normal","bimodal"))
+
 source("addMethods.R")
 
 addOutputParser(dsc_shrink,"ash2beta",ash2beta_est,"ash_output","beta_est_output")
