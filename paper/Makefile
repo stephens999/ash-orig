@@ -27,8 +27,9 @@ figures/pi0_est.pdf: ../dsc-shrink/res.RData
 # clean up all files; use with caution
 superclean: 
 	cd ../dsc-shrink; rm -r dsc-shrink-files
-	cd ../dsc-shrink; rm -r dsc-robust-files
-
+	cd ../dsc-robust; rm -r dsc-robust-files
+	rm ../dsc-shrink/res.RData
+	rm ../dsc-robust/res_robust.RData
 	rm figures/*.pdf
 
  
