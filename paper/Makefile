@@ -9,8 +9,8 @@ dsc: ../dsc-shrink/res.RData ../dsc-shrink/res_robust.RData
 
 ../dsc-shrink/res.RData:
 	cd ../dsc-shrink; R CMD BATCH run_dsc.R
-../dsc-shrink/res_robust.RData:
-	cd ../dsc_shrink; R CMD BATCH run_dsc_robust.R
+../dsc-robust/res_robust.RData:
+	cd ../dsc-robust; R CMD BATCH run_dsc_robust.R
  
 #figures
 figures/egcdf.pdf: ../dsc-shrink/res.RData
