@@ -5,7 +5,7 @@ library(magrittr)
 library(ashr)
 library(ggplot2)
 source("methods/mixfdr.wrapper.R")
-source("../paper/Rcode2/Rhelperfiles/set_plot_colors.R")
+source("set_plot_colors.R")
 load("res.RData")
 
 #df is a list with components method,seed, scenario

@@ -6,13 +6,14 @@ output: html_document
 ```{r}
 load("res.RData")
 #load("res10.RData")
+#res=res10
 library("dscr")
 library("ashr")
 library(reshape2)
 library(ggplot2)
 library(dplyr)
 
-#res=res10
+
 neglong = 
   res$negprob %>% 
     select(-user.self,-sys.self,-elapsed,-user.child,-sys.child) %>%
@@ -53,7 +54,7 @@ cdfplot(reslong.neg %>%
         )
 
 cdfplot(reslong %>% 
-          filter(method %in% c("ash.n","ash.hu","ash.u","ash.hu.s") & scenario %in% c("A","B","C","efron_FCR")), "All Discoveries"
+          filter(method %in% c("ash.n","ash.hu","ash.u","ash.hu.s") & scenario %in% c("A","B","C","efron_FCR")), "All observations"
         )
 
 

@@ -29,6 +29,6 @@ mixfdr2pi0_est = function(output){
 mixfdr2fitted.g = function(output){
   return (list(fitted.g=
     normalmix(output$res$pi,output$res$mu,
-              output$res$sigma-output$res$noiseSD)))
+              sqrt(output$res$sigma^2-output$res$noiseSD^2))))
 }
 
