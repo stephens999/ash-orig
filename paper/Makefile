@@ -5,7 +5,7 @@ all: $(TEXFILE).pdf $(OUT_FILES) $(CROP_FILES)
 
 figures: figures/egcdf.pdf figures/mean_cdf.pdf figures/pi0_est.pdf figures/scenarios_density.pdf
  
-dsc: ../dsc-shrink/res.RData ../dsc-shrink/res_robust.RData 
+dsc: ../dsc-shrink/res.RData ../dsc-robust/res_robust.RData 
 
 ../dsc-shrink/res.RData:
 	cd ../dsc-shrink; R CMD BATCH run_dsc.R
