@@ -3,8 +3,8 @@ source("set_plot_colors.R")
 library(dplyr)
 
 PLOTMETHODS= c("mixfdr.tnull","ash.n","ash.u","qvalue","locfdr")
-PLOTSCENARIOS = c("hard","An","Bn","Cn","easy","bimodal")
-PLOTNAMES = c("spiky","near-normal","flat-top","skew","big-normal","bimodal")
+PLOTSCENARIOS = c("spiky","near-normal","flat-top","skew","big-normal","bimodal")
+PLOTNAMES = PLOTSCENARIOS
 ALPHALEVEL = 0.8 # controls transparency
 FILE = "../paper/figures/pi0_est.pdf"
 
