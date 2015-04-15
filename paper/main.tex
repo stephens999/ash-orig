@@ -24,6 +24,8 @@
 
 % cite package, to clean up citations in the main text. Do not remove.
 \usepackage{cite}
+\usepackage{caption}
+\usepackage{subcaption}
 
 \usepackage{color} 
 
@@ -884,11 +886,11 @@ While the UA is not the only way to achieve this, it is a simple and effective a
 
 Interestingly, even in the ``bimodal" scenario where the UA is severely contradicted, the estimated $g$ from $\ashr$ 
 is visually more accurate than that from mixFdr: although mixFdr is capable, in principle, of fitting the multiple modes of $g$, it does not do this well here. We believe this
-is mostly because the noise level is sufficiently large to make reliable estimation of the multiple modes difficult, rather than reflecting
-deficiencies in the specific choices made by mixFdr, and indeed in simulations where the modes are sufficiently well-spaced
-to be clearly visible in the observed $\betahat$, mixFdr is able to fit this modes (Supplementary Information; 
+mostly reflects the fact that the noise level is sufficiently large to make reliable estimation of the multiple modes difficult, rather than 
+fundamental deficiencies of mixFdr. Indeed, in multi-modal simulations where the multiple modes are sufficiently well-spaced
+to be clearly visible in the observed $\bhat$, mixFdr fits these modes (Supplementary Information; 
 \url{dsc-shrink/check_mixfdr_lownoise.rmd}). Of course, we would not advocate the UA in settings where multi-modality is 
-clearly visible in the observed $\betahat$.
+clearly visible in the observed $\bhat$.
 
 
 
@@ -951,6 +953,25 @@ Results in efron.fcr.rmd suggests that lower CI is OK; upper is more problematic
 \includegraphics[height=2in]{figures/mean_cdf.pdf}
 \end{figure}
 
+
+\begin{table}[!ht]
+\begin{subtable}{\textwidth}
+	\input{tables/coverage_all.tex}
+	\caption{All}
+\end{subtable}
+
+\begin{subtable}{\textwidth}
+\input{tables/coverage_neg.tex}
+\caption{Negative findings}
+\end{subtable}
+
+\begin{subtable}{\textwidth}
+\input{tables/coverage_pos.tex}
+\caption{Positive findings}
+\end{subtable}
+
+\caption{Table of 5\% lower tail coverage rates by scenario and method}
+\end{table}
 
 \subsubsection*{Reverse asymptotics}
 

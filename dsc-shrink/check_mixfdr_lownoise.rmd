@@ -1,0 +1,33 @@
+---
+title: "check_mixfdr_lownoise"
+output: html_document
+---
+
+Here we check that mixfdr actually does OK at fitting the bimodal distribution when 
+noise is small compared with bimodality.
+
+First simulate bimodal data with well-separated peaks. The histogram
+shows the multi-modal nature of the underlying g is clear.
+```{r}
+  source("datamakers/datamaker.R")
+  sim.bimodal=rnormmix_datamaker(
+              args=list(g=normalmix(c(0.5,0.5),c(-5,5),c(1,1)),
+              min_pi0=0.4,
+              max_pi0=0.4,
+              nsamp=1000,
+              betahatsd=1)
+            )
+  hist(sim.bimodal$input$betahat,nclass=20,xlim=c(-10,10),prob=TRUE)
+```
+
+Now run mixfdr on it. Note that the fit captures the multi-modal nature of g, 
+although mixfdr continues to overestimate pi0.
+```{r}
+  source("methods/mixfdr.wrapper.R")
+  sim.bimodal.mixfdroutput = mixfdr.wrapper(sim.bimodal$input,args=list(theonull=TRUE))
+  g = mixfdr2fitted.g(sim.bimodal.mixfdroutput)$fitted.g
+  x=seq(-10,10,length=100)
+  plot(ecdf(sim.bimodal$meta$beta),main="Cdf of true beta: empirical (black) and fitted (red)")
+  lines(x,mixcdf(g,x),col=2)
+```
+

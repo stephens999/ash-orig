@@ -5,7 +5,7 @@ all: $(TEXFILE).pdf $(OUT_FILES) $(CROP_FILES)
 
 figures: figures/egcdf.pdf figures/mean_cdf.pdf figures/pi0_est.pdf figures/scenarios_density.pdf
  
-dsc: ../dsc-shrink/res.RData ../dsc-robust/dsc_robust.RData ../dsc-robust/summarize_dsc_robust.html 
+dsc: ../dsc-shrink/res.RData ../dsc-robust/dsc_robust.RData ../dsc-robust/summarize_dsc_robust.html ../dsc-shrink/summarize_coverage.html ../dsc-shrink/check_mixfdr_lownoise.html
 
 ../dsc-shrink/res.RData:
 	cd ../dsc-shrink; R CMD BATCH run_dsc.R
@@ -13,6 +13,10 @@ dsc: ../dsc-shrink/res.RData ../dsc-robust/dsc_robust.RData ../dsc-robust/summar
 	cd ../dsc-robust; R CMD BATCH run_dsc_robust.R
 ../dsc-robust/summarize_dsc_robust.html: ../dsc-robust/dsc_robust.RData
 	cd ../dsc-robust; Rscript -e "library(rmarkdown); render('summarize_dsc_robust.rmd')"
+../dsc-shrink/summarize_coverage.html: ../dsc-shrink/res.RData
+	cd ../dsc-shrink; Rscript -e "library(rmarkdown); render('summarize_coverage.rmd')"
+../dsc-shrink/check_mixfdr_lownoise.html:
+	cd ../dsc-shrink; Rscript -e "library(rmarkdown); render('check_mixfdr_lownoise.rmd')"
 
 #figures
 figures/egcdf.pdf: ../dsc-shrink/res.RData
