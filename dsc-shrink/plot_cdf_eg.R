@@ -33,9 +33,9 @@ get_cdf = function(df,dsc=dsc_shrink,x=seq(-6,6,length=100)){
 }
 
 plot_mean_cdf = function(SEEDS,PLOTMETHODS=c("ash.n","ash.u","ash.hu","truth","mixfdr.tnull"),
-                         PLOTSCENARIOS=c("hard","An","Bn","Cn","easy","bimodal"),
-                         PLOTNAMES=c("spiky","near-normal","flat-top","skew","big-normal","bimodal"),pi0filter=FALSE,...){
-#set up dataframe with cdf for all methods and all datasets
+      PLOTSCENARIOS=c("spiky","near-normal","flat-top","skew","big-normal","bimodal"),pi0filter=FALSE,...){
+  PLOTNAMES=PLOTSCENARIOS
+  #set up dataframe with cdf for all methods and all datasets
   df= expand.grid(seed=SEEDS,scenario=PLOTSCENARIOS, method=PLOTMETHODS,stringsAsFactors = FALSE)
   df.cdf=ddply(df,.(seed,scenario,method), get_cdf)
   

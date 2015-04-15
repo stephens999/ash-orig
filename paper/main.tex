@@ -829,13 +829,13 @@ are used; nonetheless, users may find it reassuring that even in this case the r
 
 The EM algorithm, which we use here to fit our model, is notorious for convergence to local optima. 
 However, in this case, over hundreds of applications of the procedure, we observed no obvious serious problems 
-caused by this behaviour. To quantify this, we ran \ashr 10 times on each of XX simulated datasets using a random initialization for $\pi$,
+caused by this behaviour. To quantify this, we ran \ashr 10 times on each of the 600 simulated datasets above using a random initialization for $\pi$,
 in addition running it using our default initialization procedure (XX need to specify in methods?). We then compared the largest
 log-likelihood achieved across all 11 runs with the log-likelihood achieved by our default run.
-When using a mixture of normals (ash.n) the results were extremely stable: 95\% showed a negligible log-likelihood difference (< 0.02), 
-and the largest difference was 0.8. When using mixtures of uniforms (ash.u,ash.hu) results were slightly less stable: 80\% showed a negligible log-likelihood difference (<0.02),
-and 9\% of runs showed an appreciable log-likelihood difference (>1), with the largest difference being 5.2. However, perhaps suprisingly, 
-even for this largest difference results from the default run (e.g. the lfsrs, and the posterior means) were in other ways virtually indistinguishable from the results from the run with the highest log-likelihood \url{github.com/stephens999/ash/dsc-stability/check_convergence.rmd}.
+When using a mixture of normals (ash.n) the results were extremely stable: 96\% showed a negligible log-likelihood difference (< 0.02), 
+and the largest difference was 0.8. When using mixtures of uniforms (ash.u,ash.hu) results were slightly less stable: 89\% showed a negligible log-likelihood difference (<0.02),
+and 6\% of runs showed an appreciable log-likelihood difference (>1), with the largest difference being 5.0. However, perhaps suprisingly, 
+even for this largest difference results from the default run (e.g. the lfsrs, and the posterior means) were in other ways virtually indistinguishable from the results from the run with the highest log-likelihood \url{github.com/stephens999/ash/dsc-robust/summarize_dsc_robust.rmd}.
 
 \subsubsection*{The UA helps provide reliable estimates of $g$}
 

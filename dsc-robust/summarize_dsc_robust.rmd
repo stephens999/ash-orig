@@ -1,0 +1,72 @@
+---
+title: "Summarize dsc_robust"
+output: html_document
+---
+
+
+
+Here we summarize the results of the simulation study to look at convergence of ash.
+```{r}
+  library(dscr)
+  library(ashr)
+  library(ggplot2)
+  library(reshape2)
+  library("dplyr")
+  load("dsc_robust.RData") 
+  res = dsc_robust$res
+```
+
+```{r}
+  quantile((res %>% filter(method=="ash.n"))$score.diff1,c(0.8,0.9,0.95,0.99,1))
+  quantile((res %>% filter(method=="ash.hu"))$score.diff1,c(0.8,0.9,0.95,0.99,1))
+  quantile((res %>% filter(method=="ash.u"))$score.diff1,c(0.8,0.9,0.95,0.99,1))
+  
+  plot(ecdf((res %>% filter(method %in% c("ash.u","ash.hu")))$score.diff1),ylim=c(0.8,1))
+  plot(ecdf((res %>% filter(method %in% c("ash.n")))$score.diff1),ylim=c(0.8,1))
+```
+
+```{r}
+  mean((res %>% filter(method %in% c("ash.u","ash.hu")))$score.diff1<0.02)
+  mean((res %>% filter(method %in% c("ash.u","ash.hu")))$score.diff1>1)
+  mean((res %>% filter(method %in% c("ash.n")))$score.diff1<0.02)  
+```
+
+
+Now check out the example that showed the biggest convergence problem
+```{r}
+#check out which one showed biggest convergence problem
+prob = res[which.max(res$score.diff1),]
+prob_eg = loadExample(dsc_robust,seed=prob$seed,scenario=as.character(prob$scenario),method=as.character(prob$method))
+```
+
+Run ash on the example to check we can recapitulate the convergence problem.
+```{r}
+set.seed(prob$seed+1) #dscr sets the seed for the method to 1+seed 
+ash.res=list()
+ash.res[[1]] = ash(prob_eg$input$betahat,prob_eg$input$sebetahat,mixcompdist="uniform",cxx=TRUE)
+for(i in 2:11){ash.res[[i]] = ash(prob_eg$input$betahat,prob_eg$input$sebetahat,mixcompdist="uniform",randomstart=TRUE,cxx=TRUE)}
+```
+
+```{r}
+loglik = mapply(get_loglik,ash.res)
+loglik
+```
+
+```{r}
+best=which.max(loglik)
+plot(ash.res[[best]]$lfsr,ash.res[[1]]$lfsr,xlab="lfsr (best run)",ylab="lfsr (default run)",main="Comparison of lfsr (best vs default run)")
+abline(a=0,b=1,col=2)
+plot(ash.res[[best]]$PosteriorMean,ash.res[[1]]$PosteriorMean,xlab="Posterior Mean (best run)",ylab="Posterior Mean (default run)",main="Comparison of Posterior Means (best vs default run)")
+abline(a=0,b=1,col=2)
+
+```
+
+Compare Cdfs:
+```{r}
+  x = seq(-5,5,length=100)
+  cdf_res = data.frame(x=x,
+                     best=as.numeric(cdf.ash(ash.res[[best]],x)$y),
+                     default=as.numeric(cdf.ash(ash.res[[1]],x)$y))
+  cdf_res=melt(cdf_res,id.vars="x",value.name="y",variable.name="run")
+  qplot(x=x,y=y,data=cdf_res,geom="line",colour=run,main="comparison of estimated cdf (best run and default run)")
+```

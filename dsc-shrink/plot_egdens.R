@@ -3,8 +3,8 @@ library("ggplot2")
 library("dplyr")
 library("dscr")
 load("res.RData")
-PLOTSCENARIOS = c("hard","A","B","C","easy","bimodal")
-PLOTNAMES = c("spiky","near-normal","flat-top","skew","big-normal","bimodal")
+PLOTSCENARIOS = c("spiky","near-normal","flat-top","skew","big-normal","bimodal")
+PLOTNAMES = PLOTSCENARIOS
 PLOTFILE = "../paper/figures/scenarios_density.pdf"
 
 df=data.frame()
