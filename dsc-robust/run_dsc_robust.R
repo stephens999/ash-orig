@@ -34,7 +34,9 @@ addScore(dsc_robust,score)
 
 #reset_dsc(dsc_robust,force=TRUE)
 res_robust=run_dsc(dsc_robust)
-save(res_robust,file="res_robust.RData")
+#save(res_robust,file="res_robust.RData")
+save(dsc_robust,file="dsc_robust.RData")
+
 
 
 
