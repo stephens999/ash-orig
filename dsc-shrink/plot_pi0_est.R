@@ -16,7 +16,7 @@ df$scenario = factor(df$scenario,levels=PLOTSCENARIOS)
 levels(df$scenario)= PLOTNAMES
 
 p=ggplot(df,
-         aes(pi0,pi0_est,colour=method,alpha=ALPHALEVEL)) +geom_point(shape=1) +
+         aes(score.pi0,score.pi0_est,colour=method,alpha=ALPHALEVEL)) +geom_point(shape=1) +
   facet_grid(. ~ scenario) + 
   guides(alpha=FALSE) +
   geom_abline(colour = "black") +
