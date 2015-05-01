@@ -5,7 +5,8 @@ output: html_document
 
 ```{r}
 load("res.RData")
-
+coverthresh = 0.05 # threshold at which we look at coverage
+findthresh=0.95 #threshold at we define a discovery significant
 library("dscr")
 library("ashr")
 library(reshape2)
@@ -17,13 +18,13 @@ neglong =
   res$negprob %>% 
     select(-user.self,-sys.self,-elapsed,-user.child,-sys.child) %>%
     melt(id.vars=c("method","scenario","seed",".id"),value.name="negprob") %>%
-    filter(negprob > 0.9)
+    filter(negprob > findthresh)
  
 poslong = 
   res$posprob %>% 
     select(-user.self,-sys.self,-elapsed,-user.child,-sys.child) %>%
     melt(id.vars=c("method","scenario","seed",".id"),value.name="posprob") %>%
-    filter(posprob > 0.9)
+    filter(posprob > findthresh)
 
 reslong = 
   res$cdf_score %>% 
@@ -32,35 +33,45 @@ reslong =
 
 reslong.pos = inner_join(reslong,poslong)
 reslong.neg = inner_join(reslong,neglong)
+dim(reslong.pos)
+dim(reslong.neg)
 
 ```
 
+Overall proportion of negative findings is `r nrow(reslong.neg)/nrow(reslong)`.
 
-Table of lower 5\% tail for all observations
+Overall proportion of positive findings is `r nrow(reslong.pos)/nrow(reslong)`.
+
+
+
+Table of lower tail for all observations
 ```{r}
-xtabs(lt~method+scenario,reslong %>% group_by(scenario,method) %>% summarize(lt = mean(value<0.05))) %>% round(2)
+xtabs(lt~method+scenario,reslong %>% group_by(scenario,method) %>% summarize(lt = mean(value<coverthresh))) %>% round(2)
 ```
 
 
-Table of lower 5\% tail of positive findings. Because of the unimodal assumption
+Table of lower tail of positive findings. Because of the unimodal assumption
 and the favoritism toward the null this should assess problems
 with``over shrinkage" toward 0.
 ```{r}
-xtabs(lt~method+scenario,reslong.pos %>% group_by(scenario,method) %>% summarize(lt = mean(value<0.05))) %>% round(2)
+xtabs(lt~method+scenario,reslong.pos %>% group_by(scenario,method) %>% summarize(lt = mean(value<coverthresh))) %>% round(2)
 ```
 
 
-Table of lower 5\% tail of negative findings. This should indicate problems with tail behaviour of $g$. The uniform methods tend to over-shrink.
+Table of lower tail of negative findings. This should indicate problems with tail behaviour of $g$. The uniform methods tend to over-shrink.
 ```{r}
-xtabs(lt~method+scenario,reslong.neg %>% group_by(scenario,method) %>% summarize(lt = mean(value<0.05))) %>% round(2)
+xtabs(lt~method+scenario,reslong.neg %>% group_by(scenario,method) %>% summarize(lt = mean(value<coverthresh))) %>% round(2)
 ```
 
 ```{r}
-save_latex_coverage_table=function(df,methodnames,filename,SCENARIONAMES=c("spiky","near-normal","flat-top","skew","big-normal","bimodal")){
+save_latex_coverage_table=function(df,methodnames,filename,SCENARIONAMES=c("spiky","near-normal","flat-top","skew","big-normal","bimodal"),switch=FALSE){
   library(xtable)
   df$method=factor(df$method,levels=methodnames)
   df$scenario=factor(df$scenario,levels=SCENARIONAMES)
   mat <- as.matrix(xtabs(lt~method+scenario,df))
+  if(switch){
+    mat=1-mat
+  }
   mat <- xtable(mat,digits=rep(2,ncol(mat)+1))
   write(print(mat, 
         sanitize.text.function = function(x){x},
@@ -74,8 +85,23 @@ save_latex_coverage_table=function(df,methodnames,filename,SCENARIONAMES=c("spik
   
 }
   
-save_latex_coverage_table(reslong.neg %>% group_by(scenario,method) %>% summarize(lt = mean(value<0.05)),c("ash.n","ash.u","ash.hu"),"../paper/tables/coverage_neg.tex")
-save_latex_coverage_table(reslong.pos %>% group_by(scenario,method) %>% summarize(lt = mean(value<0.05)),c("ash.n","ash.u","ash.hu"),"../paper/tables/coverage_pos.tex")
-save_latex_coverage_table(reslong %>% group_by(scenario,method) %>% summarize(lt = mean(value<0.05)),c("ash.n","ash.u","ash.hu"),"../paper/tables/coverage_all.tex")
+save_latex_coverage_table(reslong.neg %>% group_by(scenario,method) %>% summarize(lt = mean(value<coverthresh)),c("ash.n","ash.u","ash.hu"),"../paper/tables/coverage_neg.tex")
+save_latex_coverage_table(reslong.pos %>% group_by(scenario,method) %>% summarize(lt = mean(value<coverthresh)),c("ash.n","ash.u","ash.hu"),"../paper/tables/coverage_pos.tex")
+save_latex_coverage_table(reslong %>% group_by(scenario,method) %>% summarize(lt = mean(value<coverthresh)),c("ash.n","ash.u","ash.hu"),"../paper/tables/coverage_all.tex")
+
+save_latex_coverage_table(reslong.neg %>% group_by(scenario,method) %>% summarize(lt = mean(value<coverthresh)),c("ash.n.s","ash.u.s","ash.hu.s"),"../paper/tables/coverage_neg_nopen.tex")
+save_latex_coverage_table(reslong.pos %>% group_by(scenario,method) %>% summarize(lt = mean(value<coverthresh)),c("ash.n.s","ash.u.s","ash.hu.s"),"../paper/tables/coverage_pos_nopen.tex")
+save_latex_coverage_table(reslong %>% group_by(scenario,method) %>% summarize(lt = mean(value<coverthresh)),c("ash.n.s","ash.u.s","ash.hu.s"),"../paper/tables/coverage_all_nopen.tex")
+```
+
+These tables show 1-the left tail instead of the left tail.
+```{r}
+save_latex_coverage_table(reslong.neg %>% group_by(scenario,method) %>% summarize(lt = mean(value<coverthresh)),c("ash.n","ash.u","ash.hu"),"../paper/tables/scoverage_neg.tex",switch=TRUE)
+save_latex_coverage_table(reslong.pos %>% group_by(scenario,method) %>% summarize(lt = mean(value<coverthresh)),c("ash.n","ash.u","ash.hu"),"../paper/tables/scoverage_pos.tex",switch=TRUE)
+save_latex_coverage_table(reslong %>% group_by(scenario,method) %>% summarize(lt = mean(value<coverthresh)),c("ash.n","ash.u","ash.hu"),"../paper/tables/scoverage_all.tex",switch=TRUE)
+
+save_latex_coverage_table(reslong.neg %>% group_by(scenario,method) %>% summarize(lt = mean(value<coverthresh)),c("ash.n.s","ash.u.s","ash.hu.s"),"../paper/tables/scoverage_neg_nopen.tex",switch=TRUE)
+save_latex_coverage_table(reslong.pos %>% group_by(scenario,method) %>% summarize(lt = mean(value<coverthresh)),c("ash.n.s","ash.u.s","ash.hu.s"),"../paper/tables/scoverage_pos_nopen.tex",switch=TRUE)
+save_latex_coverage_table(reslong %>% group_by(scenario,method) %>% summarize(lt = mean(value<coverthresh)),c("ash.n.s","ash.u.s","ash.hu.s"),"../paper/tables/scoverage_all_nopen.tex",switch=TRUE)
 ```
 

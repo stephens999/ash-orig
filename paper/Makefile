@@ -3,7 +3,7 @@
  
 all: $(TEXFILE).pdf $(OUT_FILES) $(CROP_FILES)
 
-figures: figures/egcdf.pdf figures/mean_cdf.pdf figures/pi0_est.pdf figures/scenarios_density.pdf
+figures: figures/egcdf.pdf figures/mean_cdf_nopen.pdf figures/mean_cdf.pdf figures/pi0_est.pdf figures/scenarios_density.pdf
  
 dsc: ../dsc-shrink/res.RData ../dsc-robust/dsc_robust.RData ../dsc-robust/summarize_dsc_robust.html ../dsc-shrink/summarize_coverage.html ../dsc-shrink/check_mixfdr_lownoise.html
 
@@ -22,6 +22,8 @@ dsc: ../dsc-shrink/res.RData ../dsc-robust/dsc_robust.RData ../dsc-robust/summar
 figures/egcdf.pdf: ../dsc-shrink/res.RData
 	cd ../dsc-shrink; R CMD BATCH plot_cdf_eg.R
 figures/mean_cdf.pdf: ../dsc-shrink/res.RData
+	cd ../dsc-shrink; R CMD BATCH plot_cdf_eg.R
+figures/mean_cdf_nopen.pdf: ../dsc-shrink/res.RData
 	cd ../dsc-shrink; R CMD BATCH plot_cdf_eg.R
 figures/scenarios_density.pdf: ../dsc-shrink/res.RData
 	cd ../dsc-shrink; R CMD BATCH plot_egdens.R

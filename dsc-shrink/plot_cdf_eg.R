@@ -60,4 +60,8 @@ pdf("../paper/figures/mean_cdf.pdf",height=3,width=9)
 plot_mean_cdf(1:100,PLOTMETHODS=c("ash.n","ash.u","ash.hu","truth"),pi0filter=TRUE)
 dev.off()
 
-
+pdf("../paper/figures/mean_cdf_nopen.pdf",height=3,width=9)
+names(myColors) <- c("mixfdr.tnull","ash.hu.s","ash.n.s","ash.u.s","qvalue","locfdr","truth")
+colScale <- scale_colour_manual(name = "method",values = myColors)
+plot_mean_cdf(1:100,PLOTMETHODS=c("ash.n.s","ash.u.s","ash.hu.s","truth"),pi0filter=TRUE)
+dev.off()
