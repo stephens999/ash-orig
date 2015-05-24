@@ -1,0 +1,373 @@
+---
+title: "Dynamic Statistical Comparisons, and other adventures in getting organized"
+author: Matthew Stephens
+date: May 22, 2015
+output: ioslides_presentation
+---
+
+
+```{r, include=FALSE}
+require("qvalue")
+require("ashr")
+require("ggplot2")
+require("knitr")
+```
+
+```{r setup, include=FALSE}
+  #set global chunk options
+  opts_chunk$set(cache=TRUE,autodep=TRUE,warning=FALSE)
+  dep_auto()
+```
+
+## Getting Organized!
+
+- Over ~10 years of working with graduate students + postdocs,
+I've noticed something.
+- Organized researchers get more done (and better!).
+- Many of them are more organized than I am.
+- Thought: I should get organized; I should help others get organized.
+
+## So what can you do?
+
+- Buy a notebook; bring it to meetings; make notes! 
+- Come to meetings with a written agenda. 
+- While doing research, record what you did and what the outcome was.
+- Use version control ([git](http://git-scm.com)) and internet repositories ([bitbucket](http://www.bitbucket.org), [github](http://www.github.com)) to organize notes, code, etc.
+- Use *knitr* to help make your research reproducible.
+- Talk about the tools you find useful!
+
+## What are these repository things?
+
+- A repository: a central place in which an aggregation of data is kept and maintained in an organized way (searcharticle.com)
+- Great for sharing material across multiple people (eg student and advisor!)
+- An amateur example: [http://github.com/stephens999/ash](http://github.com/stephens999/ash)
+
+## What is knitr?
+
+- An R package
+- A tool for literate programming
+- Text, and R code are interleaved
+- When you compile the document, the code is run, and output inserted into the text.
+- Great for writing reports, and keeping a track of what you did and what the result was!
+- This talk was written with knitr (with RStudio)!
+
+## What is knitr?
+
+ ![Image](screenshot.png)
+
+## What is Reproducible Research?
+
+- Principle: when publishing results of computational procedures, we should
+publish the code that produced the results.
+- "publishing figures or results without the complete software environment could
+be compared to a mathematician publishing an announcement of a mathematical theorem without giving the proof" (Buckheit and Donohoe)
+- “an article about a computational result is advertising, not scholarship. The actual scholarship is the full software environment, code and data, that produced the result.” [Claerbout]
+
+## Why is reproducibility important?
+
+- Not only because people are forgetful, error-prone, or dishonest!
+- Reproducing work is also the first step to extending it.
+- Helps communications among researchers (eg student + advisor).
+- If you do not publish code implementing your methods, your methods will likely go unused.
+
+
+## More on git, github, knitr, reproducibility
+
+- Google "The git book", to get started on git.
+- Google "Karl Broman github tutorial" for statistics-oriented intro to github.
+- Google "donohoe buckheit" for "Wavelab and reproducible research"
+
+## More ridiculously-personal tips
+
+- "Don't try to show them how clever you are" (BD Ripley)
+- Minimise email for research communications 
+- Chunk time
+- Relax! (Exercise, Vacation)
+- Admin on Fridays
+- Learn some programming principles
+- Benchmark early and often
+
+## Minimise email
+
+![Image](slack.screenshot.png)
+
+## Benchmarking: 
+
+By which I mean, any quantitative assessment and comparisons of performance (accuracy; speed).
+
+## Benchmarking: 
+
+Benefits include:
+
+- Communication
+- Tweaking/honing
+- Basic quality assurance (cf "testing")
+
+## Benchmarking: 
+
+Even basic benchmarks have benefits (...Done is better than perfect)
+
+## Dynamic Statistical Comparisons 
+
+- Overall Goal: Improve how we, in the statistics community, make comparisons among methods.
+
+- Reduce work and redundancy; make comparisons more transparent
+
+- How? Centralize reproducible statistical comparisons in easily-extensible public repositories.
+
+## Inspiration: Public Benchmarking
+
+- Protein folding (CASP)
+
+- Image analysis (Pascal)
+
+- The Neflix Prize 
+
+- Genetics Analysis Workshop
+
+- RECOMB/DREAM challenge
+
+- Sage Bionetworks
+
+
+## Dynamic Statistical Comparisons: advantages
+
+- Authors can run their own methods. 
+- Ease of adding new data can quickly uncover over-tuning to specific datasets.
+- Work is divided, and not duplicated.
+- Promotes collaboration through competition. 
+- Ensures results are reproducible, and extendable.
+
+- [http://stephens999.github.io/blog/](http://stephens999.github.io/blog/) for more on DSC
+
+
+## DSC Requirements
+
+- Well-defined input format for methods
+- Well-defined output format
+- Scoring function (output, input, meta-data)
+- Ways to produce input, meta-data
+- Methods to turn input -> output
+
+## DSCR - an R package
+
+- Define Scenarios (produce input, meta-data)
+- Define Methods (turn input -> output)
+- Define Scores
+
+A simple function call then runs all methods on all scenarios, outputs scores
+
+[Simple Vignette](http://htmlpreview.github.com/?https://github.com/stephens999/dscr/blob/master/vignettes/one_sample_location.html)
+
+
+## DSC examples we're working on
+
+- Covariance Estimation
+- Large-scale linear regression
+- 1-D Smoothing with Wavelets [after Antoniadis et al, 2001]
+
+
+## Wavelet Smoothing Example: The "Blocks" Function
+
+```{r, echo=FALSE}
+  blocks = function(n){
+     t=1:n/n
+    pos=c(.1, .13, .15, .23, .25, .40, .44, .65, .76, .78, .81)
+    hgt = 2.88/5*c(4, (-5), 3, (-4), 5, (-4.2), 2.1, 4.3, (-3.1), 2.1, (-4.2))
+    mu.blk = rep(0,n)
+    for(j in 1:length(pos)){
+      mu.blk = mu.blk + (1 + sign(t-pos[j]))*(hgt[j]/2)
+    }
+    mu=0.2+0.6*(mu.blk-min(mu.blk))/max(mu.blk-min(mu.blk))
+    return(mu)
+  }
+len = 1024
+x = seq(0,1,length=len)
+mu=blocks(len)
+plot(x,mu,type="l",col=2,lwd=2)
+y=mu+rnorm(len,0,sd=sd(mu))
+points(x,y,cex=0.5)
+```
+
+## Wavelet Transform of Noisy Data
+
+```{r,echo=FALSE}
+  y.wd = wavethresh::wd(y,filter=1,family="DaubExPhase")
+  plot(y.wd,first.level=5) #Haar transform
+```
+
+## Wavelet Transform of True Mean
+
+```{r, echo=FALSE}
+mu.wd = wavethresh::wd(mu,filter=1,family="DaubExPhase")
+plot(mu.wd,first.level=5) #Haar transform
+```
+
+## Wavelet Shrinkage
+
+- WCs of true mean ($$\beta$$) are "sparse" (or at least, have spiky density about 0)
+
+- WCs for observed data ($$\betahat$$) are noisy observations of true WCs.
+
+- If we shrink the $$\betahat$$ toward 0, they will give a better estimate for $$\beta$$
+
+- And inverting the wavelet transform will give better estimate for $\mu$
+
+## Shrink + Backtransform = Smooth
+
+```{r, echo=FALSE}
+y.wd.thresh = wavethresh::threshold(y.wd, policy="BayesThresh")
+y.est = wavethresh::wr(y.wd.thresh)
+plot(x,mu,type="l",col=2,lwd=2)
+lines(x,y.est,type="l")
+```
+
+## How to Shrink?
+
+We've been developing generic EB approaches to shrinkage estimation:
+
+- Assume $\beta_j \sim g()$ where $g$ has some concentration about 0 ("sparse"). 
+
+- Assume we have corresponding estimates $\hat\beta_j$, with standard error $s_j$. 
+
+- 
+## How to Shrink?
+
+- *Incorporate precision* of each observation $\hat\beta$ by assuming
+$$\hat\beta_j | \beta_j \sim N(\beta_j, s_j^2)$$
+
+- Constrain $g$ to be *unimodal* about 0; 
+
+- Shrink via two-stage procedure: first estimate $g$ "non-parametrically" from data; then
+compute $p(\beta_j | \hat{g}, \hat\beta_j,s_j)$.
+
+
+## Details
+
+- A convenient way to model $g$: mixture of 0-centered
+normal distributions: 
+$$g(\beta; \pi) = \sum_{k=1}^K \pi_k N(\beta; 0, \sigma^2_k)$$
+
+- Estimating $g$ comes down to estimating $\pi$. Joint estimation of $\pi_0,\pi$ easy by maximum likelihood (EM algorithm).
+
+- By allowing $K$ large, and $\sigma_k$ to span a dense grid of values,
+we get a flexible unimodal symmetric distribution.
+
+- Can approximate, arbitrarily closely, any scale mixture of normals.
+Includes almost all priors used for sparse regression problems (spike-and-slab, double exponential/Laplace/Bayesian Lasso, horseshoe). 
+
+
+## Illustration: $g$ a mixture of 0-centered normals
+
+```{r, echo=FALSE,fig.height=4,fig.cap=""}
+x=seq(-4,4,length=100)
+plot(x, dnorm(x,0,1),type="l",ylim=c(0,2),ylab="density")
+lines(x, dnorm(x,0,0.1))
+lines(x, dnorm(x,0,0.5))
+```
+
+## Illustration: $g$ a mixture of 0-centered normals
+
+```{r, echo=FALSE,fig.height=4,fig.cap=""}
+x=seq(-4,4,length=100)
+plot(x, 0.5*dnorm(x,0,1)+0.5*dnorm(x,0,0.1),type="l",ylim=c(0,2),ylab="density")
+```
+
+
+## Illustration: $g$ a mixture of 0-anchored uniforms
+
+```{r, echo=FALSE,fig.height=4,fig.cap=""}
+x=seq(-4,4,length=100)
+plot(x, dunif(x,0,1),type="s",ylim=c(0,5),ylab="density")
+lines(x, dunif(x,0,0.2),type="s")
+lines(x, dunif(x,0,0.5),type="s")
+lines(x, dunif(x,-0.3,0),type="s",col=2)
+lines(x, dunif(x,-0.4,0),type="s",col=2)
+lines(x, dunif(x,-2,0),type="s",col=2)
+```
+
+## Illustration: $g$ a mixture of 0-anchored uniforms
+
+```{r, echo=FALSE,fig.height=4,fig.cap=""}
+x=seq(-4,4,length=100)
+plot(x, 0.1*dunif(x,0,3)+ 0.3*dunif(x,0,0.2) + 0.2*dunif(x,0,0.5) + 0.1* dunif(x,-0.3,0) + 0.1*dunif(x,-0.3,0)+0.2*dunif(x,-0.4,0),type="s",ylim=c(0,2),ylab="density")
+```
+
+## Adaptive Shrinkage
+
+- Approach provides posterior distribution for each $\beta_j$.
+
+- For wavelet shrinkage we just use posterior mean.
+
+- Because $g(\beta)$ is unimodal, the point estimates (and CIs) will tend to be "shrunk" towards the overall mean (0).
+
+- Because $g(\beta)$ is estimated from the data, the amount
+of shrinkage is adaptive to signal in the data. And because of the role of $s_j$, the amount of shrinkage adapts to the information on each observation.
+
+- So we call the approach "Adaptive Shrinkage" (ash).
+
+## Smoothing with Adaptive Shrinkage (smash)
+
+```{r, echo=FALSE, results='hide', message=FALSE}
+load("../../dscr-smash/res.RData")
+library("dplyr")
+library("ggplot2")
+res.1.v1 = res %>% filter(grepl(".1.v1",scenario)) %>% filter(method %in% c("smash.haar","smash.homo.s8","ebayesthresh","sure.homo.s8"))
+PLOTNAMES=c("angles","blip","blocks","bump","corner","doppler","spike")
+res.1.v1$scenario=factor(res.1.v1$scenario,levels=paste0(c("ang","blip","blk","bump","cor","dop","sp"),".1.v1"))
+levels(res.1.v1$scenario)=PLOTNAMES
+ggplot(res.1.v1,aes(x=method,y=mise,fill=method)) + geom_violin() + facet_grid(.~scenario) + theme(axis.text.x=element_blank())
+```
+
+## Homoskedastic errors
+
+
+```{r, echo=FALSE, results='hide', message=FALSE}
+res.1.v1 = res %>% filter(grepl(".1.v1",scenario)) %>% filter(method %in% c("smash.haar","smash.homo.s8","ebayesthresh"))
+
+PLOTNAMES=c("angles","blip","blocks","bump","corner","doppler","spike")
+res.1.v1$scenario=factor(res.1.v1$scenario,levels=paste0(c("ang","blip","blk","bump","cor","dop","sp"),".1.v1"))
+levels(res.1.v1$scenario)=PLOTNAMES
+
+ggplot(res.1.v1,aes(x=method,y=mise,fill=method)) + geom_violin() + facet_grid(.~scenario) +theme(axis.text.x=element_blank())
+```
+
+
+
+## Heteroskedastic errors
+
+```{r, echo=FALSE, results='hide', message=FALSE}
+res.1.v4 = res %>% filter(grepl(".1.v4",scenario)) %>% filter(method %in% c("smash.haar","smash.homo.s8","ebayesthresh"))
+res.1.v4$scenario=factor(res.1.v4$scenario,levels=paste0(c("ang","blip","blk","bump","cor","dop","sp"),".1.v4"))
+levels(res.1.v4$scenario)=PLOTNAMES
+ggplot(res.1.v4,aes(x=method,y=mise,fill=method)) + geom_violin() + facet_grid(.~scenario) + theme(axis.text.x=element_blank())
+```
+
+## Question
+
+- Does anyone have applications where allowing for heteroskedastic errors might be useful?
+
+
+## Summary
+
+- We're looking for conspirators interested in organizing benchmarking!
+
+
+## Thanks
+
+- Zhengrong Xing
+
+- to the developers of **R**, **knitr**, **Rstudio** and **Pandoc**.
+Also the very cool **SQUAREM** and **wavethresh** packages.
+
+- to the several postdoctoral researchers and students
+who have worked with me on related topics.
+
+- Including Chaoxing Dai, Mengyin Lu, Ester Pantaleo, Scott Powers, Sen Tian, Wei Wang, . 
+
+- NHGRI, Moore Foundation for funding.
+
+- `ashr` package: `http://www.github.com/stephens999/ashr`
+
+- `dscr` package: `http://www.github.com/stephens999/dscr`
+
