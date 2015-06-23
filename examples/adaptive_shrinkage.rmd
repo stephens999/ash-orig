@@ -1,0 +1,39 @@
+---
+title: "Adaptive Shrinkage Illustration"
+output: html_document
+---
+
+The goal here is to illustrate the "adaptive" nature of the adaptive shrinkage. The shrinkage is adaptive in two senses. First,
+the amount of shrinkage depends on the distribution $g$ of the true effects, which is learned from the data: when $g$ is very peaked about zero
+then ash learns this and deduces that signals should be more strongly shrunk towards zero than when g is less peaked about zero.
+Second, the amount of shrinkage of each observation depends on its standard error: the smaller the standard error, the more informative
+the data, and so the less shrinkage that occurs. From an Empirical Bayesian point of view both of these 
+points are entirely natural: the posterior depends on both the prior
+and the likelihood; the prior, $g$, is learned from the data, and the likelihood incorporates the standard error of each observation.
+
+We simulate from two scenarios, the first with effects more peaked about zero, the second with effects less peaked.
+```{r}
+set.seed(100)
+library(ashr)
+beta1 = c(rnorm(500,0,0.01),rnorm(500,0,0.5))
+beta2 = rnorm(1000,0,1)
+s = 1/rgamma(1000,10,10)
+e = rnorm(1000,0,s)
+beta1hat = beta1 + e
+beta2hat = beta2 + e
+```
+
+Now run ash on both:
+```{r}
+beta1.ash = ash(beta1hat, s)
+beta2.ash = ash(beta2hat, s)
+```
+
+```{r}
+df = data.frame(betahat = c(beta1hat,beta2hat), beta_est = c(beta1.ash$PosteriorMean, beta2.ash$PosteriorMean),s=c(s,s),scenario=c(rep("peaked",1000),rep("less peaked",1000)))
+library(ggplot2)
+ggplot(df,aes(x=betahat,y=beta_est)) + geom_point(col=s) + facet_grid(.~scenario) 
+#need to add equal scales, and color gradient
+
+```
+

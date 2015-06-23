@@ -1,0 +1,52 @@
+---
+title: "Wavelet Vignette"
+author: Matthew Stephens
+date: May 22, 2015
+output: ioslides_presentation
+---
+
+## Example: The "Blocks"" Function
+
+```{r, echo=FALSE}
+  blocks = function(n){
+     t=1:n/n
+    pos=c(.1, .13, .15, .23, .25, .40, .44, .65, .76, .78, .81)
+    hgt = 2.88/5*c(4, (-5), 3, (-4), 5, (-4.2), 2.1, 4.3, (-3.1), 2.1, (-4.2))
+    mu.blk = rep(0,n)
+    for(j in 1:length(pos)){
+      mu.blk = mu.blk + (1 + sign(t-pos[j]))*(hgt[j]/2)
+    }
+    mu=0.2+0.6*(mu.blk-min(mu.blk))/max(mu.blk-min(mu.blk))
+    return(mu)
+  }
+len = 1024
+x = seq(0,1,length=len)
+mu=blocks(len)
+plot(x,mu,type="l",col=2,lwd=2)
+y=mu+rnorm(len,0,sd=sd(mu))
+points(x,y,cex=0.5)
+```
+
+## Wavelet Transform of Noisy Data
+
+```{r,echo=FALSE}
+  y.wd = wavethresh::wd(y,filter=1,family="DaubExPhase")
+  plot(y.wd,first.level=5) #Haar transform
+```
+
+## Wavelet Transform of True Mean
+
+```{r, echo=FALSE}
+mu.wd = wavethresh::wd(mu,filter=1,family="DaubExPhase")
+plot(mu.wd,first.level=5) #Haar transform
+```
+
+## Shrink + Backtransform = Smooth
+```{r, echo=FALSE}
+y.wd.thresh = wavethresh::threshold(y.wd, policy="BayesThresh")
+y.est = wavethresh::wr(y.wd.thresh)
+plot(x,mu,type="l",col=2,lwd=2)
+lines(x,y.est,type="l")
+```
+
+

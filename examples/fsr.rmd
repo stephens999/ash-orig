@@ -1,3 +1,9 @@
+---
+title: "False Sign Rate Illustration"
+output: html_document
+---
+
+
 # FSR Example
 
 This is an example of how the false sign rate and the false discovery rate can
@@ -10,7 +16,7 @@ and the ``true" FDR is always 0, whatever threshold is used.
 
 
 ```{r}
-opts_chunk$set(fig.path='figure/lfsr/')
+#opts_chunk$set(fig.path='figure/lfsr/')
 set.seed(100)
 library(ashr)
 library(qvalue)
@@ -51,6 +57,7 @@ the lfdr. When $\pi_0$ is small both measures are meaningful,
 and indeed are generally quite similar. Consequently we recommend lfsr for general usage.
 
 In this example, at a $p$ value threshold of 0.05, $\ash$ estimates the local false sign rate (lfsr) to be `r max(z.ash$lfsr[p<0.05])` and the tail false sign rate (FSR) to be `r mean(z.ash$lfsr[p<0.05])`. The actual FSR at that threshold is `r mean(sign(z[p<0.05])!=sign(beta[p<0.05]))`.
+(The conservative estimates from $\ash$ are likely partly due to our deliberate use of a penalty term to provide conservative estimates of $\pi_0$.)
 
 
 
