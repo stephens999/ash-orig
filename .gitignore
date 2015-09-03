@@ -13,15 +13,12 @@ scratchwork/*.md
 talks/*.md
 examples/*.md
 tests/*.md
-paper/main.pdf
 paper/main.bbl
 paper/main.dvi
 paper/main.blg
 paper/main.log
 paper/Rcode/figures/*.pdf
-paper/main.pdf
 paper/main.aux
-paper/main.log
 package/*.Rcheck
 scratchwork/*cache
 talks/*cache

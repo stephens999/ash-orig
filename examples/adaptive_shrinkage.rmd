@@ -7,33 +7,78 @@ The goal here is to illustrate the "adaptive" nature of the adaptive shrinkage. 
 the amount of shrinkage depends on the distribution $g$ of the true effects, which is learned from the data: when $g$ is very peaked about zero
 then ash learns this and deduces that signals should be more strongly shrunk towards zero than when g is less peaked about zero.
 Second, the amount of shrinkage of each observation depends on its standard error: the smaller the standard error, the more informative
-the data, and so the less shrinkage that occurs. From an Empirical Bayesian point of view both of these 
+the data, and so the less shrinkage that occurs. From an Empirical Bayesian perspective both of these 
 points are entirely natural: the posterior depends on both the prior
 and the likelihood; the prior, $g$, is learned from the data, and the likelihood incorporates the standard error of each observation.
 
 We simulate from two scenarios, the first with effects more peaked about zero, the second with effects less peaked.
-```{r}
+```{r initialize}
 set.seed(100)
 library(ashr)
-beta1 = c(rnorm(500,0,0.01),rnorm(500,0,0.5))
-beta2 = rnorm(1000,0,1)
-s = 1/rgamma(1000,10,10)
-e = rnorm(1000,0,s)
-beta1hat = beta1 + e
-beta2hat = beta2 + e
+
+#load the simulation function, (rnormmix_datamaker)
+source("../dsc-shrink/datamakers/datamaker.R")
+
+NSAMP=1000
+s = 1/rgamma(NSAMP,5,5)
+sim.bignormal = rnormmix_datamaker(args=list(g=normalmix(c(1),c(0),c(4)),
+                        min_pi0=0,
+                        max_pi0=0,
+                        nsamp=NSAMP,
+                        betahatsd=s
+                      ))
+
+sim.spiky = rnormmix_datamaker(args=list(g=normalmix(c(.4,.2,.2,.2),c(0,0,0,0),c(.25,.5,1,2)),
+                        min_pi0=0,
+                        max_pi0=0,
+                        nsamp=NSAMP,
+                        betahatsd=s
+                      ))
+
 ```
 
 Now run ash on both:
-```{r}
-beta1.ash = ash(beta1hat, s)
-beta2.ash = ash(beta2hat, s)
+```{r run-ash}
+beta.bignormal.ash = ash(sim.bignormal$input$betahat, s)
+beta.spiky.ash = ash(sim.spiky$input$betahat, s)
+```
+
+Here we plot the shrunken estimates against the observed values, colored
+according to the (square root of) precision: precise esitmates being colored red, and less precise estimates being blue. Two key features of the plots
+illustrate the ideas of adaptive shrinkage: i) the estimates under the spiky scenario are shrunk more strongly, illustrating that shrinkage adapts to the underlying distribution of beta; ii) in both cases, estimates with large standard error (blue) are shrunk more than estimates with small standard error (red) illustrating that shrinkage adapts to measurement precision.
+
+
+```{r plotting}
+df = data.frame(betahat = c(sim.spiky$input$betahat,sim.bignormal$input$betahat),
+                beta_est = c(beta.spiky.ash$PosteriorMean, beta.bignormal.ash$PosteriorMean),
+                lfsr = c(beta.spiky.ash$lfsr, beta.bignormal.ash$lfsr),
+                s=c(s,s),
+                scenario=c(rep("spiky",NSAMP),rep("big-normal",NSAMP)))
+df$signif = df$lfsr<0.05
+library(ggplot2)
+library(scales)
+ggplot(df,aes(x=betahat,y=beta_est,color=1/s)) + 
+  xlab("Observed beta-hat") +
+  ylab("Shrunken beta estimate") + geom_point() +  facet_grid(.~scenario) + geom_abline(intercept=0,slope=1) +
+scale_colour_gradient2(midpoint = median(1/s),low="blue", mid="white",high="red")  +coord_fixed(ratio=1)
+ggsave("ash.pdf")
 ```
 
 ```{r}
-df = data.frame(betahat = c(beta1hat,beta2hat), beta_est = c(beta1.ash$PosteriorMean, beta2.ash$PosteriorMean),s=c(s,s),scenario=c(rep("peaked",1000),rep("less peaked",1000)))
-library(ggplot2)
-ggplot(df,aes(x=betahat,y=beta_est)) + geom_point(col=s) + facet_grid(.~scenario) 
-#need to add equal scales, and color gradient
+  ggplot(df,aes(x=pnorm(-abs(betahat/s)),y=lfsr,color=log(s))) + geom_point() +  facet_grid(.~scenario) +xlim(c(0, 0.025)) + xlab("p value") + ylab("lfsr") +
+  scale_colour_gradient2(midpoint = 0,low="blue", mid="white",high="red")  
+```
 
+
+```{r}
+hist(s,main="histogram of standard errors")
+summary(s)
+```
+
+This is a "volcano plot" showing effect size against p value. The blue points are "significant" in that they have lfsr<0.05. In this case the significance by lfsr is not quite the same as cutting off at a given $p$ value (you can see that the decision boundary is not quite the same as drawing a horizontal line), but also not that different, presumably because the standard errors, although varying across observations, do not vary greatly.
+```{r volcano}
+  ggplot(df,aes(x=betahat,y=-log10(2*pnorm(-abs(betahat/s))),col=signif)) + geom_point(alpha=1,size=1.75) +  facet_grid(.~scenario) + theme(legend.position = "none") +
+  xlim(c(-10, 10)) + ylim(c(0, 15)) +
+  xlab("Effect (beta)") + ylab("-log10 p-value")
 ```
 
