@@ -25,6 +25,6 @@ p=ggplot(df,
 print(p +scale_y_continuous(limits=c(0,1)) +
         scale_x_continuous(limits=c(0,1)) +
         #scale_colour_manual(values=cbbPalette,breaks=breaks,labels=labels) +
-        coord_equal(ratio=1) + colScale)
+        coord_equal(ratio=1) + colScale + theme(legend.position = "bottom"))
 
 dev.off()

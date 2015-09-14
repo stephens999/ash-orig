@@ -19,7 +19,7 @@ dsc: ../dsc-shrink/res.RData ../dsc-robust/dsc_robust.RData ../dsc-robust/summar
 	cd ../dsc-shrink; Rscript -e "library(rmarkdown); render('check_mixfdr_lownoise.rmd')"
 
 #figures
-figures/egcdf.pdf: ../dsc-shrink/res.RData
+figures/egcdf.pdf: ../dsc-shrink/res.RData ../dsc-shrink/plot_cdf_eg.R
 	cd ../dsc-shrink; R CMD BATCH plot_cdf_eg.R
 figures/mean_cdf.pdf: ../dsc-shrink/res.RData
 	cd ../dsc-shrink; R CMD BATCH plot_cdf_eg.R
@@ -27,10 +27,11 @@ figures/mean_cdf_nopen.pdf: ../dsc-shrink/res.RData
 	cd ../dsc-shrink; R CMD BATCH plot_cdf_eg.R
 figures/scenarios_density.pdf: ../dsc-shrink/res.RData
 	cd ../dsc-shrink; R CMD BATCH plot_egdens.R
-figures/pi0_est.pdf: ../dsc-shrink/res.RData
+figures/pi0_est.pdf: ../dsc-shrink/res.RData ../dsc-shrink/plot_pi0_est.R
 	cd ../dsc-shrink; R CMD BATCH plot_pi0_est.R
 
- 
+figures/GOODPOOReg_hist.pdf: Rcode/makefig_FDReg_hist.R
+	cd Rcode; R CMD BATCH makefig_FDReg_hist.R 
  
 # clean up all files; use with caution
 superclean: 

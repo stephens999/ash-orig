@@ -37,7 +37,7 @@ bin_fdr = res.qvalue$pi0/temp$density #compute local fdr in each bin of histogra
 qval_fdr = bin_fdr[as.numeric(cut(pval,temp$breaks))]
 qval_fdr = pmin(1,qval_fdr) #threshold at 1, so fdr never bigger than 1
 
-pdf("figures/FDReg_hist.pdf",width=6,height=3)
+pdf("../figures/FDReg_hist.pdf",width=6,height=3)
 par(mai=c(0.5,0.5,0.2,0.2),mgp = c(3, 0.5, 0))
 layout(matrix(1:2,ncol=2,byrow=TRUE))
 plot_FDReg_hist(pval,res.qvalue$pi0,type=1,title="p values",cex.axis=0.8,cex.main=0.8)
@@ -47,7 +47,7 @@ dev.off()
 
 ############################## decomp_ZA.pdf #############################################
 
-pdf("figures/decomp_ZA.pdf",width=6,height=6)
+pdf("../figures/decomp_ZA.pdf",width=6,height=6)
 layout(matrix(1:12,ncol=3,byrow=FALSE))
 plotlabel=function(label,cex=1.5){
   plot(0,0,type="n",axes=FALSE,xlab="",ylab="")
@@ -87,6 +87,42 @@ axis(side=1, labels=TRUE,tck=-0.01,cex.axis=0.8)
 
 dev.off()
 
+#a different layout (4 columns, 2 rows) for my Tukey poster
+pdf("../figures/decomp_ZA_poster.pdf",width=6,height=2)
+layout(matrix(1:8,ncol=4,byrow=TRUE))
+par(mar = c(1.3,2,1.5,0.2),mgp = c(3, 0.5, 0))
+ncz=25
+
+#p value histograms
+altnullhist(pval,qval_fdr,main="p values: qvalue",ncz=ncz,xaxt='n',cex.axis=0.8)
+#plot_FDReg_hist(pval,res.qvalue$pi0,type=2,title="p values",xaxt='n',cex.axis=0.8)
+axis(side=1, labels=FALSE,tck=-0.01)
+#mtext(side=3,"p values",line=1)
+altnullhist(pval,res.locfdr$fdr,main="locfdr",ncz=ncz,xaxt='n',cex.axis=0.8)
+axis(side=1, labels=FALSE,tck=-0.01)
+altnullhist(pval,res.mixfdr$fdr,main="mixfdr",ncz=ncz,xaxt='n',cex.axis=0.8)
+axis(side=1, labels=FALSE,tck=-0.01)
+altnullhist(pval,res.ash$lfdr,main="ashr",ncz=ncz,xaxt='n',cex.axis=0.8)
+axis(side=1, labels=TRUE,tck=-0.01,cex.axis=0.8)
+#mtext(side=1,"p values",line=2)
+
+#z score histograms
+nullalthist(zscore,qval_fdr,main="z scores: qvalue",ncz=ncz,xaxt='n',cex.axis=0.8,ylim=c(0,0.3),xlim=c(-6,6))
+axis(side=1, labels=FALSE,tck=-0.01)
+#mtext(side=3,"z scores",line=1)
+nullalthist(zscore,res.locfdr$fdr,main="locfdr",ncz=ncz,xaxt='n',cex.axis=0.8,ylim=c(0,0.3),xlim=c(-6,6))
+axis(side=1, labels=FALSE,tck=-0.01)
+nullalthist(zscore,res.mixfdr$fdr,main="mixfdr",ncz=ncz,xaxt='n',cex.axis=0.8,ylim=c(0,0.3),xlim=c(-6,6))
+axis(side=1, labels=FALSE,tck=-0.01)
+nullalthist(zscore,res.ash$lfdr,main="ashr",ncz=ncz,xaxt='n',cex.axis=0.8,ylim=c(0,0.3),xlim=c(-6,6))
+axis(side=1, labels=TRUE,tck=-0.01,cex.axis=0.8)
+#mtext(side=1,"z scores",line=2)
+
+dev.off()
+
+
+
+
 ################################### GOODPOOReg_hist.pdf ###############################
 
 #simple simulated example to illustrate high and low signal
@@ -105,7 +141,7 @@ betahat = beta + rnorm(ntest, 0, sebetahat)
 zscore = betahat/sebetahat
 pval = pchisq(zscore^2,df=1,lower.tail=F)
 
-pdf("figures/GOODPOOReg_hist.pdf",width=6.5,height=3)
+pdf("../figures/GOODPOOReg_hist.pdf",width=6.5,height=3)
 par(mai=c(0.3,0.3,0.2,0.2),mgp = c(3, 0.5, 0))
 layout(matrix(1:3,ncol=3,byrow=TRUE))
 plot_FDReg_hist(pval[GOOD],1,type=1,title="Good-precision observations",ylab="",nc=20,cex.axis=1,cex.main=1.2,ylim=c(0,2.5))
@@ -126,7 +162,7 @@ res.qvalue.good = qvalue(pval[GOOD])
 res.locfdr.good = locfdr(zscore[GOOD],nulltype=0,plot=0)
 res.ash.good = ash(betahat[GOOD],sebetahat[GOOD],method="fdr")
 
-pdf("figures/GOODPOOReg_scatter.pdf",width=6.5,height=3)
+pdf("../figures/GOODPOOReg_scatter.pdf",width=6.5,height=3)
 par(mai=c(0.3,0.3,0.2,0.2),mgp = c(3, 0.5, 0))
 layout(matrix(1:3,ncol=3,byrow=TRUE))
 plot(res.qvalue.good$q,res.qvalue$q[GOOD],main="qvalue",xlim=c(0,1),ylim=c(0,1),axes=F)
@@ -146,7 +182,7 @@ res = rbind(data.frame(x= res.qvalue.good$qvalues, y = res.qvalue$qvalues[GOOD],
             data.frame(x=res.ash.good$lfsr,y=res.ash$lfsr[GOOD],type="ashr"))
 
 library("ggplot2")
-pdf("figures/GOODPOOReg_scatter.pdf",height=3,width=6.5)
+pdf("../figures/GOODPOOReg_scatter.pdf",height=3,width=6.5)
 pp= ggplot(data=res,aes(x,y)) +geom_point(shape=1) +
   facet_grid(. ~ type) +
   geom_abline(colour = "red") +

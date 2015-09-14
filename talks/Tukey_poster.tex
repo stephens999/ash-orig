@@ -1,0 +1,146 @@
+\documentclass[a0paper,landscape]{tikzposter} % See Section 3
+
+\usepackage[backend=bibtex,style=numeric,sorting=none]{biblatex}
+\addbibresource{~/Dropbox/Documents/mainbib.bib}
+
+\usepackage{amsmath}
+%\usepackage{natbib}
+% amssymb package, useful for mathematical symbols
+\usepackage{amssymb}
+\usepackage{booktabs}
+\usepackage{xspace}
+% graphicx package, useful for including eps and pdf graphics
+% include graphics with the command \includegraphics
+\usepackage{graphicx}
+
+
+\def\qvalue{{\tt qvalue}\xspace}
+\def\locfdr{{\tt locfdr}\xspace}
+\def\mixfdr{{\tt mixfdr}\xspace}
+\def\ashr{{\tt ashr}\xspace}
+\def\bhat{\hat{\beta}}
+\def\shat{\hat{s}}
+
+\title{False Discovery Rates - A New Deal} \institute{Department of Statistics and Department of Human Genetics, University of Chicago} % See Section 4.1
+\author{Matthew Stephens} 
+%\titlegraphic{Logos}
+\usetheme{Default} % See Section 5
+\usecolorstyle{Spain}
+\begin{document}
+\maketitle % See Section 4.1
+\begin{columns} % See Section 4.4
+\column{0.38}
+\block{The Set-up}{
+For $j=1,\dots,J$, let 
+\begin{align*}
+\beta_j & \text{ denote the (unobserved) $j$th effect of interest.} \\
+\bhat_j & \text{  denote a noisy measurement of $\beta_j$.} \\
+\shat_j & \text{ denote the (estimated) standard error of $\bhat_j$.} \\
+z_j & := \bhat_j/\shat_j \text{, and $p_j$ be the corresponding $p$ value testing $H_j: \beta_j=0$}
+\end{align*}
+
+A typical genomics pipeline analyses the $p$ values with the goal of estimating or controlling the false discovery rate (FDR) \cite{benjamini1995controlling}.
+
+\innerblock{Examples}{
+\qvalue \cite{storey.02} essentially attempts to decompose the distribution of $p$ values into two components, one null (uniform distribution), and the other alternative.
+
+\locfdr \cite{efron2008microarrays} attempts to decompose the distribution of $z$ scores into two components, one null (standard normal), and the other alternative.
+
+\mixfdr \cite{muralidharan2010empirical} attempts to decompose the distribution of $z$ scores into two components, one null (standard normal), and the other alternative (mixture of normals).% See Section 4.2
+}
+
+For example, \mixfdr assumes that 
+\begin{equation}
+p(z_j) = \pi_0 N(z_j; 0,1) + (1-\pi_0) f_1(z_j)
+\end{equation}
+where $f_1$ is assumed to follow a mixture of normal distributions.
+It then estimates $\pi_0$ and $f_1$ by (penalized) maximum likelihood, from which estimates of (local) FDR follow.
+}
+
+\block{A New Deal}{
+Similar to \cite{efron2008microarrays,muralidharan2010empirical} we take an Empirical Bayes (EB) approach to the problem, but with some key differences:
+\begin{enumerate}
+\item Decompose distribution of $\beta_j$ (instead of $p$ values or $z$ score): \qquad
+$$p(\beta_j | s_j)  = \pi_0 \delta_0 + (1-\pi_0) g_1(\beta_j)$$
+\item {\bf Unimodal Assumption (UA):} Assume $g_1$ to be unimodal about 0. 
+\item Connect the observations with the model via a normal likelihood assumption:
+$$\bhat_j | \beta_j, \shat_j \sim N(\beta_j, \shat_j).$$
+\end{enumerate}
+
+\innerblock{Details}{
+\begin{enumerate}
+\item Simple way to implement the UA is via a mixture of 0-centered normals:
+$g_1(\beta_j) = \sum_{k=1}^K \pi_k N(\beta_j; 0,\sigma_k^2)$
+where $K$ is large, and $\sigma_1,\dots,\sigma_K$ are a fixed fine grid spanning values from very small to very large.
+Mixture proportions estimated by a simple EM algorithm.
+%\item The UA provides very computationally stable and statistically stable estimates. (It regularizes $g_1$.)
+%\item Using two numbers $\beta_j,\shat_j$, instead of one ($z_j$ or $p_j$) for each observation, allows differences in measument precision to be better accounted for. Specifically, large $\shat_j$ implies a flat likelihood, and so little information, something that is lost in modelling $z_j$ or $p_j$ directly.
+\item The mixture of normals (above) also assumes $g_1$ is symmetric; can allow asymmetry using mixures of uniforms that end or start at 0.
+\item Can generalize normal likelihood to $t$ likelihood to help allow for estimation of $\shat_j$.
+\item Add penalty term to the likelihood to encourage $\pi_0$ to be as big as possible given data (avoids underestimating FDR).
+\end{enumerate}
+}
+The methods are implemented in an R package \ashr (``Adaptive SHrinkage") available at \url{http://github.com/stephens999/ashr}. Code for this poster, draft paper in progress, and other info at \url{http://github.com/stephens999/ash}.
+}
+
+
+
+\column{0.31} % See Section 4.4
+
+
+\block{UA changes $p$ value and $z$ score decomposition (dark-blue=null; cyan = alt)}{
+Results from this approach can be strikingly different from existing methods
+\includegraphics[width=13in]{../paper/figures/decomp_ZA_poster.pdf}
+}
+
+\block{Illustrative Simulations}{
+
+%\begin{tikzfigure}[We conducted simulations under a variety of true $g_1$] \label{fig:sims}
+\innerblock{We conducted simulations using various effect distributions $g_1$}{
+\includegraphics[width=12.5in]{../paper/figures/scenarios_density.pdf}
+}
+%\end{tikzfigure}
+
+\innerblock{The UA (if it holds) allows less conservative estimates of $\pi_0$}{
+All methods over-estimate $\pi_0$ (deliberately); $\ashr$ is least conservative.
+%which will lead to less conservative estimates of FDR). If UA doesn't hold, estimates are anti-conservative, but not too egregious.
+\includegraphics[width=12.5in]{../paper/figures/pi0_est.pdf}
+}
+
+\innerblock{The UA leads to stable estimates of $g$ (vs \mixfdr)}{
+Figures compare true cdf with estimate from different methods.
+\includegraphics[width=12.5in,height=3.5in]{../paper/figures/egcdf.pdf} \\
+See also \cite{efron2008microarrays} which discusses challenges of getting stable non-parametric estimates of $g$; the UA provides one simple solution to this problem. 
+}
+
+}
+
+
+\column{0.31}
+
+
+\block{Problem: low precision measurements have less power, diluting signal}{
+The $p$ values from high-precision measurements (left) show more signal than those from low-precision measurements (center) due to higher power of former. Combining them (right) dilutes the signal.
+\center\includegraphics[width=12in,height=3.2in]{../paper/figures/GOODPOOReg_hist.pdf}
+\innerblock{Taking precision into account avoids dilution}{
+Figure shows $q$ values (FDR estimates) for good-precision measurements. For \qvalue and \locfdr, the $q$ values are inflated by including low-precision measurements in the analysis. For \ashr they are not, because the $N(\beta,\shat_j)$ likelihood is essentially flat when $\shat_j$ is large, so low-precision measurements effectively ignored.
+\includegraphics[width=12.5in,height=3.5in]{../paper/figures/GOODPOOReg_scatter.pdf}
+}
+}
+
+\block{Adaptive Shrinkage}{
+Methods are applicable not only to FDR, but also shrinkage more generally. Eg as a competitor to EB approaches like \cite{johnstone2004needles}, which
+make more restrictive parametric assumptions than the UA. Because \ashr provides posterior distribution on each effect given observed data, can also tackle the ``post-selection" problem of providing interval estimates for ``significant" effects.
+}
+
+%\note{Notetext} % See Section 4.3
+\renewcommand*{\bibfont}{\small}
+\block{References}{
+\begin{center}\mbox{}\vspace{-\baselineskip}
+    \printbibliography[heading=none]   
+    \end{center} 
+}
+
+\end{columns}
+
+\end{document}

@@ -255,9 +255,8 @@ Our methods are implemented in an R package, \ashr (for {\bf a}daptive {\bf sh}r
 \def\fsdr{\text{lfsdr}}
 
  \section*{Methods}
- \includegraphics[]{main.pdf}
 
- \subsection*{Notation}
+ \subsection*{Outline}
  
 % Here we consider one setting in which FDR-based methods are widely used:
 %an experimenter has measured a large numbers of ``effects", each with an associated
@@ -270,13 +269,144 @@ Our methods are implemented in an R package, \ashr (for {\bf a}daptive {\bf sh}r
 %a common goal is to identify ``differentially-expressed genes" -- that is, genes
 %whose mean expression (activity) level differs in two conditions. Here the ``effect" of interest is the difference in (log) 
 %mean expression level between the two conditions, often referred to as the ``log-fold change". 
+We begin by presenting the simplest version of method, and comparing it with existing work, before adding further embellishments.
 
-Suppose that we are interested in the values of $J$ ``effects" $\beta_j$ ($j=1,\dots,J$). For example, in a canonical genomics application
-$\beta_j$ might be the difference in the mean (log) expression of gene $j$ in two conditions.
-In some contexts interest may focus on which of the $\beta_j$ are ``significantly" different from zero, whereas in other contexts interest may focus on estimating their values; the methods described here tackle both these problems.
- We assume that we have obtained data $D$ that consist of estimates $\bhat_1,\dots,\bhat_J$ of these effects,
- with corresponding (estimated) standard errors $\shat_1,\dots,\shat_J$. Let $H_j$ denote the event that the $j$th null hypothesis holds ($H_j:\beta_j=0$), and $t_j$ denote
- the $t$ statistic testing this null:
+Suppose that we are interested in the values of $J$ ``effects" $\beta=(\beta_1,\dots,\beta_J)$. For example, in a typical genomics application
+that aims to identify differentially expressed genes,  $\beta_j$ might be the difference in the mean (log) expression of gene $j$ in two conditions.
+In contexts where FDR methods are applied, interest often focuses on identifying significant non-zero effects;
+that is, in testing the null hypotheses $H_j:\beta_j=0$.  Here we will also tackle
+the more general problem of estimating, and assessing uncertainty in, the effect sizes $\beta_j$.
+ 
+We assume that the available data are estimates $\bhat=(\bhat_1,\dots,\bhat_J)$ of these effects,
+and corresponding (estimated) standard errors $\shat=(\shat_1,\dots,\shat_J)$.  
+Initially we assume that the number of observations used to compute these estimates are sufficiently large to justify a normal approximation,
+\begin{equation} \label{eqn:normlik}
+p(\bhat_j | \beta_j, \shat_j) =  N(\bhat_j; \beta_j, \shat^2_j) 
+\end{equation}
+where $N(\cdot; \mu,\sigma^2)$ denotes the density of a normal distribution with mean $\mu$ and variance $\sigma^2$.
+
+We assume that the (unobserved) effects $\beta_j$ come from some distribution $g$, which is to be estimated, and which we write 
+as a mixture of null and alternative components:
+\begin{equation} \label{eqn:betaj0}
+g(\cdot) = \pi_0 \delta_0(\cdot) + (1-\pi_0) g_1(\cdot)
+\end{equation}
+where $\pi_0$ denotes the proportion of effects that are null, $\delta_0(\cdot)$ denotes a point mass at 0, and $g_1(\cdot)$ denotes the distribution of the non-zero $\beta_j$.
+We also assume that (given $g$) the $\beta_j$ are independent, and independent of $\shat_j$ (a point we return to later), so
+\begin{equation}
+p(\beta | \shat) = \prod_j g(\beta_j).
+\end{equation}
+
+Our key further assumption, which distinguishes our approach from previous EB approaches to FDR analysis, is that $g_1$ is unimodal,
+with a mode at 0. One simple way to implement this ``Unimodal Assumption" (UA)  is
+to use a mixture of zero-mean normal distributions:
+\begin{equation} \label{eqn:g1}
+g_1(\cdot) = \sum_{k=1}^K w_k N(\cdot; 0, \sigma_k^2)
+\end{equation}
+where $N(\cdot; \mu,\sigma^2)$ denotes the density of a normal distribution with mean $\mu$ and standard deviation $\sigma$.
+Here the $w_k$ are non-negative mixture weights that sum to $1$ and are to be estimated, and the component standard deviations $\sigma_1,\dots,\sigma_K$ 
+represent a large and dense grid of fixed positive numbers spanning a range from very small to very big (so $K$ is fixed and large).
+ The symmetry of the normal distribution implies that (\ref{eqn:g1}) is not only unimodal, but also symmetric about zero. We discuss 
+ more flexible alternatives based on using mixtures of uniform distributions, and details (such as choice of gridpoints $\{\sigma_k:k=1,\dots,K\}$) below. 
+ 
+ Substituting (\ref{eqn:g1}) for $g_1$ in (\ref{eqn:betaj0}), and defining $\pi_k := (1-\pi_0)w_k$ for $k=1,\dots,K$ (and also $\sigma_k:=0$, and $N(\cdot;0,0):=\delta_0(\cdot)$)
+ yields a notationally-convenient form for $g$, with hyperparameters $\pi:=(\pi_0,\pi_1,\dots,\pi_K)$ whose elements are non-negative and sum to 1:
+ \begin{equation} \label{eqn:g}
+ g(\cdot; \pi) & = \sum_{k=0}^K \pi_k N(\cdot; 0, \sigma_k^2).
+ \end{equation}
+ 
+ Putting all this together, and making the dependence on hyperparameters $\pi$ explicit, our joint model for $(\beta,\bhat)$ is:
+ \begin{align} \label{eqn:betaj}
+ p(\beta | \shat, \pi) & = \prod_j g(\beta_j; \pi), \\
+ p(\bhat | \beta, \shat, \pi) &= \prod_j N(\bhat_j; \beta_j, \shat_j^2),
+ \end{align}
+ with $g$ given by the mixture of normals $(\ref{eqn:g})$.
+ This implies that the marginal model $p(\bhat | \shat,\pi)$ is also a mixture of normals:
+\begin{equation}
+p(\bhat | \shat, \pi) =   \prod_j  [\sum_{k=0}^K \pi_k N(\bhat_j; 0, \sigma_k^2 + \shat_j^2)].
+\end{equation}
+
+
+The usual EB approach to fitting this model would involve two simple steps:
+\begin{enumerate}
+\item Estimate the hyperparameters $\pi$ by maximizing the likelihood $L(\pi)$, yielding $\hat{\pi} := \arg \max L(\pi)$.
+\item Compute quantities of interest from the conditional distributions $p(\beta_j | \bhat, \shat, \hat{\pi})$. For example, the evidence
+against the null hypothesis $\beta_j=0$ can be summarized by $p(\beta_j \neq 0 | | \bhat, \shat,\hat{\pi})$.
+\end{enumerate}
+Both steps 1 and 2 are very straightforward: $\hat{\pi}$ can be obtained using a simple EM algorithm \cite{dempster77}, and the conditional distributions $p(\beta_j | \bhat_j, \shat_j,\hat{\pi})$ are analytically available, each a mixture of a point mass on zero and $K$ normal distributions.
+(Note that the simplicity of the EM algorithm in step 1 is due to our using a fixed grid for $\sigma_k$ in (\ref{eqn:g1}), instead of estimating $\sigma_k$,
+which may seem more natural but is not straightforward when $\shat_j$ varies among $j$. This simple device may be useful in other applications.)
+In practice we make a small modification to this procedure: instead of obtaining $\hat\pi$ by maximizing the likelihood, we instead maximise a penalized
+likelihood, where the penalty encourages $\hat\pi_0$ to be as big as possible whilst remaining consistent with the observed data (see details below). 
+We introduce this penalty because in FDR appllications it is considered desirable to avoid underestimating $\pi_0$ so as to avoid underestimating the FDR. 
+
+
+The conditional distributions $p(\beta_j | \hat{\pi}, \bhat_j, \shat_j)$ 
+encapsulate uncertainty in $\beta_j$, combining information across {\it all} observations 
+$j=1,\dots,J$. Specifically, the combining of the information occurs through estimation of
+$\pi$, which involves all of the data. Importantly, when estimating $\pi$ our approach accounts for
+the precision of each measurement through the likelihood (\ref{eqn:normlik}). For example, 
+observations with a large $\shat_j$ have an essentially flat likelihood, and so have little effect on estimation of $\pi$, and
+corresondingly little effect on the estimated FDR of other observations. 
+We highlight this because it contrasts with approaches that model the $p$ values or $z$ scores directly: observations with large $\shat_j$ will tend to produce 
+$p$ values with approximately $U[0,1]$ distribution, and $z$ scores with an approximately $N(0,1)$ distribution, under both the null and the alternative hypothesis (assuming
+that the effect $\beta_j$ is small compared with $\shat_j$). Such noisy observations therefore do affect inference; specifically they add to the
+estimated weight of the null component $\pi_0$, and inflate estimates of the FDR. 
+Because of this our approach can take better account of the informativeness of each measurement, as illustrated in Results below.
+
+
+
+
+
+
+
+This approach, which follows \cite{wakefield:2009}, 
+should be a good approximation if $\bhat_j$ and $\shat_j$ are based on sufficiently many observations. We discuss below an improvement 
+for moderate numbers of observations, based on replacing this normal likelihood with a $t$ likelihood.
+
+
+
+
+
+What is new here?
+
+This approach, which follows  \cite{wakefield:2009},
+should be a good approximation if $\bhat_j$ and $\shat_j$ are based on sufficiently many observations.
+ 
+
+
+
+
+%Given these data, a typical FDR analysis pipeline in genomics would compute $z$ statistics $z_j = \bhat_j/\shat_j$, and a corresponding
+$p$ value $p_j$, and then feed these $p$ values to a software package like \qvalue, which will estimate the false discovery rate
+
+
+
+
+
+
+
+
+ 
+
+
+ 
+ 
+ 
+ 
+ Initially we assume
+ \begin{equation} \label{eqn:normlik}
+\bhat_j | \beta_j, \shat_j \sim N(\beta_j, \shat^2_j).
+\end{equation}
+This approach, which follows \cite{wakefield:2009}, 
+should be a good approximation if $\bhat_j$ and $\shat_j$ are based on sufficiently many observations. We discuss below an improvement 
+for moderate numbers of observations, based on replacing this normal likelihood with a $t$ likelihood.
+
+ 
+ 
+ 
+ 
+ Let $t_j$ denote
+ the $t$ statistic testing $H_j$:
  \begin{equation}  
  t_j :=\bhat_j/\shat_j. 
  \end{equation}
@@ -284,7 +414,8 @@ In some contexts interest may focus on which of the $\beta_j$ are ``significantl
  \begin{equation} \label{eqn:tstat}
  t_j | H_j \sim T_\nu
  \end{equation}
- where $T_\nu$ denotes the $t$ distribution on $\nu$ \df, with $\nu$ assumed known. 
+ where $T_\nu$ denotes the $t$ distribution on $\nu$ \df, with $\nu$ assumed known. (For simplicity we assume the degrees of freedom are the same for every test,
+ but that would be straightforward to relax).
  Let $p_j$ denote the $p$ value obtained by comparing $t_j$ with its null distribution,
  \begin{equation}
  p_j := \Pr(|T_\nu| > |t_j| ).
@@ -310,10 +441,10 @@ $z$ score, which we denote $z_j$.
 Let $\Gamma$ denote a subset of the tests $1,\dots,J$ declared ``significant" by some procedure. 
 We define the FDR for $\Gamma$ as the proportion of these tests that are ``false discoveries" in that $H_j$ is true:
 \begin{equation} \label{eqn:FDR}
-\FDR(\Gamma) := \frac{\#\{j: H_j \cap j \in \Gamma\}}{\#\{j: j \in \Gamma\}},
+\FDR(\Gamma; H) := \frac{\#\{j: H_j \cap j \in \Gamma\}}{\#\{j: j \in \Gamma\}},
 \end{equation}
 taken to be 0 if both numerator and denominator are 0. Frequentist approaches to controlling the FDR attempt to control
-the expectation of $\FDR(\Gamma)$ where the expecation is taken over the sampling distribution of $\Gamma$ (which is a function of the procedure
+the expectation of $\FDR(\Gamma;H)$ where the expecation is taken over the sampling distribution of $\Gamma$ (which is a function of the procedure
 used, considered fixed, and the data $D$, considered random). Bayesian approaches, in contrast, condition on the observed data, and compute
 the posterior distribution for the $H_j$ given the data, which induces a posterior distribution on $\FDR(\Gamma)$. This posterior
 distribution can be used to obtain a point estimate for $\FDR(\Gamma)$, for example using the posterior mean. 

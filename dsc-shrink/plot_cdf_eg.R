@@ -49,7 +49,8 @@ plot_mean_cdf = function(SEEDS,PLOTMETHODS=c("ash.n","ash.u","ash.hu","truth","m
   df.cdf$scenario=factor(df.cdf$scenario,levels=PLOTSCENARIOS)
   levels(df.cdf$scenario)=PLOTNAMES
 
-  ggplot(df.cdf,aes(x=x,y=y,color=method),...) + colScale + geom_line() + facet_grid(.~scenario)
+  ggplot(df.cdf,aes(x=x,y=y,color=method),...) + colScale + geom_line() + facet_grid(.~scenario) + theme(legend.position = "bottom")
+
 }
 
 pdf("../paper/figures/egcdf.pdf",height=3,width=9)
