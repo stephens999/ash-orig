@@ -189,10 +189,14 @@ In principle, Bayesian approaches can naturally unify testing and estimation int
 simply estimation with some positive prior probability that the effect is exactly zero.
 However, despite ongoing interest in this area from both frequentist \cite{benjamini2005false} and Bayesian \cite{zhao2012empirical,gelman2012we} 
 perspectives, in practice large-scale studies that assess many effects almost invariably focus on testing significance and
-controlling the FDR, and not on estimation. To help provide a bridge between FDR and estimation we introduce the terminology
-``signed discovery" for a discovery (an effect declared to be non-zero) for which the sign of the effect (positive or negative) is declared,
-and correspondingly define the ``false signed discovery rate" (FSDR) in a natural way. We show that in some settings, particularly those with many discoveries, 
-the FSDR and FDR can be quite different, and emphasise benefits of the FSDR, particularly its increased robustness to modelling assumptions. 
+controlling the FDR, and not on estimation. To help provide a bridge between FDR and estimation we introduce the term
+``local false sign rate" (lfsr), which is analogous to the ``local false discovery rate" (lfdr) \cite{efron2008microarrays}, but which measures confidence  
+in the {\it sign} of each effect rather than confidence in each effect being non-zero. We show that in some settings, particularly those with many discoveries, 
+the lfsr and lfdr can be quite different, and emphasise benefits of the lfsr, particularly its increased robustness to modelling assumptions. 
+
+%terminology
+%``signed discovery" for a discovery (an effect declared to be non-zero) for which the sign of the effect (positive or negative) is declared,
+%and correspondingly define the ``false signed discovery rate", or simply ``false sign rate" (FSR), in a natural way. 
 
 %The methods we provide here can address both problems, and we provide results that highlight important benefits of focussing on estimation, and particularly on assessing the correctness of the {\it sign} of the estimated effects, rather than on testing for non-zero effects.
 
@@ -251,8 +255,8 @@ Our methods are implemented in an R package, \ashr (for {\bf a}daptive {\bf sh}r
 \def\df{df}
 \def\FDR{\text{FDR}}
 \def\fdr{\text{lfdr}}
-\def\FSDR{\text{FSDR}}
-\def\fsdr{\text{lfsdr}}
+\def\FSR{\text{FSR}}
+\def\fsr{\text{lfsr}}
 
  \section*{Methods}
 
@@ -315,8 +319,8 @@ g_1(\cdot) = \sum_{k=1}^K w_k N(\cdot; 0, \sigma_k^2)
 where $N(\cdot; \mu,\sigma^2)$ denotes the density of a normal distribution with mean $\mu$ and standard deviation $\sigma$.
 Here the $w_k$ are non-negative mixture weights that sum to $1$ and are to be estimated, and the component standard deviations $\sigma_1,\dots,\sigma_K$ 
 represent a large and dense grid of fixed positive numbers spanning a range from very small to very big (so $K$ is fixed and large).
- The symmetry of the normal distribution implies that (\ref{eqn:g1}) is not only unimodal, but also symmetric about zero. We discuss 
- more flexible alternatives based on using mixtures of uniform distributions, and details (such as choice of gridpoints $\{\sigma_k:k=1,\dots,K\}$) below. 
+ The symmetry of the normal distribution implies that (\ref{eqn:g1}) is not only unimodal, but also symmetric about zero. We introduce
+ more flexible alternatives based on using mixtures of uniform distributions, and further details (such as choice of gridpoints $\{\sigma_k:k=1,\dots,K\}$) below. 
  
  Substituting (\ref{eqn:g1}) for $g_1$ in (\ref{eqn:betaj0}), and defining $\pi_k := (1-\pi_0)w_k$ for $k=1,\dots,K$ (and also $\sigma_k:=0$, and $N(\cdot;0,0):=\delta_0(\cdot)$)
  yields a notationally-convenient form for $g$, with hyperparameters $\pi:=(\pi_0,\pi_1,\dots,\pi_K)$ whose elements are non-negative and sum to 1:
@@ -352,64 +356,60 @@ In practice we make a small modification to this procedure: instead of obtaining
 likelihood, where the penalty encourages $\hat\pi_0$ to be as big as possible whilst remaining consistent with the observed data (see details below). 
 We introduce this penalty because in FDR appllications it is considered desirable to avoid underestimating $\pi_0$ so as to avoid underestimating the FDR. 
 
-\subsection*{Quantities of interest, and the local false sign rate}
+\subsection*{The local False Discovery Rate and local False Sign Rate}
 
 As noted above, the posterior distributions $p(\beta_j | \bhat, \shat, \hat{\pi})$ have a simple analytic form.
-In practice it is common, and desirable, to summarize this distribution to convey the ``significance" of observation $j$.
-
-For exampe, previous EB approaches to FDR analysis have focussed on the ``local FDR" 
-\cite{efron2008microarrays}
+In practice it is common, and desirable, to summarize these distributions to convey the ``significance" of each observation $j$.
+One natural measure of the significance of observation $j$ is its ``local FDR" \cite{efron2008microarrays}, which is
+the probability that effect $j$ would be a false discovery, if we were to declare it a discovery.
+In other words it is the probability that $\beta_j$ is actually zero:
 \begin{equation} \label{eqn:fdr}
 \fdr_j := \Pr(\beta_j =0  |  \bhat, \shat, \hat{\pi}).
 \end{equation}
-The ``local" in ``local FDR" refers to the fact that $\fdr_j$ is the probability that the {\it particular}
-effect $j$ would be a false discovery, if we were to declare it a discovery.
-Storey's $q$ values  \cite{storey.03} provide an alternative way to summarize significance,
-and both $\fdr_j$ and a $q$ value for each observation ($q_j$) can be easily computed using our approach (see Appendix \ref{} for details on $q$ value calculations).
 
-Here however, we argue that an alternative quantity, which we refer to as the
-``local false sign rate", provides a more practically meaningful measure of significance than either $\fdr_j$ or $q_j$.
-Motivated by this, we define the local False Sign Rate (lfsr) for observation $j$ as 
-\begin{equation}
-\lfsr_j := \min[ p(\beta_j \geq 0| \bhat, s), p(\beta_j \leq 0| \hat\pi, \bhat, s) ].
-\end{equation}
-Thus $\lfsr_j$ gives the probability that we would get the sign of $\beta_j$ wrong if we
-were to make our best guess. (Naturally, we consider it an error to state that $\beta$ is positive or negative when it is truly zero.)
-To illustrate, suppose for concreteness
-that the minimum is achieved by the first term, $p(\beta_j \geq 0| \bhat, s)=0.05$ say. Then
-our best guess would be that $\beta$ is negative, and the probability that we have
-made an error in sign would be 0.05. 
-
-Note that $\lfsr_j \geq \lfdr_j$ 
-because both the events $\beta_j \geq 0$
-and $\beta_j \leq 0$ include the event $\beta_j=0$.
-Thus, lfsr gives an upper bound for lfdr.
-
-Because our methods involve explicitly modelling effects $\beta_j$, rather than 
-$p$ values or $z$ scores, they can provide estimates of the local false sign rates.
-As show later, these estimates are much more robust to underlying assumptions than estimates
-of the FDR or $\lfdr$. Thus, although for comparison with existing methods we have
-focussed on FDR computations, in practice we strongly recommend using $\lfsr$ and not $\lfdr$.
-
-\cite{gelman2012we} emphasise that there are settings where
-$\beta_j=0$ is implausible, in which case the FDR is not useful: if every $\beta_j$ is non-zero then there
-is no such thing as a false discovery and the FDR will always be identically 0. 
-Gelman et.~al.~suggest that in such settings we should replace the concept of a false discovery with the
-concept of an ``error in sign". The idea is that, in settings where $\beta_j=0$ is implausible, the most fundamental
-inference objective is to ask which $\beta_j$ are positive and which are negative.
-Indeed, even in settings where some
-$\beta_j$ are exactly zero, separately identifying which are positive and which negative may be useful. For example, when identifying differentially expressed genes,
-analysts will often separate the genes that are ``upregulated" from those that ``downregulated" in a condition.
-Further, this idea has a long history: for example, \cite{tukey1962future}, p32, suggests one should address
+The local FDR, like most other measures of significance (e.g. $p$ values and $q$ values), is rooted in the hypothesis testing paradigm which focuses on 
+whether or not an effect is exactly zero. This paradigm is popular, despite the fact that many statistical practitioners have argued that it is often inappropriate because
+the null hypothesis $H_j: \beta_j=0$ is often implausible. For example, Tukey  (\cite{tukey.91}) argued that
+``All we know about the world teaches us that the effects of $A$ and $B$ are always different -- in some decimal place -- for any $A$ and $B$. Thus asking 'Are the effects different?' is foolish." Instead, Tukey suggested (\cite{tukey1962future}, p32,) that one should address
 \begin{quote}
 ...the more meaningful question: ``is the evidence strong enough to support a belief that the observed difference has the correct sign?"
 \end{quote}
+Along the same lines, Gelman and co-authors \cite{gelman2000type, gelman2012we} suggest  
+moving focus away from ``type I errors" towards ``type S errors", meaning errors in sign. 
+
+Motivated by these suggestions, we define the ``local False Sign Rate" for effect $j$, $\lfsr_j$, to be the probability that we
+would make an error in the sign of effect $j$ if we were forced to declare it either positive or negative. Specifically,
+\begin{equation} \label{eqn:lfsr}
+\lfsr_j := \min[ p(\beta_j \geq 0| \bhat, s), p(\beta_j \leq 0| \hat\pi, \bhat, s) ].
+\end{equation}
+To illustrate, suppose for concreteness
+that $p(\beta_j < 0| \bhat, s, \hat\pi))=0.95,  p(\beta_j =0| \bhat, s, \hat\pi)) = 0.03, p(\beta_j >0| \bhat, s, \hat\pi) = 0.02$. Then 
+from (\ref{eqn:lfsr}) $\lfsr_j=\min(0.05,0.98)=0.05$ (and, from (\ref{eqn:lfdr}), $\lfdr_j=0.03$). This $\lfsr$ corresponds to the fact that, given these results, 
+our best guess for the sign of $\beta_j$ is that it is negative, and the probability that this guess is wrong would be $0.05$. 
+
+As our notation suggests, $\lfsr_j$ is intended to be compared and contrasted with $\lfdr_j$: whereas small values of $\lfdr_j$ indicate that we can be {\it confident that $\beta_j$ is non-zero}, 
+small values of $\lfsr_j$ indicate that we can be {\it confident in the sign of $\beta_j$}. 
+Of coure, being confident in the sign of an effect logically implies that we are confident it is non-zero, and
+this is reflected in the fact that $\lfsr_j \geq \lfdr_j$ 
+(this follows from the definition because both the events $\beta_j \geq 0$
+and $\beta_j \leq 0$ include the event $\beta_j=0$).
+In this sense, as a measure of ``significance", $\lfsr$ is more ``conservative" than $\lfdr$. More importantly, as we illustrate in Section \ref{sec:lfsr},
+$\lfsr$ can be substantially more robust to modelling assumptions than $\lfdr$.
+
+In addition to these ``local" measures of significance for each observation, we can also compute average error rates over subsets of observations,
+which can lead to measures of significance analogous to Storey's $q$ values for example. See Appendix \ref{} for details, which also outlines 
+frequentist versions of the false sign rate.
+
+%Because our methods involve explicitly modelling effects $\beta_j$, rather than 
+%$p$ values or $z$ scores, they can provide estimates of the local false sign rates.
+
+%Indeed, even in settings where some
+%$\beta_j$ are exactly zero, separately identifying which are positive and which negative may be useful. For example, when identifying differentially expressed genes,
+%analysts will often separate the genes that are ``upregulated" from those that ``downregulated" in a condition.
+
+\subsection*{Comparisons and contrasts with previous work}
 
 
-
-\subsection*{Existing methods for FDR analysis}
-
-\subsection{Comparisons and contrasts with previous work}
 
 Note use of (\ref{eqn:normlik}) in \cite{wakefield:2009}.
 
@@ -490,76 +490,6 @@ so the FDR is estimated by $B/(A+B)$ which in this case is 0.28.} \label{fig:qva
 \end{figure}
 
 
- \subsection*{Adaptive Shrinkage}
- 
- %(See Discussion for ideas on how our methods may be applicable more generally; for example if, in place of $\shat_j$, we have a $p$ value testing $\beta_j=0$.)
-
- Here we introduce an EB method, which, for reasons discussed above, we call ``adaptive shrinkage" or ``ash".
- The method provides not only estimated $\fdr_j$ and $q$ values, but also shrinkage point estimates and credible intervals for $\beta_j$,
- and estimates of the local false sign rates.
-  
-We begin by presenting the simplest version of our model, before embellishing it.
-Instead of partitioning the (observed) $z$ scores or $p$ values into null and alternative components,
-we use a model that partitions the (unobserved) effects $\beta_j$  into null and alternative components.
-That is, letting $g$ denote the distribution of the effects $\beta_j$, we write
-\begin{equation} \label{eqn:betaj}
-g(\beta_j) = \pi_0 \delta_0 + (1-\pi_0) g_1(\beta_j)
-\end{equation}
-where $\delta_0$ denotes a point mass at 0, and $g_1$ denotes the (unknown) distribution of the non-zero $\beta_j$.
-Thus $\pi_0$ denotes the proportion of effects that are null. 
-
-At this point we introduce a key assumption, which distinguishes our approach from previous work: we assume that $g_1$ is unimodal,
-with a mode at 0. One simple way to achieve this ``Unimodal Assumption" (UA)  is
-to assume that $g_1$ is a mixture of zero-mean normal distributions
-\begin{equation} \label{eqn:g1}
-g_1(\cdot) = \sum_{k=1}^K w_k N(\cdot; 0, \sigma_k^2)
-\end{equation}
-where $N(\cdot; \mu,\sigma^2)$ denotes the density of a normal distribution with mean $\mu$ and standard deviation $\sigma$.
-Here the $w_k$ are non-negative mixture weights that sum to $1$ and are to be estimated, and the component standard deviations $\sigma_1,\dots,\sigma_K$ 
-represent a large and dense grid of fixed positive numbers spanning a range from very small to very big (so $K$ is fixed and large).
- The symmetry of the normal distribution implies that (\ref{eqn:g1}) is not only unimodal, but also symmetric about zero. We discuss 
- more flexible alternatives based on using mixtures of uniform distributions, and details (such as choice of gridpoints $\{\sigma_k:k=1,\dots,K\}$), as well as the UA more generally, below. 
-
-Since the $\beta_j$ are unobserved, we need a model to connect the $\beta_j$ to observations. Here we
-treat the estimates $\bhat_j$ as the observed data, and assume that they are noisy measurements of the true $\beta_j$ with given standard error
-$\shat_j$:
-\begin{equation} \label{eqn:normlik}
-\bhat_j | \beta_j, \shat_j \sim N(\beta_j, \shat^2_j).
-\end{equation}
-This approach, which follows \cite{wakefield:2009}, 
-should be a good approximation if $\bhat_j$ and $\shat_j$ are based on sufficiently many observations. We discuss below an improvement 
-for moderate numbers of observations, based on replacing this normal likelihood with a $t$ likelihood.
-
-Combining (\ref{eqn:betaj})-(\ref{eqn:normlik}), and assuming independence of the observations and effects for different $j$ (given $\shat, \pi_0,w_1,\dots,w_k$), yields
-a hierarchical model for $\beta,\bhat$ given $\shat$, with unknown hyper-parameters $(\pi_0,w_1,\dots,w_k)$. To simplify notation we define $\pi_k := (1-\pi_0)w_k$ 
-so that the unknown hyper-parameters can be written as a vector $\pi:=(\pi_0,\pi_1,\dots,\pi_K)$ whose elements are non-negative and sum to 1.
-The usual empirical Bayes approach to fitting this model would involve two steps:
-\begin{enumerate}
-\item Estimate the hyperparameters $\pi$ by maximum likelihood, yielding a maximum likelihood estimate $\hat{\pi}$.
-\item Compute quantities of interest (e.g. local fdr values, $q$ values, credible intervals etc.) from the conditional distributions $p(\beta_j | \bhat_j, \shat_j,\hat{\pi})$.
-\end{enumerate}
-We make one modification to this procedure: instead of obtaining $\hat\pi$ by maximizing the likelihood, we instead maximise a penalized
-likelihood, where the penalty (detailed below) encourages $\hat\pi_0$ to be as big as possible (within the constrains of the model and observed data). We use
-this penalty here because in FDR appllications it is considered desirable to avoid underestimating $\pi_0$ so as to avoid underestimating the FDR. 
-Both steps 1 and 2 are very straightforward: $\hat{\pi}$ can be obtained using a simple EM algorithm \cite{dempster77} to maximize the penalized likelihood, and the conditional distributions $p(\beta_j | \bhat_j, \shat_j,\hat{\pi})$ are analytically available, each a mixture of a point mass on zero and $K$ normal distributions.
-(Note that the simplicity of the EM algorithm in step 1 is due to our using a fixed grid for $\sigma_k$ in (\ref{eqn:g1}), instead of estimating $\sigma_k$,
-which may seem more natural but is not straightforward when $\shat_j$ varies among $j$. This simple device may be useful in other applications.)
-
-The conditional distributions $p(\beta_j | \hat{\pi}, \bhat_j, \shat_j)$ 
-encapsulate uncertainty in $\beta_j$, combining information across {\it all} observations 
-$j=1,\dots,J$. Specifically, the combining of the information occurs through estimation of
-$\pi$, which involves all of the data. Importantly, when estimating $\pi$ our approach accounts for
-the precision of each measurement through the likelihood (\ref{eqn:normlik}). For example, 
-observations with a large $\shat_j$ have an essentially flat likelihood, and so have little effect on estimation of $\pi$, and
-corresondingly little effect on the estimated FDR of other observations. 
-We highlight this because it contrasts with approaches that model the $p$ values or $z$ scores directly: observations with large $\shat_j$ will tend to produce 
-$p$ values with approximately $U[0,1]$ distribution, and $z$ scores with an approximately $N(0,1)$ distribution, under both the null and the alternative hypothesis (assuming
-that the effect $\beta_j$ is small compared with $\shat_j$). Such noisy observations therefore do affect inference; specifically they add to the
-estimated weight of the null component $\pi_0$, and inflate estimates of the FDR. 
-Because of this our approach can take better account of the informativeness of each measurement, as illustrated in Results below.
-
-
-
 \subsubsection*{Discussion on UA}
  
  Since we view the UA as a key assumption we briefly discuss it here.
@@ -590,7 +520,7 @@ and statistically stable. We illustrate these features in Results.
 \subsubsection*{More flexible unimodal distributions}
 
 To provide a more general approach to defining the distribution of effects $g(\beta_j)$, consider 
-\begin{equation} \label{eqn:g}
+\begin{equation} \label{eqn:g-general}
 g(\cdot; \pi) = \pi_0 \delta_0(\cdot) + \sum_{k=1}^K \pi_k f_k(\cdot) 
 \end{equation}
 where $f_k$ are pre-specified component distributions with one of the following forms: 
@@ -1529,9 +1459,44 @@ for example \cite{storey.03}, particularly his Theorem 1.
 
 The $q$ value for observation $j$ is defined \cite{storey.03} as, roughly, the FDR for the set of observations that are at least as significant as observation $j$.
 In a Bayesian analysis it is natural to order the significance of the hypotheses by $\fdr_j$, so we define
-\begin{equation}
+
+Frequentist approaches to FDR often concentrate on the {\it average} error rate for a subset of observations
+whose significance exceeds some threshold. Bayesian versions of such quantities can also be computed.
+For example, the FDR for any subset of effects $\Gamma \subset \{1,\dots,J\}$ can be estimated by
+\begin{equation} \label{eqn:FDRhat}
+\widehat\FDR(\Gamma) := \frac{\sum_{j \in \Gamma} \fdr_j }{\#\{j: j \in \Gamma\}}.
+\end{equation}
+And, analogous to \cite{storey.03}, we can define the $q$ value 
+for observation $j$ ($q_j$) as an estimate of the FDR for all observations that are at least as significant as $j$:
+\begin{equation} \label{eqn:qj}
 q_j := \widehat\FDR(\{k:\fdr_k \leq \fdr_j\}).
 \end{equation}
+
+
+Since the FDR terminology has become so widespread, we here introduce terminology for these ideas that parallels FDR terminology.
+Recall that, in FDR parlance, a ``discovery" is an effect that is declared to be non-zero; and a ``false discovery" refers to any such declaration that is
+made in error. The FDR is the (expected) proportion of false discoveries among all discoveries.
+Consider now insisting that for every discovery, we {\it also declare the sign of the effect} (positive or negative).
+We call such a declaration a ``signed discovery"; and correspondingly a ``false signed discovery" is any such declaration that is
+made in error - that is, any signed discovery that is either 0, or whose sign is opposite to that declared.
+Based on these definitions we can define the ``false signed discovery rate" (or ``false sign rate", FSR, for short) as the (expected) proportion
+of false signed discoveries among all signed discoveries. Similarly, we can define the local false sign rate, $\lfsr_j$ to be
+the probability that observation $j$ would be a false signed discovery, were we to declare it a signed discovery. Or, equivalently, but perhaps
+more simply, the $\lfsr_j$ is the probability we would get the sign of $\beta_j$ wrong if we
+were to be forced to declare it either positive or negative.  Explicitly:
+
+%(Naturally, we consider it an error to declare $\beta$ to be positive or negative when it is truly zero.)
+By analogy with (\ref{eqn:FDRhat}) we can also define an estimate of the average False Sign Rate for any subset of effects,
+\begin{equation}  \label{eqn:FSRhat}
+\widehat\FSR(\Gamma) := \frac{\sum_{j \in \Gamma} \fsr_j }{\#\{j: j \in \Gamma\}}.
+\end{equation}
+And, by analogy with (\ref{eqn:qj}) we can define the ``$s$-value" for each observation
+\begin{equation} \label{eqn:svalue}
+s_j := \widehat\FSR(\{k:\fsr_k \leq \fsr_j\})
+\end{equation}
+being the average error rate for all observations that are at least as significant as $j$. 
+
+
 %In simple settings (e.g. symmetric effects, with the same standard error) $\fdr_j$ is a monotonic function of the $p$ value $p_j$, and so
 %\begin{equation}
 %q_j = \widehat\FDR(\{k:p_k \leq p_j\})
