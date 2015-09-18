@@ -330,8 +330,8 @@ represent a large and dense grid of fixed positive numbers spanning a range from
  
  Putting all this together, and making the dependence on hyperparameters $\pi$ explicit, we have:
  \begin{align} \label{eqn:betaj}
- p(\beta | \shat, \pi) & = \prod_j g(\beta_j; \pi), \\
- p(\bhat | \beta, \shat, \pi) &= \prod_j N(\bhat_j; \beta_j, \shat_j^2),
+ p(\beta | \shat, \pi) & = \prod_j g(\beta_j; \pi), \\  \label{eqn:normlik2}
+ p(\bhat | \beta, \shat, \pi) &= \prod_j N(\bhat_j; \beta_j, \shat_j^2), 
  \end{align}
  with $g$ given by the mixture of normals $(\ref{eqn:g})$.
  
@@ -375,7 +375,7 @@ the null hypothesis $H_j: \beta_j=0$ is often implausible. For example, Tukey  (
 ...the more meaningful question: ``is the evidence strong enough to support a belief that the observed difference has the correct sign?"
 \end{quote}
 Along the same lines, Gelman and co-authors \cite{gelman2000type, gelman2012we} suggest  
-moving focus away from ``type I errors" towards ``type S errors", meaning errors in sign. 
+focussing on ``type S errors", meaning errors in sign, rather than the more traditional type I errors.
 
 Motivated by these suggestions, we define the ``local False Sign Rate" for effect $j$, $\lfsr_j$, to be the probability that we
 would make an error in the sign of effect $j$ if we were forced to declare it either positive or negative. Specifically,
@@ -392,13 +392,14 @@ small values of $\lfsr_j$ indicate that we can be {\it confident in the sign of 
 Of coure, being confident in the sign of an effect logically implies that we are confident it is non-zero, and
 this is reflected in the fact that $\lfsr_j \geq \lfdr_j$ 
 (this follows from the definition because both the events $\beta_j \geq 0$
-and $\beta_j \leq 0$ include the event $\beta_j=0$).
+and $\beta_j \leq 0$ in (\ref{eqn:lfsr}) include the event $\beta_j=0$).
 In this sense, as a measure of ``significance", $\lfsr$ is more ``conservative" than $\lfdr$. More importantly, as we illustrate in Section \ref{sec:lfsr},
 $\lfsr$ can be substantially more robust to modelling assumptions than $\lfdr$.
 
 In addition to these ``local" measures of significance for each observation, we can also compute average error rates over subsets of observations,
-which can lead to measures of significance analogous to Storey's $q$ values for example. See Appendix \ref{} for details, which also outlines 
-frequentist versions of the false sign rate.
+leading to measures of significance analogous to Storey's $q$ values. See Appendix \ref{} for details. The appendix also provides a more
+thorough discussion of the connection between the Bayesian quantities we compute here and frequentist quantities, including  
+a brief discussion of the False Sign Rate from a frequentist perspective.
 
 %Because our methods involve explicitly modelling effects $\beta_j$, rather than 
 %$p$ values or $z$ scores, they can provide estimates of the local false sign rates.
@@ -408,6 +409,89 @@ frequentist versions of the false sign rate.
 %analysts will often separate the genes that are ``upregulated" from those that ``downregulated" in a condition.
 
 \subsection*{Comparisons and contrasts with previous work}
+
+Among previous methods that explicitly consider the estimation of False Discovery Rates and related quantities,
+our work here seems most naturally compared with the Empirical Bayes methods of \cite{efron2008microarrays} and \cite{muralidharan2010empirical}
+ (implemented in the R packages \locfdr and \mixfdr respectively) and with the widely-used methods from  \cite{storey.03} (implemented in the R package \qvalue), which although not formally an EB approach, shares some elements in common.
+  %Here we highlight the key differences between our approach and these three existing approaches.
+
+There are two key differences between the approach implemented here and all of these three existing methods. First, our approach 
+directly models the distribution of the {\it unobserved} effects $\beta_j$ as a mixture of null and alternative components (\ref{eqn:betaj}),
+and links these unobserved effects to
+the observations ($\bhat_j,\shat_j$) through a likelihood (\ref{eqn:normlik2}). In contrast $\locfdr, \mixfdr$ and $\qvalue$ all work directly with the observed test statistics 
+-- either $z$ scores (for \locfdr and \mixfdr), or $p$ values (\qvalue) -- and attempt to decompose them into null and alternative components. 
+While this may seem a trivial difference, it is not.  For example, as we illustrate in our results (Section \ref{good-poor-hist}), our approach
+can take better account of variations in measurement precision among observations, essentially because the measurement precision is reflected in the
+curvature of the likelihood \ref{eqn:normlik2}. More generally, we might summarize this difference by saying that whereas
+existing methods summarize the information on $\beta_j$ by a single number ($p_j$ or $z_j$), we instead work with two numbers
+($\bhat_j,\shat_j$), which, clearly, have the potential to be more informative.
+
+%allows for different modelling assumptions to be compared through likelihood comparisons.
+
+accounts for
+the different measurement precision of different observations through the likelihood \ref{eqn:normlik}, rather than 
+
+
+directly models
+the  and whose 
+
+. This may seem
+a trivial difference, but i
+
+
+works with two numbers
+$\bhat_j,\shat_j$ for each observation, rather than 
+
+
+we assume that the distribution
+of the effects 
+
+
+
+The fundamental idea underlying \locfdr, \mixfdr and \qvalue is to decompose the overall distribution of test statistics -- either $z$ scores (for \locfdr and \mixfdr), or $p$ values (\qvalue) -- into null and alternative components. 
+
+
+Our approach differs from this in modelling the decomposition at the level of the {\it effect}s, rather than 
+
+Second, our approach differs by making the Unimodal assumption on the 
+
+
+
+ Once this decomposition is done computations of FDR-related quantities is essentially straightforward,
+and the primary difference between the methods is how they perform the decomposition. Starting with \qvalue, it makes two key assumptions:
+  i) the null $p$ values have a uniform distribution, and ii) the $p$ values near 1 are all from
+ tests where the null is true. Under these assumptions performing the decomposition boils down to 
+ drawing the horizontal line on the $p$ value histogram that intersects with the distribution at $p=1$: the area under this horizontal
+ line defines the uniform component that is due to the null $p$ values, with the remainder necessarily corresponding to
+ the alternative $p$ values. In particular, the height of the horizontal line is an estimate of $\pi_0$, the proportion of $p$ values that come from the null.
+ 
+
+Starting with \locfdr, 
+
+%two EB methods that
+% seem most relevant to our work here and which had good software implementations at the time of writing. 
+ The first is due to 
+ This method differs from \qvalue in that, instead of working with $p$ values, it works with $z$ scores.
+ %Analagous to \qvalue, \locfdr attempts to decompose the overall distribution of $z$ scores into two constitutive components,
+ %one corresponding to the null tests, and the other corresponding to the alternative tests. 
+ In the simplest case
+ \locfdr  makes assumptions analogous to the two key assumptions of \qvalue: i) the null $z$ scores have a $N(0,1)$ distribution,
+ and ii) all the $z$ scores near 0 are from the null, which Efron
+calls the ``Zero Assumption" (ZA).  
+The \locfdr package first estimates the overall distribution of $z$ scores using a non-parametric regression approach, and then, using the two assumptions,  ``subtracts out" the
+null component, leaving the remainder to be the alternative component. In this way \locfdr, like \qvalue, avoids explicit modelling of the alternative component.
+ (An important focus of Efron's work, also implemented in \locfdr, 
+ is to relax the assumption that the null $z$ scores are $N(0,1)$, to allow for empirical deviations from this
+theoretical null distribution. Although important, this issue is largely orthogonal to the issues we focus on here, which arise
+even if the theoretical null distribution holds precisely in the empirical data, and so we consider it just briefly in the Discussion.) 
+
+
+Like \locfdr, \mixfdr works with $z$ scores, but it differs in that it {\it explicitly} models the alternative
+distribution of $z$ scores, using a mixture of normal distributions. In principle this approach also differs from \qvalue and \locfdr in
+that it does not explicitly make the ZA. However, we have found that in practice the results often approximately satisfy the ZA,
+which we believe to be due to details in the fitting procedure used.
+
+
 
 
 
@@ -430,11 +514,11 @@ Because of this our approach can take better account of the informativeness of e
 
 \subsubsection*{qvalue}
 
-One standard genomics analysis pipeline is to take the $p$ values $p_1,\dots,p_J$ and use them to estimate $q$ values $q_1,\dots,q_J$
- using the R package \qvalue.
-  Figure \ref{fig:qvalue} shows a graphical illustration of the procedure implemented in \qvalue. 
- In brief, the idea is that the overall distribution of $p$ values can be decomposed into two constitutive
- components: one component corresponding to the ``null" tests, and a second component corresponding to the ``alternative" tests. 
+%One standard genomics analysis pipeline is to take the $p$ values $p_1,\dots,p_J$ and use them to estimate $q$ values $q_1,\dots,q_J$
+%using the R package \qvalue.
+ % Figure \ref{fig:qvalue} shows a graphical illustration of the procedure implemented in \qvalue. 
+ %In brief, the idea is that the overall distribution of $p$ values can be decomposed into two constitutive
+ %components: one component corresponding to the ``null" tests, and a second component corresponding to the ``alternative" tests. 
 To perform this decomposition, \qvalue makes two key assumptions:
   i) the null $p$ values have a uniform distribution, and ii) the $p$ values near 1 are all from
  tests where the null is true. Under these assumptions performing the decomposition boils down to 
@@ -452,31 +536,6 @@ To perform this decomposition, \qvalue makes two key assumptions:
  
 \subsubsection*{EB approaches: \locfdr and \mixfdr}
  
-The fundamental
- idea of EB procedures is similar to that of \qvalue: partition the observations into null and alternative components.
-Here we highlight two EB methods that
- seem most relevant to our work here and which had good software implementations at the time of writing. 
- The first is due to \cite{efron2008microarrays}, implemented in the R package \locfdr.
- This method differs from \qvalue in that, instead of working with $p$ values, it works with $z$ scores.
- %Analagous to \qvalue, \locfdr attempts to decompose the overall distribution of $z$ scores into two constitutive components,
- %one corresponding to the null tests, and the other corresponding to the alternative tests. 
- In the simplest case
- \locfdr  makes assumptions analogous to the two key assumptions of \qvalue: i) the null $z$ scores have a $N(0,1)$ distribution,
- and ii) all the $z$ scores near 0 are from the null, which Efron
-calls the ``Zero Assumption" (ZA).  
-The \locfdr package first estimates the overall distribution of $z$ scores using a non-parametric regression approach, and then, using the two assumptions,  ``subtracts out" the
-null component, leaving the remainder to be the alternative component. In this way \locfdr, like \qvalue, avoids explicit modelling of the alternative component.
- (An important focus of Efron's work, also implemented in \locfdr, 
- is to relax the assumption that the null $z$ scores are $N(0,1)$, to allow for empirical deviations from this
-theoretical null distribution. Although important, this issue is largely orthogonal to the issues we focus on here, which arise
-even if the theoretical null distribution holds precisely in the empirical data, and so we consider it just briefly in the Discussion.) 
-
-Another EB method, and perhaps the one most closely related to our
-work here, is due to \cite{muralidharan2010empirical}, implemented in the R package \mixfdr.
-Like \locfdr, \mixfdr works with $z$ scores, but it differs in that it {\it explicitly} models the alternative
-distribution of $z$ scores, using a mixture of normal distributions. In principle this approach also differs from \qvalue and \locfdr in
-that it does not explicitly make the ZA. However, we have found that in practice the results often approximately satisfy the ZA,
-which we believe to be due to details in the fitting procedure used.
 
  %The details of how this decomposition is performed vary among methods, but they share one important element in common with \qvalue: just as \qvalue assumes that the $p$ values near 1 are from the null, so \locfdr assumes that the $z$ scores near 0 are from the null; Efron calls this assumption the ``Zero Assumption" (ZA). 
 
