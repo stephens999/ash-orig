@@ -630,17 +630,22 @@ See Section \ref{sec:implement} for further implementation details.
 
 \section*{Results}
 
-add details of software parameters and package versions used?
+We compare results of \ashr with existing FDR-based methods implemented
+in the R packages \qvalue (v1.99.1 from Bioconductor), \locfdr (v1.1-7 from \url{https://cran.r-project.org/src/contrib/Archive/locfdr/}), and \mixfdr (v1.0, from \url{https://cran.r-project.org/src/contrib/Archive/mixfdr/}).  In all our simulations we assume that the test statistics follow the expected theoretical distribution under the null, and we indicate this
+to \locfdr using {\tt nulltype=0} and to \mixfdr using {\tt theonull=TRUE}. Otherwise all packages were used with default options.
+
 
 \subsection*{Effects of the Unimodal Assumption}
 
-Here we consider the effects of making the UA. To isolate these effects we consider the simplest case, where every observation has the same
-standard error, $s_j=1$, and we consider the normal limit (\ref{eqn:normallik}). That
-is,
+Here we consider the effects of making the UA. In this section, to isolate these effects we consider the simplest case, where every observation has the same
+standard error, $s_j=1$. We also assume that the sample size is sufficient that the estimated standard error for each observation is accurate, $\shat_j=1$,
+and we consider the normal limit (\ref{eqn:normlik}). That is,
 \begin{equation} \label{eqn:bhatgivenbz}
-\bhat_j | \beta_j \sim N(\beta_j,s^2_j=1)
+\bhat_j | \beta_j \sim N(\beta_j,1),
 \end{equation}
-so $z_j:=\bhat_j/s_j=\bhat_j$ is standard normal if null $H_j$ holds.
+so $z_j:=\bhat_j/\shat_j=\bhat_j$ is standard normal if null $H_j$ holds.
+in this way we attempt to minimize the differences between our method (which works with $\bhat_j,\shat_j$) and
+the other methods that work directly with the $z$ scores or their corresponding $p$ values.
 
 To briefly summarize the results in this section:
 \begin{enumerate}
@@ -676,7 +681,7 @@ the alternative component (light blue). Because the null component is $N(0,1)$, 
 
  How do these differences influence estimates of the FDR? To address this, we note that  -- in this simple case where the 
  $\shat_j$ are all identical --  the primary driver of differences in FDR estimates among methods is {\it differences in their estimates
- of $\pi_0$. To see why, observe that, given an estimate $\hat\pi_0$ for $\pi_0$, equation (\ref{eqn:FDRest}) provides a 
+ of $\pi_0$}. To see why, observe that, given an estimate $\hat\pi_0$ for $\pi_0$, equation (\ref{eqn:FDRest}) provides a 
  strikingly natural non-parametric estimate for the FDR (provided the denominator is not very small). Thus, 
  although the methods considered here differ from one another in many ways, having estimated $\pi_0$
  they should, if sensible, produce estimates of FDR that agree closely with (\ref{eqn:FDRest}). And, indeed, limited
@@ -687,8 +692,8 @@ Thus, differences in FDR estimates among methods are driven primarily by differe
 Figure \ref{fig:ZA} suggests that, compared with the ZA, the UA will tend to reduce the estimate of $\pi_0$. 
 At the same time, provided the UA holds, we hope still to provide ``conservative" estimates of $\pi_0$ (that is,
 overestimates of $\pi_0$, which will yield overestimates of the FDR).
-To confirm this we performed comprehensive simulation experiments across a range of alternative scenarios (i.e. values for the distribution of non-zero effects,
-which we denote $g_1$), and values
+To confirm this we performed simulations under various alternative scenarios (i.e. various distributions for the non-zero effects,
+$g_1$), and values
 for $\pi_0$. The alternative distributions are shown in Figure \ref{fig:pi0sims}a, with details in Table \ref{table:scenarios}.
 They range from a ``spiky" distribution -- where many non-zero $\beta$ are
 too close to  zero to be reliably detected, making reliable estimation of $\pi_0$ essentially impossible -- to a much
@@ -697,12 +702,12 @@ making reliable estimation of $\pi_0$ easier. We also include one asymmetric dis
 which, although we view as often unrealistic, we include to assess robustness of our methods to deviations from the UA.
 
 
-\begin{figure} \label{fig:pi0sims}
+\begin{figure} 
 \begin{center}
 \includegraphics[height=2in]{figures/scenarios_density.pdf} 
-\includegraphics[height=2in]{figures/pi0_est.pdf}
+\includegraphics[height=2in]{figures/pi0_est.pdf} 
 \end{center}
-\caption{a) Summary of the alternative distributions used for different simulation scenarios. b) Comparison of true and estimated values of $\pi_0$ in these simulated scenarios. In general $\pi_0$ is impossible to estimate accurately, and all methods yield conservative (over-)estimates for $\pi_0$ (deliberately so, to ensure conservative estimates of FDR). As expected, when the UA holds, the \ashr method is least conservative, and hence most accurate. When the UA assumption does not hold (``bimodal" scenario) the \ashr estimates are slightly anti-conservative, but quite accurate, particularly when using a mixture of uniforms to model the unimodal distribution.}
+\caption{a) Summary of the alternative distributions used for different simulation scenarios. b) Comparison of true and estimated values of $\pi_0$ in these simulated scenarios. In general $\pi_0$ is impossible to estimate accurately, and all methods yield conservative (over-)estimates for $\pi_0$ (deliberately so, to ensure conservative estimates of FDR). As expected, when the UA holds, the \ashr method is least conservative, and hence most accurate. When the UA assumption does not hold (``bimodal" scenario) the \ashr estimates are slightly anti-conservative (less so for ash.u than for ash.n in this case)} \label{fig:pi0sims}
 \end{figure}
 
 \begin{table}[!ht]
@@ -739,10 +744,10 @@ estimate $\pi_0$ for each data set. For \ashr we show results for $g$ modelled a
 and a mixture of symmetric uniform components (``ash.u"). (Results using the asymmetric uniforms, which we refer to
 as ``half-uniforms", and denote ``ash.hu" in subsequent sections, are here generally similar to ash.u and omitted to avoid over-cluttering figures.)
 
-Figure \ref{fig:pi0} compares estimated and true values of $\pi_0$ under each Scenario. 
+Figure \ref{fig:pi0sims}b) compares estimated and true values of $\pi_0$ under each Scenario. 
 For most scenarios no method reliably estimates $\pi_0$. This is expected because most scenarios include
 an appreciable fraction of ``small non-null effects" that are essentially indistinguishable from 0, making accurate
-estimation of$\pi_0$ impossible. This is particularly true for the ``spiky" scenario, for example.  The
+estimation of $\pi_0$ impossible. This is particularly true for the ``spiky" scenario, for example.  The
 exception is the ``big-normal" scenario, where the \ashr estimates of $\pi_0$ are quite accurate - made possible by the fact that, in this scenario, most non-zero effects
 are very different from zero. 
 
@@ -750,7 +755,7 @@ Although accurate estimation of $\pi_0$ is impossible in general, the simulation
 that, when the UA holds, \ashr consistently provides substantially smaller, more accurate, estimates of $\pi_0$, than existing methods. 
 As noted above, this means that estimates of FDR from \ashr will also be smaller and more accurate under these scenarios (while
 remaining conservative).
-When the UA assumption does not hold (``bimodal" scenario) the \ashr estimates are slightly anti-conservative, although quite accurate.
+When the UA assumption does not hold (``bimodal" scenario) the \ashr estimates are slightly anti-conservative.
 We view such a strong bimodal scenario as rather unlikely in most applications where FDR methods
 are used; nonetheless, users may find it reassuring that even in this case the results from \ashr should not be horribly misleading.
 
@@ -776,8 +781,8 @@ are used; nonetheless, users may find it reassuring that even in this case the r
 The EM algorithm, which we use here to fit our model, is notorious for convergence to local optima. 
 However, in this case, over hundreds of applications of the procedure, we observed no obvious serious problems 
 caused by such behaviour. To quantify this, we ran \ashr 10 times on each of the 600 simulated datasets above using a random initialization for $\pi$,
-in addition running it using our default initialization procedure (XX need to specify in methods?). We then compared the largest
-log-likelihood achieved across all 11 runs with the log-likelihood achieved by our default run.
+in addition running it using our default initialization procedure (see Implementation details). We then compared the largest
+log-likelihood achieved across all 11 runs with the log-likelihood achieved by the default run.
 When using a mixture of normals (ash.n) the results were extremely stable: 96\% showed a negligible log-likelihood difference (< 0.02), 
 and the largest difference was 0.8. When using mixtures of uniforms (ash.u,ash.hu) results were slightly less stable: 89\% showed a negligible log-likelihood difference (<0.02),
 and 6\% of runs showed an appreciable log-likelihood difference (>1), with the largest difference being 5.0. However, perhaps suprisingly, 
@@ -840,27 +845,27 @@ to be clearly visible in the observed $\bhat$, \mixfdr fits these modes (Supplem
 \url{dsc-shrink/check_mixfdr_lownoise.rmd}). Of course, we would not advocate the UA in settings where multi-modality is 
 clearly visible in the observed $\bhat$.
 
-We note one caveat on the accuracy of estimated $g$: we tend to systematically
+We note one caveat on the accuracy of estimated $g$: \ashr tends to systematically
 overestimate the mass of $g$ near zero, due to our deliberate use of a penalty term (\ref{eqn:penalty}) to avoid under-estimation of $\pi_0$.
 On careful inspection, this is visually apparent in Figure \ref{fig:egcdf}: the estimated cdf is generally below the true cdf just to the left of zero,
 and above the true cdf just to the right of zero. Averaging the cdf over many replicates confirms this systematic effect (Figure \ref{fig:egcdf}b),
 and applying our methods without the penalty term removes this systematic effect, although at the cost of sometimes 
 under-estimating $\pi_0$ (Figure \ref{fig:egcdf}c). 
 
-\begin{figure}[h!] \label{fig:egcdf}
+\begin{figure}[h!] 
 \begin{subfigure}{\textwidth}
 	\includegraphics[height=2in]{figures/egcdf.pdf}
 	\caption{Example estimated cdfs for single data sets compared with truth. The unimodal assumption made by the ash methods effectively regularizes estimates compared with \mixfdr.}
 \end{subfigure}
 \begin{subfigure}{\textwidth}
 \includegraphics[height=2in]{figures/mean_cdf.pdf}
-\caption{Average estimated cdfs across $\sim10$ data sets compared with truth; methods here use penalty (\ref{}) so $\pi_0$ is systematically overestimated.}
+\caption{Average estimated cdfs across $\sim10$ data sets compared with truth; methods here use penalty (\ref{eqn:penalty}) so $\pi_0$ is systematically overestimated.}
 \end{subfigure}
 \begin{subfigure}{\textwidth}
 \includegraphics[height=2in]{figures/mean_cdf_nopen.pdf}
-\caption{Average estimated cdfs across $\sim10$ data sets compared with truth; methods here do not use penalty (\ref{}) so $\pi_0$ is not systematically overestimated. Modest systematic differences from the truth in ``skew" and ``bimodal" scenarios highlight the modest effects of model mis-specification.}
+\caption{Average estimated cdfs across $\sim10$ data sets compared with truth; methods here do not use penalty (\ref{eqn:penalty}) so $\pi_0$ is not systematically overestimated. Modest systematic differences from the truth in ``skew" and ``bimodal" scenarios highlight the modest effects of model mis-specification.}
 \end{subfigure}
-\caption{Comparisons of estimated cdfs of $g$ and true cdf of $g$. See Figure \ref{fig:pi0sims} for simulation scenarios.}
+\caption{Comparisons of estimated cdfs of $g$ and true cdf of $g$. See Figure \ref{fig:pi0sims} for simulation scenarios.} \label{fig:egcdf}
 \end{figure}
 
 
@@ -936,23 +941,23 @@ sometimes all this mass is concentrated almost entirely just to one side (left o
 for example, if all the mass is just to the right of 0 then all observations will be assigned a very high probability of being positive (but very small),
 and a (misleading) low local false sign rate. For this reason we do not recommend use of the half-uniform with no penalty.
 
-Note - this could probably be solved by making the small components symetric - the idea is that the asymetry only comes in with the tail.
+%Note - this could probably be solved by making the small components symetric - the idea is that the asymetry only comes in with the tail.
 
 \begin{table}[!ht]
 \begin{subtable}{\textwidth}
-	\input{tables/scoverage_all.tex}
-	\caption{All observations. Coverage rates are generally satisfactory, except for the extreme ``spiky" scenario. This is due to the penalty term \ref{} which tends to cause over-shrinking towards zero; removing this penalty term produces coverage rates closer to the nominal levels for uniform and normal methods. (Removing the penalty in the half-uniform case can lead to unexpected problems explained in section \ref{sec:unexpected}).}
+	\centering\input{tables/scoverage_all.tex}
+	\caption{All observations. Coverage rates are generally satisfactory, except for the extreme ``spiky" scenario. This is due to the penalty term (\ref{eqn:penalty}) which tends to cause over-shrinking towards zero; removing this penalty term produces coverage rates closer to the nominal levels for uniform and normal methods. (Removing the penalty in the half-uniform case can lead to unexpected problems explained in Section \ref{sec:unexpected}).}
 \end{subtable}
 
 \begin{subtable}{\textwidth}
-\input{tables/scoverage_neg.tex}
+\centering\input{tables/scoverage_neg.tex}
 \caption{``Significant" negative discoveries. Coverage rates are generally satisfactory, except for the uniform-based methods in the spiky and near-normal scenarios,
 and the normal-based method in the flat-top scenario. These results likely reflect inaccurate estimates of the tails of $g$ due to a disconnect between the tail of $g$ and the component distributions in these cases. For example, the uniform methods sometimes substantially underestimate the length of the tail of $g$ in these long-tailed scenarios, 
 causing over-shrinkage of the tail toward 0.}
 \end{subtable}
 
 \begin{subtable}{\textwidth}
-\input{tables/scoverage_pos.tex}
+\centering\input{tables/scoverage_pos.tex}
 \caption{``Significant" positive discoveries. Coverage rates are generally satisfactory, except for the symmetric methods under the asymmetric (``skew") scenario. }
 \end{subtable}
 
@@ -1110,8 +1115,8 @@ may prefer to choose whichever of $\alpha=0,1$ yields the highest likelihood, an
 %than if $\beta_j$ are mostly large. And observations $\bhat_j$ with large standard error will have flatter likelihoods than observations with
 %small standard error, and so their posteriors will be more affected by the prior, and undergo more shrinkage. 
 
-previous work based on normal means:
-http://link.springer.com/article/10.1007/BF02562623
+%previous work based on normal means:
+%http://link.springer.com/article/10.1007/BF02562623
 
 \subsection*{Local False Sign Rate}
 
@@ -1332,7 +1337,7 @@ we chose it to provide conservative estimates of $\pi_0$ rather than to represen
 
 \subsubsection*{Initialization}
 
-We initialize our EM algorithm with $\pi_k=1/n$ for $k=1,\dots,K$, with $\pi_0=1-\pi_1-\dots-\pi_K$. 
+By default we initialize our EM algorithm with $\pi_k=1/n$ for $k=1,\dots,K$, with $\pi_0=1-\pi_1-\dots-\pi_K$. (In all our simulations here $K<<n$ so this initializes with most mass on $\pi_0$.)  
 Our rationale to initializing ``near the null" like this is that we expect that strong signal in the data can quickly draw the EM algorithm away from the null (in a single iteration),
 but weak signal in the data cannot quickly draw the algorithm towards the null.
 
