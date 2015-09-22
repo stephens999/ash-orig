@@ -367,10 +367,11 @@ In other words it is the posterior probability that $\beta_j$ is actually zero:
 \fdr_j := \Pr(\beta_j =0  |  \bhat, \shat, \hat{\pi}).
 \end{equation}
 
-The local FDR, like most other measures of significance (e.g. $p$ values and $q$ values), is rooted in the hypothesis testing paradigm which focuses on 
+
+The lfdr, like most other measures of significance (e.g. $p$ values and $q$ values), is rooted in the hypothesis testing paradigm which focuses on 
 whether or not an effect is exactly zero. This paradigm is popular, despite the fact that many statistical practitioners have argued that it is often inappropriate because
 the null hypothesis $H_j: \beta_j=0$ is often implausible. For example, Tukey  (\cite{tukey1991philosophy}) argued that
-``All we know about the world teaches us that the effects of $A$ and $B$ are always different -- in some decimal place -- for any $A$ and $B$. Thus asking 'Are the effects different?' is foolish." Instead, Tukey suggested (\cite{tukey1962future}, p32,) that one should address
+``All we know about the world teaches us that the effects of $A$ and $B$ are always different -- in some decimal place -- for any $A$ and $B$. Thus asking `Are the effects different?' is foolish." Instead, Tukey suggested (\cite{tukey1962future}, p32,) that one should address
 \begin{quote}
 ...the more meaningful question: ``is the evidence strong enough to support a belief that the observed difference has the correct sign?"
 \end{quote}
@@ -384,7 +385,7 @@ would make an error in the sign of effect $j$ if we were forced to declare it ei
 \end{equation}
 To illustrate, suppose for concreteness
 that $p(\beta_j < 0| \bhat, s, \hat\pi))=0.95,  p(\beta_j =0| \bhat, s, \hat\pi)) = 0.03, p(\beta_j >0| \bhat, s, \hat\pi) = 0.02$. Then 
-from (\ref{eqn:lfsr}) $\lfsr_j=\min(0.05,0.98)=0.05$ (and, from (\ref{eqn:lfdr}), $\lfdr_j=0.03$). This $\lfsr$ corresponds to the fact that, given these results, 
+from (\ref{eqn:lfsr}) $\lfsr_j=\min(0.05,0.98)=0.05$ (and, from (\ref{eqn:fdr}), $\lfdr_j=0.03$). This $\lfsr$ corresponds to the fact that, given these results, 
 our best guess for the sign of $\beta_j$ is that it is negative, and the probability that this guess is wrong would be $0.05$. 
 
 As our notation suggests, $\lfsr_j$ is intended to be compared and contrasted with $\lfdr_j$: whereas small values of $\lfdr_j$ indicate that we can be {\it confident that $\beta_j$ is non-zero}, 
@@ -393,11 +394,22 @@ Of coure, being confident in the sign of an effect logically implies that we are
 this is reflected in the fact that $\lfsr_j \geq \lfdr_j$ 
 (this follows from the definition because both the events $\beta_j \geq 0$
 and $\beta_j \leq 0$ in (\ref{eqn:lfsr}) include the event $\beta_j=0$).
-In this sense, as a measure of ``significance", $\lfsr$ is more ``conservative" than $\lfdr$. More importantly, as we illustrate in Section \ref{sec:lfsr},
+In this sense, as a measure of ``significance", $\lfsr$ is more conservative than $\lfdr$. More importantly, as we illustrate in Section \ref{sec:lfsr},
 $\lfsr$ can be substantially more robust to modelling assumptions than $\lfdr$.
 
-In addition to these ``local" measures of significance for each observation, we can also compute average error rates over subsets of observations,
-leading to measures of significance analogous to Storey's $q$ values. See Appendix \ref{} for details. The appendix also provides a more
+From these ``local" measures of significance, we can also compute average error rates over subsets of observations
+$\Gamma \subset \{1,\dots,J\}$. For example,   
+\begin{equation} \label{eqn:FDR}
+\widehat\FDR(\Gamma):= (1/|\Gamma|) \sum_{j \in \Gamma} \fdr_j. 
+\end{equation}
+estimates the FDR we would obtain if we were to declare all tests in $\Gamma$ significant.
+And 
+\begin{equation} \label{eqn:qvalue}
+q_j := \widehat \FDR(\{k: \fdr_k \leq \fdr_j\}) 
+\end{equation}
+provides a measure of significance analogous to Storey's $q$ value \cite{storey.03}.
+
+See Appendix for a more
 thorough discussion of the connection between the Bayesian quantities we compute here and frequentist quantities, including  
 a brief discussion of the False Sign Rate from a frequentist perspective.
 
@@ -462,14 +474,17 @@ and statistically stable. We illustrate these features in Results.
 \subsubsection*{Other work}
 
 There is also a very considerable literature that does not directly focus on the FDR problem, but which involves essentially the same models,
-and deals with closely-related issues.  Among these, \cite{cordy1997deconvolution} is perhaps most similar our work:
+and deals with closely-related issues.  Among these, \cite{cordy1997deconvolution} is perhaps most similar to our work:
 indeed all the elements of our approach outlined above, except for the point mass on 0 and corresponding penalty term, appear in their paper.
 However, they focus entirely on the estimation of $g$, in contrast to our focus on estimating $\beta_j$; 
 and they provide no software implementation.  More generally, the literature is too large to do a comprehensive review here, but relevant key-words include ``empirical bayes", ``shrinkage", ``deconvolution", ``semi-parametric", ``shape-constrained", and ``heteroskedastic". Some pointers to recent papers in which other relevant
-citations can be found include \cite{xie2012sure, sarkar:2014, koenker2014convex}. Much (but not all) of the literature focusses on the homoskedastic case (i.e. $\shat_j$ all equal)
-whereas we allow for heteroskedasticity. Much of the recent literature involves more flexible non-parametric assumptions on 
-$g$ than the UA assumption we make here, and these methods provide
-alternatives to our approach in settings where the UA assumption is considered too restrictive.
+citations can be found include \cite{xie2012sure, sarkar:2014, koenker2014convex}. Much (but not all) of the literature focusses on the homoskedastic case (i.e. $\shat_j$ all equal) whereas we allow for heteroskedasticity. And much (but not all) of the recent shrinkage-oriented literature focuses only on point estimation of $\beta_j$, whereas for FDR-related applications measures of uncertainty are essential. Several recent papers consider more flexible non-parametric assumptions on 
+$g$ than the UA assumption we make here. In particular, \cite{jiang2009general,koenker2014convex} consider the unconstrained non-parametric maximum likelihood
+estimate (NPMLE) for $g$. These methods may provide alternatives to our approach in settings where the UA assumption is considered too restrictive. However, the  NPMLE for $g$ is a discrete distribution, which will induce a discrete posterior distribution on $\beta_j$, and so although the NPMLE
+may perform well for point estimation, it seems possible it will not adequately reflect uncertainty in $\beta_j$, and some regularization on $g$ may be necessary.
+
+
+
 
 %The conditional distributions $p(\beta_j | \bhat, \shat, \hat{\pi})$ 
 %encapsulate uncertainty in $\beta_j$, combining information across {\it all} observations 
@@ -638,14 +653,8 @@ to \locfdr using {\tt nulltype=0} and to \mixfdr using {\tt theonull=TRUE}. Othe
 \subsection*{Effects of the Unimodal Assumption}
 
 Here we consider the effects of making the UA. In this section, to isolate these effects we consider the simplest case, where every observation has the same
-standard error, $s_j=1$. We also assume that the sample size is sufficient that the estimated standard error for each observation is accurate, $\shat_j=1$,
-and we consider the normal limit (\ref{eqn:normlik}). That is,
-\begin{equation} \label{eqn:bhatgivenbz}
-\bhat_j | \beta_j \sim N(\beta_j,1),
-\end{equation}
-so $z_j:=\bhat_j/\shat_j=\bhat_j$ is standard normal if null $H_j$ holds.
-in this way we attempt to minimize the differences between our method (which works with $\bhat_j,\shat_j$) and
-the other methods that work directly with the $z$ scores or their corresponding $p$ values.
+standard error, $s_j=1$ and all methods are provided that information. That is,
+$\bhat_j | \beta_j \sim N(\beta_j,1)$ and $\shat_j=s_j=1$. In this case the $z$ scores $z_j:=\bhat_j/\shat_j=\bhat_j$, so modelling the $z$ scores is the same as modelling the $\bhat_j$, and so the only difference between our method and methods like $\locfdr$ and $\mixfdr$ are in how they estimate $g$.
 
 To briefly summarize the results in this section:
 \begin{enumerate}
@@ -665,12 +674,11 @@ In contrast the method introduced here (\ashr) assumes that the effect sizes (an
 \end{figure}
 
 To illustrate the different inferences from the UA and ZA we show results for a single
-dataset simulated with $\beta_j \sim N(0,1)$ and $\shat_j=1$, assumed known (so $\bhat_j  \sim N(0,2^2)$). We used each of the methods
-\qvalue, \locfdr, \mixfdr and \ashr (all implemented in R packages) 
-to decompose the $z$ scores ($z_j = \bhat_j$), or their corresponding $p$ values, into null and alternative components.
+dataset simulated with the true effects $\beta_j \sim N(0,1)$ (so with $s_j=1$, $\bhat_j  \sim N(0,2^2)$). We used each of the methods
+\qvalue, \locfdr, \mixfdr and \ashr to decompose the $z$ scores ($z_j = \bhat_j$), or their corresponding $p$ values, into null and alternative components.
 The results (Figure \ref{fig:ZA}) illustrate the clear difference between the existing methods and our method. The effects of the ZA made by \qvalue and \locfdr
 are visually clear, producing a ``hole"  in the alternative $z$ score distribution around 0. Although \mixfdr does not formally make the ZA, its decomposition
-exhibits a similar hole. In contrast, due to the UA, the alterantive $z$ score distribution for \ashr is required to have a mode at 0, 
+exhibits a similar hole. In contrast, due to the UA, the alternative $z$ score distribution for \ashr is required to have a mode at 0, 
 effectively ``filling in" the hole.  (Of course the null distribution also has a peak at 0, and the local fdr 
  under the UA is still smallest for $z$ scores that are far from zero -- i.e. large $z$ scores remain the ``most significant".)
  

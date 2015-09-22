@@ -1,7 +1,9 @@
 ---
-title: Interactive illustration of unimodal assumption
+title: Illustration of unimodal assumption and role of penalty in ashr
 runtime: shiny
-output: ioslides_presentation
+output: 
+  ioslides_presentation:
+    smaller: true
 ---
 
 
@@ -9,7 +11,7 @@ output: ioslides_presentation
  #plot a histogram of z scores, highlighting the alternative distribution
 #of z scores that is implied by pi0
 nullalthist_z = function(z,pi0,nullcol="blue",altcol="cyan",...){
-  h=hist(z, freq=FALSE,col=nullcol,nclass=40,ylim=c(-0.5,0.5),...)
+  h=hist(z, freq=FALSE,col=nullcol,nclass=50,ylim=c(-0.5,0.5),...)
   nb = length(h$breaks)
   nullexp = pi0 * (pnorm(h$breaks)[-1] - pnorm(h$breaks[-nb]))/(h$breaks[-1]-h$breaks[-nb])
   h$density = h$density - nullexp
@@ -20,8 +22,13 @@ nullalthist_z = function(z,pi0,nullcol="blue",altcol="cyan",...){
 z = c(rnorm(5000,0,2),rnorm(5000,0,1))
 ```
 
-## Illustration of unimodal assumption
-Increase the proportion of nulls until the alternative (cyan) looks unimodal.
+##
+
+Slide the slider to see how the proportion of nulls (pi0) changes the decomposition of $z$ scores into null (dark blue) and alternative (cyan).
+
+If you increase pi0 until the alternative (cyan) just stops looking unimodal, this mimics the UA of ashr. The ashr penalty pushes pi0 as far as possible in this way. 
+
+If you increase pi0 until cyan hits 0 then you are making the ZA of locfdr and qvalue.
 ```{r, echo=FALSE}
  
 inputPanel(  
