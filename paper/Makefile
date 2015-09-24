@@ -29,6 +29,9 @@ figures/scenarios_density.pdf: ../dsc-shrink/res.RData
 	cd ../dsc-shrink; R CMD BATCH plot_egdens.R
 figures/pi0_est.pdf: ../dsc-shrink/res.RData ../dsc-shrink/plot_pi0_est.R
 	cd ../dsc-shrink; R CMD BATCH plot_pi0_est.R
+figures/lfsr_est.png: ../dsc-shrink/res.RData ../dsc-shrink/plot_lfsr.R
+	cd ../dsc-shrink; R CMD BATCH plot_lfsr.R
+
 
 figures/GOODPOOReg_hist.pdf: Rcode/makefig_FDReg_hist.R
 	cd Rcode; R CMD BATCH makefig_FDReg_hist.R 

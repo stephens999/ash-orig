@@ -1,0 +1,76 @@
+---
+title: "Investigate coverage problem with half uniform"
+output: html_document
+---
+
+```{r}
+load("res.RData")
+
+library("dscr")
+library("ashr")
+library(reshape2)
+library(ggplot2)
+library(dplyr)
+
+
+neglong = 
+  res$negprob %>% 
+    select(-user.self,-sys.self,-elapsed,-user.child,-sys.child) %>%
+    melt(id.vars=c("method","scenario","seed",".id"),value.name="negprob") %>%
+    filter(negprob > 0.95)
+ 
+poslong = 
+  res$posprob %>% 
+    select(-user.self,-sys.self,-elapsed,-user.child,-sys.child) %>%
+    melt(id.vars=c("method","scenario","seed",".id"),value.name="posprob") %>%
+    filter(posprob > 0.95)
+
+reslong = 
+  res$cdf_score %>% 
+    select(-user.self,-sys.self,-elapsed,-user.child,-sys.child) %>%    
+    melt(id.vars=c("method","scenario","seed",".id"))
+
+reslong.pos = inner_join(reslong,poslong)
+reslong.neg = inner_join(reslong,neglong)
+
+```
+
+
+```{r}
+ash.hu.ft = reslong.pos %>% dplyr::filter(method=="ash.hu.s" & scenario=="flat-top")
+head(ash.hu.ft)
+```
+
+```{r}
+  eg=loadExample(dsc_shrink,42,"flat-top",method="ash.hu.s")
+  eg$output$fitted.g
+```
+
+Notice how almost all the inferred weight is on a small positive component. As a result false sign rate will be small, and there will be a strong tendency
+to overestimate 0 effects. This leads to coverage problems observed.
+
+Now let's look at an example with u and spiky which seems to be somewhat badly calibrated for the negative discoveries. 
+```{r}
+ash.u.s.spiky = reslong.neg %>% dplyr::filter(method=="ash.u.s" & scenario=="spiky")
+ash.n.s.spiky = reslong.neg %>% dplyr::filter(method=="ash.n.s" & scenario=="spiky")
+hist(ash.u.s.spiky$value,nclass=100,main="histogram of quantile where observation falls in its CI; significant negative discoveries")
+hist(ash.n.s.spiky$value,nclass=100,main="histogram of quantile where observation falls in its CI; significant negative discoveries")
+```
+
+So what seems to be happening here is that the uniform tail is too short; when observation falls outside of this tail it gets a zero quantile of posterior interval.
+
+Can we find an example?
+```{r}
+  table((ash.u.s.spiky %>% filter(value==0))$seed)
+  eg =loadExample(dsc_shrink,seed = 39,method="ash.u.s",scenario="spiky")
+```
+
+
+For comparison, here are the positive discoveries; here there is not too bad.
+```{r}
+ash.u.s.spiky = reslong.pos %>% dplyr::filter(method=="ash.u.s" & scenario=="spiky")
+ash.n.s.spiky = reslong.pos %>% dplyr::filter(method=="ash.n.s" & scenario=="spiky")
+hist(ash.n.s.spiky$value)
+hist(ash.u.s.spiky$value)
+```
+

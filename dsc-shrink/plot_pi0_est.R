@@ -15,16 +15,16 @@ df = res$pi0_score %>% filter(scenario %in% PLOTSCENARIOS) %>% filter(method %in
 df$scenario = factor(df$scenario,levels=PLOTSCENARIOS)
 levels(df$scenario)= PLOTNAMES
 
-p=ggplot(df,
-         aes(score.pi0,score.pi0_est,colour=method,alpha=ALPHALEVEL)) +geom_point(shape=1) +
+pi0_plot=ggplot(df,
+         aes(pi0,pi0_est,colour=method,alpha=ALPHALEVEL)) +geom_point(shape=1) +
   facet_grid(. ~ scenario) + 
   guides(alpha=FALSE) +
   geom_abline(colour = "black") +
   xlab("True pi0") +
   ylab("Estimated pi0") 
-print(p +scale_y_continuous(limits=c(0,1)) +
+print(pi0_plot +scale_y_continuous(limits=c(0,1)) +
         scale_x_continuous(limits=c(0,1)) +
         #scale_colour_manual(values=cbbPalette,breaks=breaks,labels=labels) +
-        coord_equal(ratio=1) + colScale + theme(legend.position = "bottom"))
+        coord_equal(ratio=1) + colScale + theme(legend.position = "top",axis.text.x = element_text(size = 8,angle=45)))
 
 dev.off()

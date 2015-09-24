@@ -1,11 +1,19 @@
-sourceDir("datamakers")
+source_dir("datamakers")
 
-addNamedScenarios = function(dsc,names,nsamp=1000){
+gdef = list(spiky=normalmix(c(.4,.2,.2,.2),c(0,0,0,0),c(.25,.5,1,2)),
+            skew=normalmix(c(1/4,1/4,1/3,1/6),c(-2,-1,0,1),c(2,1.5,1,1)),
+            bignormal=normalmix(c(1),c(0),c(4)),
+            bimodal=normalmix(c(0.5,0.5),c(-2,2),c(1,1)),
+            flat_top=normalmix(rep(1/7,7),c(-1.5,-1,-0.5,0,0.5,1,1.5),rep(0.5,7)),
+            near_normal=normalmix(c(2/3,1/3),c(0,0),c(1,2))
+            )
+
+add_named_scenarios = function(dsc,names,nsamp=1000){
 
 #the -nn suffix indicates no nulls (min_pi0 = max_pi0 = 0)
 
 if("near-normal-nn" %in% names){
-	addScenario(dsc,name="near-normal-nn",
+	add_scenario(dsc,name="near-normal-nn",
                     fn=rnormmix_datamaker,
                     args=list(
                       g=normalmix(c(2/3,1/3),c(0,0),c(1,2)),
@@ -18,7 +26,7 @@ if("near-normal-nn" %in% names){
 }
 
 if("flat-top-nn" %in% names){
-	addScenario(dsc,name="flat-top-nn",
+	add_scenario(dsc,name="flat-top-nn",
                     fn=rnormmix_datamaker,
                     args=list(
                       g=normalmix(rep(1/7,7),c(-1.5,-1,-0.5,0,0.5,1,1.5),rep(0.5,7)),
@@ -31,7 +39,7 @@ if("flat-top-nn" %in% names){
 }
 
 if("skew-nn" %in% names){
-  addScenario(dsc,name="skew-nn",
+  add_scenario(dsc,name="skew-nn",
                       fn=rnormmix_datamaker,
                       args=list(
                         g=normalmix(c(1/4,1/4,1/3,1/6),c(-2,-1,0,1),c(2,1.5,1,1)),
@@ -44,10 +52,10 @@ if("skew-nn" %in% names){
 }
 
 if("near-normal" %in% names){
-  addScenario(dsc,name="near-normal",
+  add_scenario(dsc,name="near-normal",
                     fn=rnormmix_datamaker,
                     args=list(
-                      g=normalmix(c(2/3,1/3),c(0,0),c(1,2)),
+                      g=gdef$near_normal,
                       min_pi0=0,
                       max_pi0=1,
                       nsamp=nsamp,
@@ -57,10 +65,10 @@ if("near-normal" %in% names){
 }
 
 if("flat-top" %in% names){
-  addScenario(dsc,name="flat-top",
+  add_scenario(dsc,name="flat-top",
                     fn=rnormmix_datamaker,
                     args=list(
-                      g=normalmix(rep(1/7,7),c(-1.5,-1,-0.5,0,0.5,1,1.5),rep(0.5,7)),
+                      g=gdef$flat_top,
                       min_pi0=0,
                       max_pi0=1,
                       nsamp=nsamp,
@@ -70,10 +78,10 @@ if("flat-top" %in% names){
 }
 
 if("skew" %in% names){
-  addScenario(dsc,name="skew",
+  add_scenario(dsc,name="skew",
                       fn=rnormmix_datamaker,
                       args=list(
-                        g=normalmix(c(1/4,1/4,1/3,1/6),c(-2,-1,0,1),c(2,1.5,1,1)),
+                        g=gdef$skew,
                         min_pi0=0,
                         max_pi0=1,
                         nsamp=nsamp,
@@ -83,10 +91,10 @@ if("skew" %in% names){
 }
 
 if("spiky" %in% names){
-  addScenario(dsc,name="spiky",
+  add_scenario(dsc,name="spiky",
                       fn=rnormmix_datamaker,
                       args=list(
-                        g=normalmix(c(.4,.2,.2,.2),c(0,0,0,0),c(.25,.5,1,2)),
+                        g=gdef$spiky,
                         min_pi0=0,
                         max_pi0=1,
                         nsamp=nsamp,
@@ -96,10 +104,10 @@ if("spiky" %in% names){
 }
 
 if("big-normal" %in% names){
-  addScenario(dsc,name="big-normal",
+  add_scenario(dsc,name="big-normal",
                       fn=rnormmix_datamaker,
                       args=list(
-                        g=normalmix(c(1),c(0),c(4)),
+                        g=gdef$bignormal,
                         min_pi0=0,
                         max_pi0=1,
                         nsamp=nsamp,
@@ -109,10 +117,10 @@ if("big-normal" %in% names){
 }
 
 if("bimodal" %in% names){
-  addScenario(dsc,name="bimodal",
+  add_scenario(dsc,name="bimodal",
             fn=rnormmix_datamaker,
             args=list(
-              g=normalmix(c(0.5,0.5),c(-2,2),c(1,1)),
+              g=gdef$bimodal,
               min_pi0=0,
               max_pi0=1,
               nsamp=nsamp,

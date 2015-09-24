@@ -27,7 +27,7 @@ rnormmix_datamaker = function(args){
   beta = ifelse(isnull, 0,rnorm(args$nsamp,comp_mean(args$g)[comp],comp_sd(args$g)[comp]))
   sebetahat = args$betahatsd
   betahat = beta + rnorm(args$nsamp,0,sebetahat)
-  meta=list(beta=beta,pi0=pi0)
+  meta=list(g1=args$g,beta=beta,pi0=pi0)
   input=list(betahat=betahat,sebetahat=sebetahat,df=NULL)
   
   #end of meat of function

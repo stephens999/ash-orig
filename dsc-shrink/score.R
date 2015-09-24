@@ -38,6 +38,14 @@ score_fdr = function(data, output){
   return(c(S=output$res$fdr))
 }
 
+score_lfsr = function(data, output){
+  return(c(S=output$lfsr))
+}
+
+score_lfdr = function(data, output){
+  return(c(S=output$lfdr))
+}
+
 score_betahat = function(data, output){
   return(c(S=data$input$betahat))
 }
