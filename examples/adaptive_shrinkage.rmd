@@ -15,7 +15,8 @@ We simulate from two scenarios, the first with effects more peaked about zero, t
 ```{r initialize}
 set.seed(100)
 library(ashr)
-
+library(ggplot2)
+library(scales)
 #load the simulation function, (rnormmix_datamaker)
 source("../dsc-shrink/datamakers/datamaker.R")
 
@@ -43,42 +44,65 @@ beta.bignormal.ash = ash(sim.bignormal$input$betahat, s)
 beta.spiky.ash = ash(sim.spiky$input$betahat, s)
 ```
 
+
 Here we plot the shrunken estimates against the observed values, colored
 according to the (square root of) precision: precise esitmates being colored red, and less precise estimates being blue. Two key features of the plots
 illustrate the ideas of adaptive shrinkage: i) the estimates under the spiky scenario are shrunk more strongly, illustrating that shrinkage adapts to the underlying distribution of beta; ii) in both cases, estimates with large standard error (blue) are shrunk more than estimates with small standard error (red) illustrating that shrinkage adapts to measurement precision.
 
 
 ```{r plotting}
-df = data.frame(betahat = c(sim.spiky$input$betahat,sim.bignormal$input$betahat),
-                beta_est = c(beta.spiky.ash$PosteriorMean, beta.bignormal.ash$PosteriorMean),
-                lfsr = c(beta.spiky.ash$lfsr, beta.bignormal.ash$lfsr),
-                s=c(s,s),
-                scenario=c(rep("spiky",NSAMP),rep("big-normal",NSAMP)))
-df$signif = df$lfsr<0.05
-library(ggplot2)
-library(scales)
-ggplot(df,aes(x=betahat,y=beta_est,color=1/s)) + 
-  xlab("Observed beta-hat") +
-  ylab("Shrunken beta estimate") + geom_point() +  facet_grid(.~scenario) + geom_abline(intercept=0,slope=1) +
-scale_colour_gradient2(midpoint = median(1/s),low="blue", mid="white",high="red")  +coord_fixed(ratio=1)
+make_df_for_ashplot = function(sim1,sim2,ash1,ash2,name1="spiky",name2="big-normal"){
+  df = data.frame(betahat = c(sim1$input$betahat,sim2$input$betahat),
+                beta_est = c(ash1$PosteriorMean, ash2$PosteriorMean),
+                lfsr = c(ash1$lfsr, ash2$lfsr),
+                s=c(sim1$input$sebetahat,sim2$input$sebetahat),
+                scenario=c(rep(name1,NSAMP),rep(name2,NSAMP)))
+  df$signif = df$lfsr<0.05
+  return(df)
+}
+  
+ashplot=function(df,xlab="Observed beta-hat",ylab="Shrunken beta estimate"){
+  ggplot(df,aes(x=betahat,y=beta_est,color=1/s)) + 
+    xlab(xlab) +
+    ylab(ylab) + geom_point() +  facet_grid(.~scenario) +   geom_abline(intercept=0,slope=1) +
+  scale_colour_gradient2(midpoint = median(1/s),low="blue", mid="white",high="red",space="Lab")  +coord_fixed(ratio=1)
+}
+df=make_df_for_ashplot(sim.spiky,sim.bignormal,beta.spiky.ash,beta.bignormal.ash)
+ashplot(df)
 ggsave("ash.pdf")
 ```
 
+A related consequence is that significance of each observation is no longer monotonic with $p$ value.
+
 ```{r}
+pval_plot=function(df){
   ggplot(df,aes(x=pnorm(-abs(betahat/s)),y=lfsr,color=log(s))) + geom_point() +  facet_grid(.~scenario) +xlim(c(0, 0.025)) + xlab("p value") + ylab("lfsr") +
   scale_colour_gradient2(midpoint = 0,low="blue", mid="white",high="red")  
+}
+pval_plot(df)
+```
+
+Let's see how these are affected by changing the modelling assumptions so that
+the standardized beta are exchangeable (rather than the beta being exchangeable).
+```{r run-ash-ES}
+beta.bignormal.ash.ES = ash(sim.bignormal$input$betahat, s,model="ES",mixcompdist="normal")
+beta.spiky.ash.ES = ash(sim.spiky$input$betahat, s,model="ES",mixcompdist="normal")
+df.ES = make_df_for_ashplot(sim.spiky,sim.bignormal,beta.spiky.ash.ES,beta.bignormal.ash.ES)
+ashplot(df.ES,ylab="Shrunken beta estimate (ES model)")
+pval_plot(df.ES)
 ```
 
 
-```{r}
-hist(s,main="histogram of standard errors")
-summary(s)
-```
 
 This is a "volcano plot" showing effect size against p value. The blue points are "significant" in that they have lfsr<0.05. In this case the significance by lfsr is not quite the same as cutting off at a given $p$ value (you can see that the decision boundary is not quite the same as drawing a horizontal line), but also not that different, presumably because the standard errors, although varying across observations, do not vary greatly.
 ```{r volcano}
   ggplot(df,aes(x=betahat,y=-log10(2*pnorm(-abs(betahat/s))),col=signif)) + geom_point(alpha=1,size=1.75) +  facet_grid(.~scenario) + theme(legend.position = "none") +
   xlim(c(-10, 10)) + ylim(c(0, 15)) +
   xlab("Effect (beta)") + ylab("-log10 p-value")
+```
+
+```{r sehist}
+hist(s,main="histogram of standard errors")
+summary(s)
 ```
 

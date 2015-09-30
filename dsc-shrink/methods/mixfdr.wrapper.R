@@ -14,7 +14,7 @@ library(mixfdr)
 
 mixfdr.wrapper=function(input,args=NULL){
   res = try(do.call(mixFdr, args= c(list(x=input$betahat/input$sebetahat, noiseSD=1, plots=FALSE),args)))
-  if(inherits(res,"try-error")){res=list(effectSize=rep(NA,length(input$betahat)),pi0_est=NA)}
+  if(inherits(res,"try-error")){res=list(effectSize=rep(NA,length(input$betahat)),pi0_est=NA,pi=NA,mu=NA,sigma=NA,noiseSD=NA)}
   return(list(res=res,input=input))
 }
 

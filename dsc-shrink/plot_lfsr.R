@@ -70,4 +70,12 @@ print(p1.s+theme(legend.position="none",axis.text.x = element_text(size = 8,angl
 ggsave("../paper/figures/lfsr_est_s.png",height=3,width=9)
 ggsave("../paper/figures/lfsr_est_s.pdf",height=3,width=9)
 
+lfsr.s.nn = process_score_for_plotting_against_gold(
+    res$lfsr,PLOTSEEDS=1:100,PLOTMETHODS="ash.n.s",
+    PLOTSCENARIOS=paste0(c("spiky","near-normal","flat-top","skew","big-normal","bimodal"),"-nn"))
+p1.s.nn=plot_lfsr(lfsr.s.nn,ylim=c(0,1),xlim=c(0,0.2))
+
+print(p1.s.nn+theme(legend.position="none",axis.text.x = element_text(size = 8,angle=45))
+      +coord_equal(ratio=1/5))
+ggsave("../paper/figures/lfsr_est_s.nn.png",height=3,width=9)
 

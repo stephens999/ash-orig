@@ -2,7 +2,8 @@ library(dscr)
 
 dsc_shrink=new_dsc("shrink","dsc-shrink-files")
 source("add_named_scenarios.R")
-add_named_scenarios(dsc_shrink,c("spiky","near-normal","flat-top","skew","big-normal","bimodal"))
+add_named_scenarios(dsc_shrink,c("spiky","near-normal","flat-top","skew","big-normal","bimodal","near-normal-nn"))
+add_named_scenarios(dsc_shrink,c("spiky","near-normal","flat-top","skew","big-normal","bimodal"),min_pi0=0,max_pi0=0,suffix="-nn")
 
 source("add_methods.R")
 
