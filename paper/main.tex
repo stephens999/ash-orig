@@ -178,12 +178,11 @@ see also \cite{kendziorski2003parametric,newton2004detecting,
 datta2005empirical,muralidharan2010empirical} for example.
 So what is the ``New Deal" here? We introduce two simple ideas that are new (at least compared with
 existing widely-used FDR pipelines) and can substantially affect
-inference. The first idea is to {\it assume that the distribution of effects is unimodal}, and to perform
-non-parametric inference under this assumption. This yields a very simple, fast, and stable computer implementation,
- and improves inference of FDR, at least when the unimodal assumption is correct.  
+inference. The first idea is to {\it assume that the distribution of effects is unimodal}. This yields a very simple, fast, and stable computer 
+implementation, as well as improving inference of FDR when the unimodal assumption is correct.  
 The second idea is to use two numbers -- effect sizes, and their standard errors -- rather than just one -- $p$ values, or $z$ scores -- 
-to summarize each measurement. This idea allows variations in measurement precision to be accounted for,
- and avoids the problem with standard pipelines that poor-precision measurements can inflate estimated FDR.
+to summarize each measurement. This idea allows variations in measurement precision to be better accounted for,
+ and avoids a problem with standard pipelines that poor-precision measurements can inflate estimated FDR.
 
 In addition to these two new ideas, we highlight a third idea that is old, but which remains under-used in practice:
 the idea that it may be preferable to focus on estimation rather than on testing.
@@ -203,24 +202,8 @@ the lfsr and lfdr can be quite different, and emphasise benefits of the lfsr, pa
 %The methods we provide here can address both problems, and we provide results that highlight important benefits of focussing on estimation, and particularly on assessing the correctness of the {\it sign} of the estimated effects, rather than on testing for non-zero effects.
 
 
-The use of EB methods for estimation also has a long and close relationship with another key concept in modern statistics: shrinkage estimation \cite{efron1973}.
-This close relationship becomes especially intimate here due to our unimodal assumption on the underlying effects, 
-which encourages shrinkage towards the mode of the distribution.
-%Indeed, within our EB framework, multiple comparisons correction can be seen as a natural limit of shrinkage estimation:
-%if effects are distributed uni-modally about zero then it is natural to shrink estimates towards zero. 
-% are essentially two sides of the same coin, one related to testing and the other to estimation. 
-Thus, although we focus here primarily on FDR-related issues, another important contribution of our work is to provide {\it generic} and {\it adaptive} shrinkage estimation procedures.
-By generic, we mean that these methods can be applied in any setting where a series of effect estimates and corresponding standard errors are available.
-By adaptive, we 
-have two properties in mind. First, the appropriate amount of shrinkage is determined from the data: when the data indicate that large effects are relatively common then
-shrinkage of large observed effects is less than when the data indicate that large effects are rare.
-Second, the amount of shrinkage undergone by each measurement will depend on its precision, or standard error: measurements with big standard errors undergo more shrinkage than measurements with small standard errors.  
-Shrinkage estimation is a powerful tool, with many potential applications, including for example wavelet denoising, 
-where shrinkage of wavelet coefficients is used to smooth signals. Our methods provide an attractive and competitive alternative
-to existing EB shrinkage methods for that context, as will be explored more fully elsewhere (Xing and Stephens, in preparation).
-
 Our methods are implemented in an R package, \ashr (for {\bf a}daptive {\bf sh}rinkage in {\bf R}), available at \url{http://github.com/stephens999/ashr}.
-
+(We address the reasons for this name, and connections with shrinkage analysis, in the Discussion.)
 
 
 %Measurement precision will often vary among genes --  for example, log-fold change estimate for highly expressed genes may have greater precision than those for lower-expressed genes -- and one goal  of our methods is to allow for thiis variation. 
@@ -262,7 +245,7 @@ Our methods are implemented in an R package, \ashr (for {\bf a}daptive {\bf sh}r
 
  \section*{Methods}
 
- \subsection*{Outline}
+ \subsection*{Model Outine}
  
 % Here we consider one setting in which FDR-based methods are widely used:
 %an experimenter has measured a large numbers of ``effects", each with an associated
@@ -275,74 +258,115 @@ Our methods are implemented in an R package, \ashr (for {\bf a}daptive {\bf sh}r
 %a common goal is to identify ``differentially-expressed genes" -- that is, genes
 %whose mean expression (activity) level differs in two conditions. Here the ``effect" of interest is the difference in (log) 
 %mean expression level between the two conditions, often referred to as the ``log-fold change". 
-We begin by presenting the simplest version of method, and comparing it with existing work, before detailing further embellishments.
+We begin with the simplest version of our method, and compare it with existing work, before detailing embellishments.
 
 Suppose that we are interested in the values of $J$ ``effects" $\beta=(\beta_1,\dots,\beta_J)$. For example, in a typical genomics application
 that aims to identify differentially expressed genes,  $\beta_j$ might be the difference in the mean (log) expression of gene $j$ in two conditions.
-In contexts where FDR methods are applied, interest often focuses on identifying significant non-zero effects;
-that is, in testing the null hypotheses $H_j:\beta_j=0$.  Here we will also tackle
-the more general problem of estimating, and assessing uncertainty in, the effect sizes $\beta_j$.
+In contexts where FDR methods are applied, interest often focuses on identifying ``significant" non-zero effects;
+that is, in testing the null hypotheses $H_j:\beta_j=0$.  Here we tackle both this problem, and the  
+more general problem of estimating, and assessing uncertainty in, $\beta_j$.
  
-We assume that the available data are estimates $\bhat=(\bhat_1,\dots,\bhat_J)$ of these effects,
+Assume that the available data are estimates $\bhat=(\bhat_1,\dots,\bhat_J)$ of the effects,
 and corresponding (estimated) standard errors $\shat=(\shat_1,\dots,\shat_J)$.  Our goal is to compute a posterior distribution for $\beta$ given the observed data $\bhat,\shat$,
 which by Bayes theorem can be written as 
 \begin{equation}
 p(\beta | \bhat, \shat) \propto p(\beta | \shat) p(\bhat | \beta, \shat).
 \end{equation}
 
-We assume that the observations $\bhat$ are conditionally independent given $\beta,\shat$, and that the distribution of
-$\bhat_j$ depends only on the corresponding $\beta_j,\shat_j$, so
-\begin{equation}
-p(\bhat | \beta, \shat) = \prod_j p(\bhat_j | \beta_j, \shat_j).
-\end{equation}
-Initially we assume that the number of observations used to compute $\bhat_j,\shat_j$ are sufficiently large to justify a normal approximation,
+For $p(\beta | \shat)$ we assume that the $\beta_j$ are independent from a unimodal distribution $g$.
+This unimodal assumption (UA) is a key assumption that distinguishes our approach from previous EB approaches to FDR analysis.
+A simple way to implement the UA is to assume that $g$ is
+a mixture of a point mass at 0 and a mixture of {\it zero-mean} normal distributions:
+\begin{align} \label{eqn:beta}
+p(\beta | \shat, \pi) & = \prod_j g(\beta_j; \pi), \\   
+g(\cdot; \pi) & = \pi_0 \delta_0(\cdot) + \sum_{k=1}^K \pi_k N(\cdot; 0, \sigma_k^2), \label{eqn:mixnorm}
+\end{align}
+where $N(\cdot; \mu, \sigma^2)$ denotes the density of the normal distribution with mean $\mu$ and variance $\sigma^2$.
+Here the mixture proportions $\pi=(\pi_0,\dots,\pi_K)$ are hyperparameters, which are non-negative and sum to one, and are to be estimated,
+while the mixture component standard deviations $\sigma_1,\dots,\sigma_K$ 
+represent a large and dense grid of {\it fixed} positive numbers spanning a range from very small to very big (so $K$ is fixed and large). 
+(We encourate the reader to think of this grid as becoming infinitely large and dense, as a non-parametric limit,
+although of course in practice we use a finite grid -- see Implementation Details.)
+
+For the likelihood $p(\bhat | \beta, \shat)$ we assume  
 \begin{equation} \label{eqn:normlik}
-p(\bhat_j | \beta_j, \shat_j) =  N(\bhat_j; \beta_j, \shat^2_j),
+p(\bhat | \beta, \shat) = \prod_j N(\bhat_j; \beta_j, \shat_j^2).
 \end{equation}
-where $N(\cdot; \mu,\sigma^2)$ denotes the density of a normal distribution with mean $\mu$ and variance $\sigma^2$.
+Here, in additional to some conditional independence assumptions, we are 
+effectively  assuming that the number of observations used to compute $\bhat_j,\shat_j$ are sufficiently large to justify a normal approximation.
 
-We assume that the (unobserved) effects $\beta_j$ come from some distribution $g$, which is to be estimated, and which we write 
-as a mixture of null and alternative components:
-\begin{equation} \label{eqn:betaj0}
-g(\cdot) = \pi_0 \delta_0(\cdot) + (1-\pi_0) g_1(\cdot)
-\end{equation}
-where $\pi_0$ denotes the proportion of effects that are null, $\delta_0(\cdot)$ denotes a point mass at 0, and $g_1(\cdot)$ denotes the distribution of the non-zero $\beta_j$.
-We also assume that (given $g$) the $\beta_j$ are independent, and independent of $\shat$ (a point we return to later), so
-\begin{equation} \label{eqn:beta-iid}
-p(\beta | \shat) = \prod_j g(\beta_j).
-\end{equation}
+This simple model features both the key ideas we want to emphasise in this paper: the UA is encapsulated in (\ref{eqn:mixnorm}) while
+the different measurement precision of different observations is encapsulated in the likelihood (\ref{eqn:normlik}) -- specifically, observations
+with larger standard error will have a flatter likelihood, and therefore have less impact on inference.
+However, this simple model also has several additional assumptions that can be relaxed. Specifically,
+\begin{enumerate}
+\item  The use of a mixture of zero-mean normals (\ref{eqn:mixnorm}) also implies that $g$ is symmetric about 0; more flexibility can be obtained by replacing the mixture of normals with mixtures of uniforms [see (\ref{eqn:g-general})].
+\item The model (\ref{eqn:beta}) assumes that the effects are identically distributed, independent of their standard errors $\shat$.
+We can relax this to allow for a relationship between these quantities [see (\ref{eqn:beta-alpha})].
+\item The likelihood (\ref{eqn:normlik}) effectively assumes that the number of observations used to compute $\bhat_j,\shat_j$ are sufficiently large to justify a normal approximation. We can generalize this likelihood using a $t$ likelihood [see (\ref{eqn:tlik})].
+\end{enumerate}
+Of course there remain limitations that are harder to relax, most notably the independence and conditional independence assumptions encapsulated in our model
+(which are also made by most existing EB approaches to this problem). Correlations among tests certainly arise in practice, either due to genuine correlations
+in the system of study, or due to unmeasured confounders, and their potential to impact results of an FDR analysis is important to consider
+whatever analysis methods are used: see \cite{efron2007correlation,leek:2007} for relevant discussion.
 
-Our key further assumption, which distinguishes our approach from previous EB approaches to FDR analysis, is that $g_1$ is unimodal,
-with a mode at 0. One simple way to implement this ``Unimodal Assumption" (UA)  is
-to use a mixture of zero-mean normal distributions:
-\begin{equation} \label{eqn:mixnorm}
-g_1(\cdot) = \sum_{k=1}^K w_k N(\cdot; 0, \sigma_k^2)
-\end{equation}
-where $N(\cdot; \mu,\sigma^2)$ denotes the density of a normal distribution with mean $\mu$ and standard deviation $\sigma$.
-Here the $w_k$ are non-negative mixture weights that sum to $1$ and are to be estimated, and the component standard deviations $\sigma_1,\dots,\sigma_K$ 
-represent a large and dense grid of fixed positive numbers spanning a range from very small to very big (so $K$ is fixed and large).
- The symmetry of the normal distribution implies that (\ref{eqn:mixnorm}) is not only unimodal, but also symmetric about zero. We introduce
- more flexible alternatives based on using mixtures of uniform distributions, and further details (such as choice of gridpoints $\{\sigma_k:k=1,\dots,K\}$) below. 
+%We assume that the observations $\bhat$ are conditionally independent given $\beta,\shat$, and that the distribution of
+%$\bhat_j$ depends only on the corresponding $\beta_j,\shat_j$, so
+%\begin{equation}
+%p(\bhat | \beta, \shat) = \prod_j p(\bhat_j | \beta_j, \shat_j).
+%\end{equation}
+%Initially we assume that the number of observations used to compute $\bhat_j,\shat_j$ are sufficiently large to justify a normal approximation,
+%\begin{equation} \label{eqn:normlik}
+%p(\bhat_j | \beta_j, \shat_j) =  N(\bhat_j; \beta_j, \shat^2_j),
+%\end{equation}
+%where $N(\cdot; \mu,\sigma^2)$ denotes the density of a normal distribution with mean $\mu$ and variance $\sigma^2$.
+%
+%We assume that the (unobserved) effects $\beta_j$ come from some distribution $g$, which is to be estimated, and which we write 
+%as a mixture of null and alternative components:
+%\begin{equation} \label{eqn:betaj0}
+%g(\cdot) = \pi_0 \delta_0(\cdot) + (1-\pi_0) g_1(\cdot)
+%\end{equation}
+%where $\pi_0$ denotes the proportion of effects that are null, $\delta_0(\cdot)$ denotes a point mass at 0, and $g_1(\cdot)$ denotes the distribution of the non-zero $\beta_j$.
+%We also assume that (given $g$) the $\beta_j$ are independent, and independent of $\shat$ (a point we return to later), so
+%\begin{equation} \label{eqn:beta-iid}
+%p(\beta | \shat) = \prod_j g(\beta_j).
+%\end{equation}
+%
+%Our key further assumption, which distinguishes our approach from previous EB approaches to FDR analysis, is that $g_1$ is unimodal,
+%with a mode at 0. One simple way to implement this ``Unimodal Assumption" (UA)  is
+%to use a mixture of zero-mean normal distributions:
+%\begin{equation} \label{eqn:mixnorm}
+%g_1(\cdot) = \sum_{k=1}^K w_k N(\cdot; 0, \sigma_k^2)
+%\end{equation}
+%where $N(\cdot; \mu,\sigma^2)$ denotes the density of a normal distribution with mean $\mu$ and standard deviation $\sigma$.
+%Here the $w_k$ are non-negative mixture weights that sum to $1$ and are to be estimated, and the component standard deviations $\sigma_1,\dots,\sigma_K$ 
+%represent a large and dense grid of fixed positive numbers spanning a range from very small to very big (so $K$ is fixed and large).
+% The symmetry of the normal distribution implies that (\ref{eqn:mixnorm}) is not only unimodal, but also symmetric about zero. We introduce
+% more flexible alternatives based on using mixtures of uniform distributions, and further details (such as choice of gridpoints $\{\sigma_k:k=1,\dots,K\}$) below. 
+% 
+% Substituting (\ref{eqn:mixnorm}) for $g_1$ in (\ref{eqn:betaj0}), and defining $\pi_k := (1-\pi_0)w_k$ for $k=1,\dots,K$ (and also $\sigma_k:=0$, and $N(\cdot;0,0):=\delta_0(\cdot)$)
+% yields a notationally-convenient form for $g$, with hyperparameters $\pi:=(\pi_0,\pi_1,\dots,\pi_K)$ whose elements are non-negative and sum to 1:
+% \begin{equation} \label{eqn:g}
+% g(\cdot; \pi) = \sum_{k=0}^K \pi_k N(\cdot; 0, \sigma_k^2).
+% \end{equation}
+% 
+% Putting all this together, and making the dependence on hyperparameters $\pi$ explicit, we have:
+% \begin{align} \label{eqn:betaj}
+% p(\beta | \shat, \pi) & = \prod_j g(\beta_j; \pi), \\  \label{eqn:normlik2}
+% p(\bhat | \beta, \shat, \pi) &= \prod_j N(\bhat_j; \beta_j, \shat_j^2), 
+% \end{align}
+% with $g$ given by the mixture of normals $(\ref{eqn:g})$.
  
- Substituting (\ref{eqn:mixnorm}) for $g_1$ in (\ref{eqn:betaj0}), and defining $\pi_k := (1-\pi_0)w_k$ for $k=1,\dots,K$ (and also $\sigma_k:=0$, and $N(\cdot;0,0):=\delta_0(\cdot)$)
- yields a notationally-convenient form for $g$, with hyperparameters $\pi:=(\pi_0,\pi_1,\dots,\pi_K)$ whose elements are non-negative and sum to 1:
- \begin{equation} \label{eqn:g}
- g(\cdot; \pi) = \sum_{k=0}^K \pi_k N(\cdot; 0, \sigma_k^2).
- \end{equation}
+
+\subsection*{Fitting the model}
  
- Putting all this together, and making the dependence on hyperparameters $\pi$ explicit, we have:
- \begin{align} \label{eqn:betaj}
- p(\beta | \shat, \pi) & = \prod_j g(\beta_j; \pi), \\  \label{eqn:normlik2}
- p(\bhat | \beta, \shat, \pi) &= \prod_j N(\bhat_j; \beta_j, \shat_j^2), 
- \end{align}
- with $g$ given by the mixture of normals $(\ref{eqn:g})$.
- 
-In words, the effects $\beta_j$ are independent and identically distributed from a mixture of zero-centered normal distributions, and 
+In words, the model above assumes that the effects $\beta_j$ are independent and identically distributed from a mixture of zero-centered normal distributions, and 
 each observation $\bhat_j$ is a noisy measurement of $\beta_j$ with standard error $\shat_j$.
- Together, these assumptions imply that the observations $\bhat_j$ are also independent observations, each from a mixture of normal distributions:
+Together, these assumptions imply that the observations $\bhat_j$ are also independent observations, each from a mixture of normal distributions:
 \begin{equation} \label{eqn:marginallik}
-p(\bhat | \shat, \pi) =   \prod_j  [\sum_{k=0}^K \pi_k N(\bhat_j; 0, \sigma_k^2 + \shat_j^2)].
+p(\bhat | \shat, \pi) =   \prod_j  [\sum_{k=0}^K \pi_k N(\bhat_j; 0, \sigma_k^2 + \shat_j^2)],
 \end{equation}
+where we define $\sigma_0:=0$.
 
 The usual EB approach to fitting this model would involve two simple steps:
 \begin{enumerate}
@@ -355,7 +379,7 @@ Both steps 1 and 2 are very straightforward: $\hat{\pi}$ can be obtained using a
 which may seem more natural but is not straightforward when $\shat_j$ varies among $j$. This simple device may be useful in other applications.)
 
 In practice we make a small modification to this procedure: instead of obtaining $\hat\pi$ by maximizing the likelihood, we instead maximise a penalized
-likelihood, where the penalty encourages $\hat\pi_0$ to be as big as possible whilst remaining consistent with the observed data (see details below). 
+likelihood [see (\ref{eqn:penalty})], where the penalty encourages $\hat\pi_0$ to be as big as possible whilst remaining consistent with the observed data. 
 We introduce this penalty because in FDR appllications it is considered desirable to avoid underestimating $\pi_0$ so as to avoid underestimating the FDR. 
 
 \subsection*{The local False Discovery Rate and local False Sign Rate}
@@ -506,7 +530,7 @@ may perform well for point estimation, it seems possible it will not adequately 
 
 \subsubsection*{More flexible unimodal distributions}
 
-Using a mixture of zero-centered normal distributions for $g$ in (\ref{eqn:g}) implies that $g$ is not only unimodal, but also symmetric.
+Using a mixture of zero-centered normal distributions for $g$ in (\ref{eqn:mixnorm}) implies that $g$ is not only unimodal, but also symmetric.
 Furthermore, even some symmetric unimodal distributions, such as those with a flat top, cannot be well approximated by a mixture of zero-centered normals.
  Therefore, we have implemented a more general approach, based on 
 \begin{equation} \label{eqn:g-general}
@@ -519,16 +543,16 @@ where $f_0$ is a point mass on 0, and $f_k$ ($k=1,\dots,K$) are pre-specified co
 \item $f_k(\cdot) = U[\cdot; -a_k,0] \text{ and/or } U[\cdot; 0,a_k]$,
 \end{enumerate}
 where $U[\cdot; a,b]$ denotes the density of a uniform distribution on $[a,b]$.
-(In (iii) we include both components in the mixture (\ref{eqn:g}), so a grid of values $a_1,\dots,a_K$ defines $2K+1$ mixture component densities, 
+(In (iii) we include both components in the mixture (\ref{eqn:g-general}), so a grid of values $a_1,\dots,a_K$ defines $2K+1$ mixture component densities, 
 and $\pi$ is a $2K+1$ vector that sums to 1.)
-The simplest version (\ref{eqn:g}) corresponds to (i).
+The simplest version (\ref{eqn:mixnorm}) corresponds to (i).
 Replacing these with uniform components (ii)-(iii) only slightly complicates calculations
 under the normal likelihood (\ref{eqn:normlik}), and greatly simplifies the calculations under the $t$ likelihood
 (\ref{eqn:tlik}) introduced below. The use of uniform components here closely mirrors \cite{cordy1997deconvolution}.
 (In fact our implementation can handle {\it any} prespecified uniform or normal distributions for $f_k$ provided they are all from the same family;
 however, we restrict our attention here to (i)-(iii) which imply a unimodal $g$.)
 
-Moving from (i) to (iii) the representation (\ref{eqn:g}) becomes increasingly flexible. Indeed,
+Moving from (i) to (iii) the representation (\ref{eqn:g-general}) becomes increasingly flexible. Indeed,
 using a large dense grid of $\sigma^2_k$ or $a_k$, we can allow $g$ to approximate,
 with arbitrary accuracy,
 \begin{enumerate}[(i)]
@@ -546,29 +570,6 @@ See Section \ref{sec:grid} for our software defaults.
 
 %Although it is natural to worry about ``overfitting" if $K$ is large,  in fact the unimodal constraint is sufficient to prevent serious problems with overfitting. For example, note that the unimodal constraint is sufficiently strong that there will exist a non-parametric maximum likelihood estimate (NPMLE) for $g$ under this constraint. (Indeed, if the $\beta_j$ are observed without error, corresponding to the standard errors $\shat_j \rightarrow 0$, this NPMLE has an explicit and elegant form; \cite{grenander1956theory}.)
 %Thus allowing $K$ to be large in ii) or iii), and maximizing the likelihood with respect to $\pi$, will approximate the NPMLE for $g$, under the constraints of symmetry and unimodality (ii), or unimodality alone (iii). 
-
-
-\subsubsection*{Replace normal likelihood with $t$ likelihood}
-
-We generalize the normal likelihood (\ref{eqn:normlik}) by replacing it with a $t$ likelihood:
-  \begin{equation} \label{eqn:tlik}
- \bhat_j \, | \, \beta_j, \shat_j \sim T_\nu(\beta_j, \shat_j)
- \end{equation}
-where $T_\nu(\beta_j,\shat_j)$ denotes the distribution of $\beta_j+\shat_j T_\nu$ where $T_\nu$ has a standard $t$ distribution on $\nu$ degrees of freedom,
-and  $\nu$ denotes the degrees of freedom used to estimate $\shat_j$ (assumed known, and for simplicity assumed to be the same for each $j$).
-The normal approximation (\ref{eqn:normlik}) corresponds to the limit $\nu \rightarrow \infty$.
-This generalization does not complicate inference when the mixture components $f_k$ in (\ref{eqn:g-general}) are uniforms.
-When the $f_k$ are normal the computations with a $t$ likelihood are considerably more difficult and we have not implemented this combination.
-
-Equation (\ref{eqn:tlik}) is, of course, motivated by the standard asymptotic result
-\begin{equation} \label{eqn:tdist}
-(\bhat_j-\beta_j)/\shat_j \sim T_\nu.
-\end{equation}
-However (\ref{eqn:tdist}) does not imply (\ref{eqn:tlik}), because in (\ref{eqn:tdist}) $\shat_j$ is random whereas in (\ref{eqn:tlik}) it is conditioned on.
-In principle it would be preferable, for a number of reasons, to model the randomness in $\shat_j$; we are
-currently pursuing this improved approach in work with Mengyin Lu, and results will be published elsewhere. We note here that
-modelling the randomness in $\shat_j$ is particularly helpful when the number of observations used to estimate $\shat_j$ is very small (e.g. $<10$),
-where our simpler approach can produce unsatisfactory results (see later).
 
 \subsubsection*{Dependence of effects on standard errors}
 
@@ -598,6 +599,29 @@ rather than just $\pi$.  Although values of $\alpha$ other than 0 and 1 may not 
 and the actual relationship between $\beta_j$ and $\shat_j$ is unlikely to exactly follow (\ref{eqn:beta-alpha}) for any $\alpha$,
 this approach seems preferable in practice than simply assuming $\alpha=0$ or $\alpha=1$. We
 do not investigate this in detail here, but it has been implemented in our software by C.Dai, using a simple grid search over $\alpha$.
+
+
+\subsubsection*{Replace normal likelihood with $t$ likelihood}
+
+We generalize the normal likelihood (\ref{eqn:normlik}) by replacing it with a $t$ likelihood:
+  \begin{equation} \label{eqn:tlik}
+ \bhat_j \, | \, \beta_j, \shat_j \sim T_\nu(\beta_j, \shat_j)
+ \end{equation}
+where $T_\nu(\beta_j,\shat_j)$ denotes the distribution of $\beta_j+\shat_j T_\nu$ where $T_\nu$ has a standard $t$ distribution on $\nu$ degrees of freedom,
+and  $\nu$ denotes the degrees of freedom used to estimate $\shat_j$ (assumed known, and for simplicity assumed to be the same for each $j$).
+The normal approximation (\ref{eqn:normlik}) corresponds to the limit $\nu \rightarrow \infty$.
+This generalization does not complicate inference when the mixture components $f_k$ in (\ref{eqn:g-general}) are uniforms.
+When the $f_k$ are normal the computations with a $t$ likelihood are considerably more difficult and we have not implemented this combination.
+
+Equation (\ref{eqn:tlik}) is, of course, motivated by the standard asymptotic result
+\begin{equation} \label{eqn:tdist}
+(\bhat_j-\beta_j)/\shat_j \sim T_\nu.
+\end{equation}
+However (\ref{eqn:tdist}) does not imply (\ref{eqn:tlik}), because in (\ref{eqn:tdist}) $\shat_j$ is random whereas in (\ref{eqn:tlik}) it is conditioned on.
+In principle it would be preferable, for a number of reasons, to model the randomness in $\shat_j$; we are
+currently pursuing this improved approach in work with Mengyin Lu, and results will be published elsewhere. We note here that
+modelling the randomness in $\shat_j$ is particularly helpful when the number of observations used to estimate $\shat_j$ is very small (e.g. $<10$),
+where our simpler approach can produce unsatisfactory results (see later).
 
 \subsubsection*{Non-zero mode}
 
@@ -1272,6 +1296,24 @@ Figure \ref{fig:ash} illustrates the idea by contrasting results for two simulat
 
 
 \subsection{Discussion}
+
+
+The use of EB methods for estimation also has a long and close relationship with another key concept in modern statistics: shrinkage estimation \cite{efron1973}.
+This close relationship becomes especially intimate here due to our unimodal assumption on the underlying effects, 
+which encourages shrinkage towards the mode of the distribution.
+%Indeed, within our EB framework, multiple comparisons correction can be seen as a natural limit of shrinkage estimation:
+%if effects are distributed uni-modally about zero then it is natural to shrink estimates towards zero. 
+% are essentially two sides of the same coin, one related to testing and the other to estimation. 
+Thus, although we focus here primarily on FDR-related issues, another important contribution of our work is to provide {\it generic} and {\it adaptive} shrinkage estimation procedures.
+By generic, we mean that these methods can be applied in any setting where a series of effect estimates and corresponding standard errors are available.
+By adaptive, we 
+have two properties in mind. First, the appropriate amount of shrinkage is determined from the data: when the data indicate that large effects are relatively common then
+shrinkage of large observed effects is less than when the data indicate that large effects are rare.
+Second, the amount of shrinkage undergone by each measurement will depend on its precision, or standard error: measurements with big standard errors undergo more shrinkage than measurements with small standard errors.  
+Shrinkage estimation is a powerful tool, with many potential applications, including for example wavelet denoising, 
+where shrinkage of wavelet coefficients is used to smooth signals. Our methods provide an attractive and competitive alternative
+to existing EB shrinkage methods for that context, as will be explored more fully elsewhere (Xing and Stephens, in preparation).
+
 
 
 
