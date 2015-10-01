@@ -19,6 +19,8 @@ dsc: ../dsc-shrink/res.RData ../dsc-robust/dsc_robust.RData ../dsc-robust/summar
 	cd ../dsc-shrink; Rscript -e "library(rmarkdown); render('check_mixfdr_lownoise.rmd')"
 
 #figures
+figures/decomp_ZA.pdf: Rcode/makefig_FDReg_hist.R
+	cd Rcode; R CMD BATCH makefig_FDReg_hist.R
 figures/egcdf.pdf: ../dsc-shrink/res.RData ../dsc-shrink/plot_cdf_eg.R
 	cd ../dsc-shrink; R CMD BATCH plot_cdf_eg.R
 figures/mean_cdf.pdf: ../dsc-shrink/res.RData

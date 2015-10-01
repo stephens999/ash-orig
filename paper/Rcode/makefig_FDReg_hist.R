@@ -36,6 +36,7 @@ temp=hist(pval,nclass=50)
 bin_fdr = res.qvalue$pi0/temp$density #compute local fdr in each bin of histogram
 qval_fdr = bin_fdr[as.numeric(cut(pval,temp$breaks))]
 qval_fdr = pmin(1,qval_fdr) #threshold at 1, so fdr never bigger than 1
+qval_fdr = qvalue::lfdr(pval)
 
 pdf("../figures/FDReg_hist.pdf",width=6,height=3)
 par(mai=c(0.5,0.5,0.2,0.2),mgp = c(3, 0.5, 0))
