@@ -77,5 +77,5 @@ p1.s.nn=plot_lfsr(lfsr.s.nn,ylim=c(0,1),xlim=c(0,0.2))
 
 print(p1.s.nn+theme(legend.position="none",axis.text.x = element_text(size = 8,angle=45))
       +coord_equal(ratio=1/5))
-ggsave("../paper/figures/lfsr_est_s.nn.png",height=3,width=9)
+ggsave("../paper/figures/lfsr_est_s_nn.png",height=3,width=9)
 

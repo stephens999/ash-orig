@@ -395,7 +395,7 @@ In other words it is the posterior probability that $\beta_j$ is actually zero:
 \end{equation}
 
 
-The \lfdr, like most other measures of significance (e.g. $p$ values and $q$ values), is rooted in the hypothesis testing paradigm which focuses on 
+The $\lfdr$, like most other measures of significance (e.g. $p$ values and $q$ values), is rooted in the hypothesis testing paradigm which focuses on 
 whether or not an effect is exactly zero. This paradigm is popular, despite the fact that many statistical practitioners have argued that it is often inappropriate because
 the null hypothesis $H_j: \beta_j=0$ is often implausible. For example, Tukey  (\cite{tukey1991philosophy}) argued that
 ``All we know about the world teaches us that the effects of $A$ and $B$ are always different -- in some decimal place -- for any $A$ and $B$. Thus asking `Are the effects different?' is foolish." Instead, Tukey suggested (\cite{tukey1962future}, p32,) that one should address
@@ -726,10 +726,12 @@ To obtain conservative behaviour we must estimate $\pi_0$ by this upper bound, w
 be substantially larger than the true value. 
 
 Since FDR-related quantities depend quite sensitively on $\pi_0$, the consequence of this 
-overestimation of $\pi_0$ is corresponding overestimation of FDR (and \lfdr, and $q$ values).
+overestimation of $\pi_0$ is corresponding overestimation of FDR (and $\lfdr$, and $q$ values).
 To illustrate, Figure \ref{fig:lfdr} compares the estimated $\lfdr$ from ash.n with the true value (computed using
-Bayes rule from the true $g_1$ and $\pi_0$). As predicted, $\lfdr$ is overestimated, especially in scenarios where 
-$\pi_0$ is overestimated. All methods are similarly affected by this, and the ones that most grossly overestimate $\pi_0$ also most grossly overestimated $\lfdr$ and FDR/$q$-values (XXX).
+Bayes rule from the true $g_1$ and $\pi_0$). As predicted, $\lfdr$ is overestimated, especially in scenarios which involve many
+non-zero effects that are very near 0 (e.g.~the spiky scenario with $\pi_0$ small) where
+$\pi_0$ can be grossly overestimated.  
+(Of course other methods will be similarly affected by this: those that more grossly overestimate $\pi_0$, will more grossly overestimate $\lfdr$ and FDR/$q$-values.)
 
 The key point we want to make here is estimation of $\pi_0$, and the accompanying identifiability issues,
  become substantially less troublesome if we use the local false sign rate $\lfsr$ (\ref{eqn:lfsr}), rather than $\lfdr$, to measure significance. 
@@ -738,24 +740,40 @@ To illustrate, Figure \ref{fig:lfsr} compares the estimated $\lfsr$ from ash.n w
 be conservative, overestimating the truth, the overestimation is substantially less pronounced than for the $\lfdr$, especially for
 the ``spiky" scenario. Further, in the bi-modal scenario, the anti-conservative behaviour is less pronounced in $\lfsr$ than $\lfdr$.
 
-We emphasise that, compared with previous debates regarding estimation vs testing, 
-this section advances an additional reason for favoring focussing on the sign of an effect
-rather than testing whether it is 0. As noted above, many authors have argued to focus on estimation 
-because it is implausible that effects are {\it exactly} 0. Here we add that {\it even if one believes
+Note that, compared with previous debates regarding testing, 
+this section advances an additional reason for focussing on the sign of the effect, rather than just testing whether it is 0. 
+In previous debates authors have argued against testing whether an effect is 0
+because it is {\it implausible that effects are exactly 0}. Here we add that {\it even if one believes
 that some effects may be exactly zero}, it is still better to focus on the sign, because generally {\it the data are more informative about that question}
 and so inferences are more robust to, say, the inevitable mis-estimation of $\pi_0$.
 To provide some intuition, consider an observation with a $z$ score of 0. The $\lfdr$ of this observation can range from 0 (if $\pi_0=0$)
 to 1 (if $\pi_0=1$). But, assuming a symmetric $g$, the $\lfsr>0.5$ whatever the value of $\pi_0$, because the observation $z=0$ says
 nothing about the sign of the effect.
-Thus, are two reasons to use the $\lfsr$ instead of the \lfdr: it answers a question that is more generally meaningful (e.g. it applies
+Thus, are two reasons to use the $\lfsr$ instead of the $\lfdr$: it answers a question that is more generally meaningful (e.g. it applies
 whether or not zero effects truly exist),  and estimation of $\lfsr$ is more robust. 
  
-Finally for this section, we briefly consider the question of whether we could obtain better estimates of $\lfsr$ than are provided here. 
-We speculate that to do this we would either have to i) relax our relatively stringent requirement for conservative behaviour, or ii) be willing to make the assumption
-that no effects are exactly 0. In  support of i), note that under all scenarios the cloud of estimates for $\lfsr$ roughly stop at the line $y=x$, suggesting that
-a reduction in stringency (e.g.~reducing the penalty term (\ref{eqn:penalty})) would risk crossing this line more frequently. 
+Given that we argue for using $\lfsr$ rather than $\lfdr$, one might ask whether we even need a point mass on zero in our analysis.
+Indeed, one advantage of the $\lfsr$ is that it makes sense even if no effect is exactly zero. And, 
+if we are prepared to assume that no effects are exactly zero, then removing the point mass 
+yields smaller and more accurate estimates of $\lfsr$ when that assumption is true (Figure \ref{fig:lfsr-nn}). 
+However, there is ``no free lunch":  if in fact some effects are exactly zero
+then the analysis with no point mass will tend to be anti-conservative, underestimating $\lfsr$ (Figure \ref{fig:lfsr-s}). 
+We conclude that {\it if} ensuring a ``conservative" analysis is important then one must allow for a point mass at 0. 
 
-discussion on whether we really need a point mass.
+\begin{figure}
+\begin{center}
+\begin{subfigure}{\textwidth}
+\includegraphics[height=1.8in]{figures/lfsr_est_s_nn.png} 
+\caption{Comparison of true and estimated $\lfsr$ when data are simulated with no point mass at zero ($\pi_0=0$), and also analyzed by \ashr with no point mass on 0 (and mixture of normal components for $g$). Black line is $y=x$ and red line is $y=2x$. The results illustrate how estimates of $\lfsr$ can be more accurate in this case. That is, assuming there is no point mass can be beneficial if that is indeed true.}  \label{fig:lfsr-nn}
+\end{subfigure}
+\begin{subfigure}{\textwidth}
+\includegraphics[height=1.8in]{figures/lfsr_est_s.png} 
+\caption{Comparison of true and estimated $\lfsr$ when data are simulated with point mass at zero (drawn uniformly from [0,1] in each simulation), but analyzed by \ashr with no point mass on 0 (and mixture of normal components for $g$). Black line is $y=x$ and red line is $y=2x$. The results illustrate how estimates of $\lfsr$ can be anti-conservative if we assume there is no point mass when the truth is that there is a point mass.} \label{fig:lfsr-s}
+\end{subfigure}
+\end{center}
+\caption{Illustration of effects of excluding a point mass from the analysis.} \label{fig:lfsr-nopointmass}
+\end{figure}
+
 
 
 \subsubsection*{Numerical Stability}
@@ -959,7 +977,7 @@ and the other half are normally distributed with standard deviation 1:
 \begin{equation}
 p(\beta) = 0.5 \delta_0(\beta) + 0.5 N(\beta; 0,1).
 \end{equation}
-In this setting, the poor-precision measurements tell us very little, and any sane analysis should effectively ignore them. 
+In this setting, the poor-precision measurements $(s_j=10)$ tell us very little, and any sane analysis should effectively ignore them. 
  However, this is not the case in standard FDR-type analyses (Figure \ref{fig:goodpoor}). This is because the poor measurements 
  produce $p$ values that are approximately uniform  (Figure \ref{fig:goodpoor}a), 
  which, when combined with the good-precision measurements, dilute the overall signal (e.g. they reduce the density of $p$ values near 0).
@@ -986,62 +1004,56 @@ The bottom panel (b) illustrates this behaviour directly for the methods \qvalue
 \end{figure}
 
 
-\subsubsection*{Reordering of significance, and the ``$p$ value prior"}
+ \subsubsection*{Reordering of significance, and the ``$p$ value prior"}
 
-Another important consequence of accounting for varying
- measurement precision across units is that \ashr re-orders the significance of the observations compared
+Another consequence of accounting for differences in measurement precision is that \ashr may re-order the significance of the observations compared
  with the original $p$ values or $z$ scores. This is illustrated, using the same simulation as above, in Figure \ref{fig:lfsr_pval} (left panel).
  We see that poor precision measurements are assigned a higher $\lfsr$ than good precision measuments that have the same $p$ value.
  The intuition is that, due to their poor precision, these measurements contain very little information about the sign of the effects (or indeed any other aspect of the effects),
  and so the $\lfsr$ for these poor-precision measurements is always high.
  
-This tendency to reorder the significance of observations, and specifically to downweight the significance of observations with low precision,
-is a consequence of an assumption
-that we have made up to now: that the distribution of the effect $\beta_j$ is independent of its standard error $s_j$ (equation (\ref{eqn:betaj})). 
-One way to relax this assumption is to allow $\beta_j$ to scale with $s_j^\alpha$ for some
-power $\alpha$; that is, to assume model (\ref{eqn:beta-alpha}). Setting $\alpha=0$ implies that $\beta_j$ is
+The potential for Bayesian analyses to re-order the significance of observations, and specifically to downweight imprecise observations,
+was previously discussed in \cite{guan.stephens.08}. However, Wakefield \cite{wakefield:2009} showed that, under a certain prior assumption, the Bayesian analysis produces the same ranking of significance as $p$ values (or their $z$ scores). He named this prior the ``$p$-value prior" because it can be thought of as the 
+implicit prior assumption that is being made if we rank the significance of observations by their $p$ value.
+Wakefield's $p$-value prior assumes that the less precise effect estimates correspond to larger true effects, and specifically that they scale proportional
+to the standard errors $s_j$. More specifically still, it assumes a normal prior for the non-zero $\beta_j$ with mean 0 and variance $K s^2_j$ for some constant $K$.
+Here we observe that Wakefield's result extends to our mixture of (zero-mean) normal priors. Specifically, if, instead of assuming that $\beta_j$ is independent
+of $s_j$ as we have up to now, we assume that $z_j=\beta_j/s_j$ is independent of $s_j$, and drawn from a mixture of zero-mean normal distributions,
+then the $\lfsr$ computed by ash.n provides the {\it same ranking} of observations as the $z$ scores and $p$ values,
+as is illustrated in Figure \ref{fig:lfsr_pval}, right panel. (This result does not hold when using the mixtures of uniforms prior, ash.u.)
+
+This $p$-value prior assumes that the $z$ scores $z_j=\beta_j/s_j$
+are identically distributed, independent of $s_j$. This is essentially the assumption made, implicitly or explicitly, by existing methods -- like \locfdr, \mixfdr and \qvalue --
+that model the $z_j$ or $p_j$ directly.  In contrast, we have assumed up to now that the $\beta_j$ are independent of $s_j$. 
+We can set both these assumptions within a more general framework, which allows that $\beta_j/s^\alpha$ is independent of $s_j$ for some $\alpha$ [Equation (\ref{eqn:beta-alpha}))]. Setting $\alpha=0$ implies that $\beta_j$ is
 independent of $s_j$, as we have assumed up to now, and $\alpha>0$ implies that observations with larger standard error tend to have larger
 effects (in absolute value). This latter assumption may often be qualitatively plausible: 
 for example, in gene expression studies the standard error for gene $j$ depends partly on
 the variance of its expression among samples, and genes with a larger variance may tend to be less tightly regulated and
 so be amenable to a larger shift in expression between conditions (i.e.~larger effect $\beta_j$).
-The special case $\alpha=1$ corresponds to assuming that the $z$ scores $z_j=\beta_j/s_j$, and hence the corresponding $p$ values, 
-are identically distributed, independent of $s_j$. This is essentially the assumption made (implicitly or explicitly) by existing methods like \locfdr, \mixfdr and \qvalue,
-which model the $z_j$ or $p_j$ directly.  Under this assumption, and with the normal mixture prior for $\beta_j/s_j$ (\ref{eqn:mixnorm}),
-the $\lfsr$ computed by \ashr provides the same {\it ranking} of observations as the $z$ scores and $p$ values (see Figure \ref{fig:lfsr_pval}, right panel). 
-
-This observation extends a result in
-\cite{wakefield:2009}, who showed that, when testing a series of null hypotheses, 
-with a normal likelihood, Bayes Factors and $p$ values produce the same ranking of tests {\it if} the Bayes Factor for the $j$th test 
-is computed using a normal prior for the alternative effects with mean 0 and variance $K s^2_j$ for some constant $K$.
-Because of this correspondance in ranking, Wakefield refers to this as the ``$p$-value prior". 
-Our result extends Wakefield's results to the mixture of normals prior, from a single normal. As an aside we note
-that the result does depend on the normal assumptions: for example, it does not hold in general for mixtures of uniforms as a prior; nor
-if we use a $t$ likelihood instead of a normal likelihood. That is, under these models, the EB
-analysis may reorder the significance of the observations (compared with the $p$ values) even when $\alpha=1$.
-
+On the other hand, there is no particular reason to expect that either $\alpha=1$ or $\alpha=0$ will be the optimal choice.
+Indeed, optimal choice of $\alpha$ will depend on the actual relationship between $\beta_j$ and $s_j$,
+which will be dataset-specific. 
+Framing the problem in this way -- that is, as comparing different modelling assumptions for $\beta_j$, rather than as 
+comparing ``modelling $\beta_j$" vs  ``modelling $z_j$" (or ``modelling $p_j$") -- has the important advantage that 
+likelihood-based methods can be used to select $\alpha$. For example, following the logic of the EB approach it
+would be natural to select $\alpha$ by maximum likelihood. Since $\alpha$ is a one-dimensional parameter, this can be achieved by a 1-d grid search,
+which has been implemented in our software by C. Dai. 
 
 %\begin{result}
 %If the prior distribution on $\beta/s | s$ is a mixture of zero-centered normal distributions, (\ref{eqn:mixnorm}), and the likelihood for $\beta$ is 
 %given by $\bhat | s, \beta \sim N(0,s^2)$ then $p(\beta>0 | \bhat, s)$ is a monotonic increasing function of the $z$ score, $\bhat/s$. 
 %\end{result}
 
-%Indeed, any FDR-based approach that ranks the significance of observations 
-%by their $p$ values, like the Benjamini--Hochberg method, could be viewed as making the same implicit assumption.
 
 
-To summarize: the behaviour of \ashr depends on the value of $\alpha$ assumed in (\ref{eqn:beta-alpha}). 
-Up to now we have assumed $\alpha=0$, which implies that effects are identically distributed, independent of their standard error.
-In contrast, existing methods effectively assume $\alpha=1$, which implies that effects tend to scale proportional to their standard error.
-Whether it is better to set $\alpha=0$ or $\alpha=1$ in practice will depend on actual relationship between $\beta_j$ and $s_j$,
-which will be dataset-specific. Indeed, it seems quite likely that, in general, the optimal $\alpha$ may be some other (non-integer) value.
-Framing the problem in this way -- that is, as comparing different modelling assumptions for $\beta_j$, rather than as 
-comparing ``modelling $\beta_j$" vs  ``modelling $z_j$" (or ``modelling $p_j$") -- has the important advantage that 
-likelihood-based methods can be used to select $\alpha$. For example, following the logic of the EB approach it
-would be natural to select $\alpha$ by maximum likelihood. Since $\alpha$ is a one-dimensional parameter, this can be achieved by a 1-d grid search,
-which has been implemented in our software by C. Dai. 
-(Alternatively, since fractional values of $\alpha$ may be tricky to interpret, users
-may prefer to simply choose whichever of $\alpha=0,1$ yields the highest likelihood.) 
+%To summarize: the behaviour of \ashr depends on the value of $\alpha$ assumed in (\ref{eqn:beta-alpha}). 
+%Up to now we have assumed $\alpha=0$, which implies that effects are identically distributed, independent of their standard error.
+%In contrast, existing methods effectively assume $\alpha=1$, which implies that effects tend to scale proportional to their standard error.
+%Whether it is better to set $\alpha=0$ or $\alpha=1$ in practice will depend on actual relationship between $\beta_j$ and $s_j$,
+%which will be dataset-specific. Indeed, it seems quite likely that, in general, the optimal $\alpha$ may be some other (non-integer) value.
+%(Alternatively, since fractional values of $\alpha$ may be tricky to interpret, users
+%may prefer to simply choose whichever of $\alpha=0,1$ yields the highest likelihood.) 
 
 
 %\begin{result}
@@ -1080,7 +1092,7 @@ the estimated prior distribution $\hat{g}$ will reflect this by being concentrat
  Indeed, in the limit as $\hat{g}$ becomes flatter and flatter the posterior distribution on $\beta_j$ becomes $N(\bhat_j,\shat_j)$,
  and the Bayesian credible intervals match standard confidence intervals, which might be considered ``no shrinkage".
 
-Here we build on this idea in two ways. First,
+Our methods we build on this idea in two ways. First,
 by using flexible semi-parametric approaches to estimate $g$ we aim to maximise the potential for this adaptive behaviour.
 Second, by incorporating the precision of each measurement into the likelihood, (\ref{eqn:normlik}) or (\ref{eqn:tlik}), we ensure that shrinkage
 adapts to measurement precision: more precise measurements undergo
@@ -1139,50 +1151,9 @@ Figure \ref{fig:ash} illustrates the idea by contrasting results for two simulat
 %Dean and Raftery
 %Uniform is super-efficient
 
+\section*{Discussion}
 
-%\subsection{Do we need a point mass at zero?}
-%
-%In some settings it is the convention to focus on testing whether $\beta_j=0$. However some dislike this focus, objecting that it is unlikely to be the case that $\beta_j=0$ exactly. For example, when comparing the average expression of a gene in human samples vs chimp samples, it might be considered unlikely that the expression
-%is *exactly* the same in both. Whether or not $\beta_j=0$
-%is considered unlikely may depend on the context.
-%However, in most contexts, finite data cannot
-%distinguish between $\beta_j=0$ and $\beta_j$ being very close to zero. Thus finite data cannot usually convince a skeptic that $\beta_j$ is exactly zero, rather than just very small. In contrast it is easy to imagine data that would convince a doubter that $\beta_j$ is truly non-zero. In this sense there is an assymetry between the inferences "$\beta_j$ is zero" and "$\beta_j$ is non-zero", an assymetry that is reflected in the admonition "failure to reject the null does not imply it to be true".
-%
-%Thus any analysis that purports to distinguish between these cases must be making an assumption. 
-%
-%Consider two analyses of the same data, using two different "priors" $g$ for $\beta_j$, that effectively differ only in their assumptions about whether or not $\beta_j$ can be exactly zero. For concreteness, consider
-%\[ g_1(\cdot) = \pi \delta_0(\cdot) + (1-\pi) N(\cdot; 0,\sigma^2) \]
-%and
-%\[g_2(\cdot) = \pi N(\cdot; 0, \epsilon^2) + (1-\pi) N(\cdot; 0, \sigma^2).\]
-%If $\epsilon^2$ is sufficiently small, then these 
-%priors are "approximately the same", and will lead to "approximately the same" posteriors and inferences in many senses. To discuss these, let $p_j$ denote the posterior under prior $g_j$. Then, for any given (small) $\delta$, we will have $p_1(|\beta_j|<\delta) \approx p_2(|\beta_j|< \delta)$. However, we will not have $p_1(\beta_j=0) \approx p_2(\beta_j=0)$: the latter will always be zero, while the former could be appreciable.
-%
-% What if, instead, we examine $p_1(\beta_j >0)$ and $p_2(\beta_j >0)$? Again, these will differ. If this probability is big in the first analysis, say $1-\alpha$ with $\alpha$ small, then it could be as big as $1-\alpha/2$ in the second analysis. This is because if $p_1(\beta_j>0)=1-\alpha$, then $p_1(\beta_j=0)$ will often be close to $\alpha$, so for small $\epsilon$ $p_2(\beta_j)$ will have mass $\alpha$ near 0, of which half will be positive and half will be negative. 
-%Thus if we do an analysis without a point mass, but allow
-%for mass near 0, then we may predict what the results would have been if we had used a point mass.
-%
-%Let's try: 
-%```{r}
-%beta.ash.pm = ash(ss$betahat, ss$betasd, usePointMass=TRUE)
-%print(beta.ash.pm)
-%print(beta.ash.auto)
-%plot(beta.ash.auto$localfsr,beta.ash.pm$localfsr,main="comparison of ash localfsr, with and without point mass",xlab="no point mass", ylab="with point mass",xlim=c(0,1),ylim=c(0,1))
-%abline(a=0,b=1)
-%abline(a=0,b=2)
-%```
-%
-%Our conclusion: if we simulate data with a point mass,
-%and we analyze it without a point mass, we may underestimate
-%the $\lfsr$ by a factor of 2. Therefore, to be conservative, we might prefer to analyze the data allowing for the point mass, or, if analyzed without a point mass, multiply estimated false sign rates by 2. 
-%
-
-
- 
-
-
-
-
-\subsection{Discussion}
+Benefits of two numbers instead of one.  A general idea.
 
 
 The use of EB methods for estimation also has a long and close relationship with another key concept in modern statistics: shrinkage estimation \cite{efron1973}.
@@ -1200,9 +1171,6 @@ Second, the amount of shrinkage undergone by each measurement will depend on its
 Shrinkage estimation is a powerful tool, with many potential applications, including for example wavelet denoising, 
 where shrinkage of wavelet coefficients is used to smooth signals. Our methods provide an attractive and competitive alternative
 to existing EB shrinkage methods for that context, as will be explored more fully elsewhere (Xing and Stephens, in preparation).
-
-
-
 
 Choice of mixture components. Use of likelihood to compare different mixture components?
 
@@ -1341,12 +1309,12 @@ See Section \ref{sec:grid} for our software defaults.
 
 \subsubsection*{Dependence of effects on standard errors}
 
-Equation (\ref{eqn:betaj}) assumes that the $\beta_j$ all come from the same distribution $g$, independent of $\shat_j$.
+Equation (\ref{eqn:beta}) assumes that the $\beta_j$ all come from the same distribution $g$, independent of $\shat_j$.
 This can be relaxed to allow the distribution of $\beta_j$ to depend on $\shat_j$ using
  \begin{equation} \label{eqn:beta-alpha}
  \frac{\beta_j}{\shat_j^\alpha} \, \big |  \shat_j \sim g(\cdot; \pi)
  \end{equation}
-for any $\alpha \geq 0$. Setting $\alpha=0$ yields (\ref{eqn:betaj}), and setting $\alpha=1$ corresponds to
+for any $\alpha \geq 0$. Setting $\alpha=0$ yields (\ref{eqn:beta}), and setting $\alpha=1$ corresponds to
 assuming that the $t_j =\beta_j/ \shat_j$ have a common distribution. This case is of special interest:
 it effectively corresponds to the ``$p$ value prior" in \cite{wakefield:2009} and is, implicitly, 
 the assumption made by existing FDR methods that rank tests by their $p$ values (or $z$ or $t$ scores). See Results for further discussion.
