@@ -1,0 +1,129 @@
+For each simulation scenario we simulated 100 independent data sets, each with $J=1000$ observations. For each data set we simulated
+data as follows:
+
+\begin{enumerate}
+\item Simulate $\pi_0  \sim U[0,1]$.
+\item For $j=1,\dots,J$, simulate $\beta_j \sim \pi_0 \delta_0 + (1-\pi_0) g_1(\cdot)$.
+\item For $j=1,\dots,J$, simulate $\bhat_j | \beta_j \sim N(\beta_j,1)$.
+\end{enumerate}
+
+Figure \ref{fig:pi0sims} compares estimates of $\pi_0$ from \qvalue, \locfdr, \mixfdr and \ashr ($y$ axis) with the true values ($x$ axis). 
+For \ashr we show results for $g_1$ modelled as a mixture of normal components (``ash.n") 
+and as a mixture of symmetric uniform components (``ash.u"). (Results using the asymmetric uniforms, which we refer to
+as ``half-uniforms", and denote ``ash.hu" in subsequent sections, are here generally similar to ash.u and omitted to avoid over-cluttering figures.)
+The results show that \ashr provides the smallest more accurate, estimates for $\pi_0$, while remaining conservative
+in all scenarios where the UA holds. When the UA does not hold (``bimodal" scenario) the \ashr estimates can be slightly anti-conservative.
+We view this as a minor concern in practice, since we view such a strong bimodal scenario as unlikely in most applications where FDR methods
+are used. (In addition, the effects on $\lfsr$ estimates turn out to be relatively modest; see below).
+
+\subsubsection*{The $\lfsr$ is more robust than \lfdr}
+
+The results above show that \ashr can improve on existing methods in producing smaller, more accurate, 
+estimates of $\pi_0$, which will lead to more accurate estimates of FDR.
+Nonetheless, in many scenarios \ashr continues
+to substantially over-estimate $\pi_0$ (see the ``spiky" scenario for example). 
+This is because these scenarios include 
+an appreciable fraction of ``small non-null effects" that are essentially indistinguishable from 0, making accurate
+estimation of $\pi_0$ impossible. Put another way, and as is well known, $\pi_0$ is not identifiable:
+ the data can effectively provide an upper bound on plausible values of $\pi_0$,
+but not a lower bound (because the data cannot rule out that everything is non-null, but with miniscule effects).
+To obtain conservative behaviour we must estimate $\pi_0$ by this upper bound, which can
+be substantially larger than the true value.
+
+Since FDR-related quantities depend quite sensitively on $\pi_0$, the consequence of this 
+overestimation of $\pi_0$ is corresponding overestimation of FDR (and $\lfdr$, and $q$ values).
+To illustrate, Figure \ref{fig:lfdr} compares the estimated $\lfdr$ from ash.n with the true value (computed using
+Bayes rule from the true $g_1$ and $\pi_0$). As predicted, $\lfdr$ is overestimated, especially in scenarios which involve many
+non-zero effects that are very near 0 (e.g.~the spiky scenario with $\pi_0$ small) where
+$\pi_0$ can be grossly overestimated.  
+(Of course other methods will be similarly affected by this: those that more grossly overestimate $\pi_0$, will more grossly overestimate $\lfdr$ and FDR/$q$-values.)
+
+The key point we want to make here is estimation of $\pi_0$, and the accompanying identifiability issues,
+ become substantially less troublesome if we use the local false sign rate $\lfsr$ (\ref{eqn:lfsr}), rather than $\lfdr$, to measure significance. 
+ This is essentially because $\lfsr$ is less sensitive to the estimate of $\pi_0$.
+To illustrate, Figure \ref{fig:lfsr} compares the estimated $\lfsr$ from ash.n with the true value: although the estimated $\lfsr$ continue to
+be conservative, overestimating the truth, the overestimation is substantially less pronounced than for the $\lfdr$, especially for
+the ``spiky" scenario. Further, in the bi-modal scenario, the anti-conservative behaviour is less pronounced in $\lfsr$ than $\lfdr$.
+
+Note that, compared with previous debates regarding testing, 
+this section advances an additional reason for focussing on the sign of the effect, rather than just testing whether it is 0. 
+In previous debates authors have argued against testing whether an effect is 0
+because it is {\it implausible that effects are exactly 0}. Here we add that {\it even if one believes
+that some effects may be exactly zero}, it is still better to focus on the sign, because generally {\it the data are more informative about that question}
+and so inferences are more robust to, say, the inevitable mis-estimation of $\pi_0$.
+To provide some intuition, consider an observation with a $z$ score of 0. The $\lfdr$ of this observation can range from 0 (if $\pi_0=0$)
+to 1 (if $\pi_0=1$). But, assuming a symmetric $g$, the $\lfsr>0.5$ whatever the value of $\pi_0$, because the observation $z=0$ says
+nothing about the sign of the effect.
+Thus, are two reasons to use the $\lfsr$ instead of the $\lfdr$: it answers a question that is more generally meaningful (e.g. it applies
+whether or not zero effects truly exist),  and estimation of $\lfsr$ is more robust.
+
+Given that we argue for using $\lfsr$ rather than $\lfdr$, one might ask whether we even need a point mass on zero in our analysis.
+Indeed, one advantage of the $\lfsr$ is that it makes sense even if no effect is exactly zero. And, 
+if we are prepared to assume that no effects are exactly zero, then removing the point mass 
+yields smaller and more accurate estimates of $\lfsr$ when that assumption is true (Figure \ref{fig:lfsr-nn}). 
+However, there is ``no free lunch":  if in fact some effects are exactly zero
+then the analysis with no point mass will tend to be anti-conservative, underestimating $\lfsr$ (Figure \ref{fig:lfsr-s}). 
+We conclude that {\it if} ensuring a ``conservative" analysis is important then one must allow for a point mass at 0.
+
+\subsubsection*{Numerical Stability}
+
+The EM algorithm, which we use here to fit our model, is notorious for convergence to local optima. 
+However, in this case, over hundreds of applications of the procedure, we observed no obvious serious problems 
+caused by such behaviour. To quantify this, we ran \ashr 10 times on each of the 600 simulated datasets above using a random initialization for $\pi$,
+in addition running it using our default initialization procedure (see Implementation details). We then compared the largest
+log-likelihood achieved across all 11 runs with the log-likelihood achieved by the default run.
+When using a mixture of normals (ash.n) the results were extremely stable: 96\% showed a negligible log-likelihood difference ($< 0.02$), 
+and the largest difference was 0.8. When using mixtures of uniforms (ash.u,ash.hu) results were slightly less stable: 89\% showed a negligible log-likelihood difference ($<0.02$),
+and 6\% of runs showed an appreciable log-likelihood difference ($>1$), with the largest difference being 5.0. However, perhaps suprisingly, 
+even for this largest difference results from the default run (e.g. the $\lfsr$ values, and the posterior means) were in other ways virtually indistinguishable from the results from the run with the highest log-likelihood. See \url{http://github.com/stephens999/ash/blob/master/dsc-robust/summarize_dsc_robust.rmd} for further details.
+
+\subsubsection*{The UA helps provide reliable estimates of $g$}
+
+An important advantage of our EB approach based on modelling the effects $\beta_j$, rather than $p$ values or $z$ scores, is that it
+can estimate the {\it size} of each effect $\beta_j$.
+Specifically, it provides a posterior distribution for each $\beta_j$, which can be used
+to construct interval estimates for $\beta_j$ and address question such as ``which effects exceed $T$'', for any 
+threshold $T$.
+Further, because the posterior distribution is, by definition,
+conditional on the observed data, interval estimates based on posterior distributions are also valid Bayesian inferences for any subset of the effects that have
+been selected based on the observed data. This kind of ``post-selection" validity is much harder to achieve in the frequentist paradigm.
+In particular the posterior distribution solves the (Bayesian analogue of the) ``False Coverage Rate" problem posed by
+\cite{benjamini2005false} which \cite{efron2008microarrays} summarizes as follows: ``having applied FDR methods to select a set of nonnull cases,
+how can confidence intervals be assigned to the true
+effect size for each selected case?". \cite{efron2008microarrays} notes the potential for EB approaches to tackle this problem,
+and \cite{zhao2012empirical} consider in detail the case where the non-null effects are normally distributed.
+
+The ability of the EB approach to provide valid ``post-selection" interval estimates is extremely attractive in principle.
+But its usefulness in practice
+depends on reliably estimating the distribution $g$. Estimating $g$ is a ``deconvolution problem",
+which are notoriously difficult in general. Indeed, Efron emphasises
+the difficulties of implementing a stable general algorithm, noting in his rejoinder
+``the effort foundered on practical difficulties involving the perils of deconvolution... Maybe I am trying
+to be overly nonparametric ... but it is hard to imagine a
+generally satisfactory parametric formulation..." (\cite{efron2008microarrays} rejoinder, p46).
+Our key point here is that the UA greatly simplifies the deconvolution problem.
+While not meeting Efron's desire for an entirely general nonparametric approach, we believe 
+that the UA can handle many cases of practical interest.
+
+To illustrate this, Figure \ref{fig:egcdf} compares the
+estimated $g$ from \ashr  with that from \mixfdr which does not make the UA 
+(and which models $g$ as a mixture of $J$ normal distributions, with $J=3$ by default).
+The greater reliability of estimates afforded
+by the UA is immediately apparent. In particular the estimated cdf from \mixfdr often has an almost-vertical
+segment at some non-zero location, indicative of a concentration of density in the estimated $g$ at that location. 
+The UA prevents this kind of ``irregular" behaviour, effectively requiring $g$ to be somewhat smooth.
+While the UA is not the only way to achieve this, we find it an attractive, simple and effective approach.
+
+Interestingly, even in the ``bimodal" scenario $\ashr$ 
+is visually more accurate than \mixfdr: although \mixfdr is capable, in principle, of fitting the multiple modes of $g$, it does not do this well here. 
+Possibly the noise level here is sufficiently large to make reliable estimation of the multiple modes difficult. 
+Indeed, in multi-modal simulations where the multiple modes are sufficiently well-spaced
+to be clearly visible in the observed $\bhat$, \mixfdr fits these modes 
+(\url{http://github.com/stephens999/ash/blob/master/dsc-shrink/check_mixfdr_lownoise.rmd}). Of course, we would not advocate the UA in settings where multi-modality is 
+clearly visible in the observed $\bhat$.
+
+We note one caveat on the accuracy of estimated $g$: due to the penalty term (\ref{eqn:penalty}) \ashr tends to systematically
+overestimate the mass of $g$ near zero. On careful inspection, this is apparent in Figure \ref{fig:egcdf}: the estimated cdf is generally below the true cdf just to the left of zero,
+and above the true cdf just to the right of zero. Averaging the cdf over many replicates confirms this systematic effect (Figure \ref{fig:egcdf}b),
+and applying our methods without the penalty term removes this systematic effect, although at the cost of sometimes 
+under-estimating $\pi_0$ (Figure \ref{fig:egcdf}c).

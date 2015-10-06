@@ -1,0 +1,22 @@
+\subsection*{Differing measurement precision across units}
+
+We turn now to the second important component of our work: allowing for varying
+ measurement precision across units. The key to this is the use of a likelihood,
+ (\ref{eqn:normlik}) or (\ref{eqn:tlik}), that explicitly incorporates the measurement precision (standard error) of each $\bhat_j$.
+
+To illustrate, we conduct a simulation where half the measurements are quite precise (standard error $s_j = 1$), and the other half are very poor
+ ($s_j=10$).  In both cases,
+we assume that half the effects are null
+and the other half are normally distributed with standard deviation 1:
+
+\begin{equation}
+p(\beta) = 0.5 \delta_0(\beta) + 0.5 N(\beta; 0,1).
+\end{equation}
+In this setting, the poor-precision measurements $(s_j=10)$ tell us very little, and any sane analysis should effectively ignore them. 
+ However, this is not the case in standard FDR-type analyses (Figure \ref{fig:goodpoor}). This is because the poor measurements 
+ produce $p$ values that are approximately uniform  (Figure \ref{fig:goodpoor}a), 
+ which, when combined with the good-precision measurements, dilute the overall signal (e.g. they reduce the density of $p$ values near 0).
+ This is reflected in the results of FDR methods like $\qvalue$ and $\locfdr$:
+the estimated error rates ($q$-values, or $\lfdr$ values) for the good-precision observations increase when the low-precision observations are included in the analysis
+(Figure \ref{fig:goodpoor}b). In contrast, the results from $\ashr$ 
+for the good-precision observations are unaffected by including the low-precision observations in the analysis (Figure \ref{fig:goodpoor}b).

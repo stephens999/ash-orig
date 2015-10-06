@@ -1,0 +1,35 @@
+\subsubsection*{Reordering of significance, and the ``$p$ value prior"}
+
+Another consequence of accounting for differences in measurement precision is that \ashr may re-order the significance of the observations compared
+ with the original $p$ values or $z$ scores. This is illustrated, using the same simulation as above, in Figure \ref{fig:lfsr_pval} (left panel).
+ We see that poor precision measurements are assigned a higher $\lfsr$ than good precision measuments that have the same $p$ value.
+ The intuition is that, due to their poor precision, these measurements contain very little information about the sign of the effects (or indeed any other aspect of the effects),
+ and so the $\lfsr$ for these poor-precision measurements is always high.
+
+The potential for Bayesian analyses to re-order the significance of observations, and specifically to downweight imprecise observations,
+was previously discussed in \cite{guan.stephens.08}. However, Wakefield \cite{wakefield:2009} showed that, under a certain prior assumption, the Bayesian analysis produces the same ranking of significance as $p$ values (or their $z$ scores). He named this prior the ``$p$-value prior" because it can be thought of as the 
+implicit prior assumption that is being made if we rank the significance of observations by their $p$ value.
+Wakefield's $p$-value prior assumes that the less precise effect estimates correspond to larger true effects, and specifically that they scale proportional
+to the standard errors $s_j$. More specifically still, it assumes a normal prior for the non-zero $\beta_j$ with mean 0 and variance $K s^2_j$ for some constant $K$.
+Here we observe that Wakefield's result extends to our mixture of (zero-mean) normal priors. Specifically, if, instead of assuming that $\beta_j$ is independent
+of $s_j$ as we have up to now, we assume that $z_j=\beta_j/s_j$ is independent of $s_j$, and drawn from a mixture of zero-mean normal distributions,
+then the $\lfsr$ computed by ash.n provides the {\it same ranking} of observations as the $z$ scores and $p$ values,
+as is illustrated in Figure \ref{fig:lfsr_pval}, right panel. (This result does not hold when using the mixtures of uniforms prior, ash.u.)
+
+This $p$-value prior assumes that the $z$ scores $z_j=\beta_j/s_j$
+are identically distributed, independent of $s_j$. This is essentially the assumption made, implicitly or explicitly, by existing methods -- like \locfdr, \mixfdr and \qvalue --
+that model the $z_j$ or $p_j$ directly.  In contrast, we have assumed up to now that the $\beta_j$ are independent of $s_j$. 
+We can set both these assumptions within a more general framework, which allows that $\beta_j/s^\alpha$ is independent of $s_j$ for some $\alpha$ [Equation (\ref{eqn:beta-alpha}))]. Setting $\alpha=0$ implies that $\beta_j$ is
+independent of $s_j$, as we have assumed up to now, and $\alpha>0$ implies that observations with larger standard error tend to have larger
+effects (in absolute value). This latter assumption may often be qualitatively plausible: 
+for example, in gene expression studies the standard error for gene $j$ depends partly on
+the variance of its expression among samples, and genes with a larger variance may tend to be less tightly regulated and
+so be amenable to a larger shift in expression between conditions (i.e.~larger effect $\beta_j$).
+On the other hand, there is no particular reason to expect that either $\alpha=1$ or $\alpha=0$ will be the optimal choice.
+Indeed, optimal choice of $\alpha$ will depend on the actual relationship between $\beta_j$ and $s_j$,
+which will be dataset-specific. 
+Framing the problem in this way -- that is, as comparing different modelling assumptions for $\beta_j$, rather than as 
+comparing ``modelling $\beta_j$" vs  ``modelling $z_j$" (or ``modelling $p_j$") -- has the important advantage that 
+likelihood-based methods can be used to select $\alpha$. For example, following the logic of the EB approach it
+would be natural to select $\alpha$ by maximum likelihood. Since $\alpha$ is a one-dimensional parameter, this can be achieved by a 1-d grid search,
+which has been implemented in our software by C. Dai.

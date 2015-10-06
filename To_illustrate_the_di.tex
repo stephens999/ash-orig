@@ -1,0 +1,28 @@
+To illustrate the different inferences from the UA and ZA we show results for a single
+dataset simulated with the true effects $\beta_j \sim N(0,1)$ (so with $s_j=1$, $\bhat_j  \sim N(0,2)$). Note that none of the effects are truly null,
+but nonetheless there are many $p$ values near 1 and $z$ scores near 0 (Figure \ref{fig:ZA}).  We used each of the methods
+\qvalue, \locfdr, \mixfdr and \ashr to decompose the $z$ scores ($z_j = \bhat_j$), or their corresponding $p$ values, into null and alternative components.
+The results (Figure \ref{fig:ZA}) illustrate the clear difference between the existing methods and our method. The effects of the ZA made by \qvalue and \locfdr
+are visually clear, producing a ``hole"  in the alternative $z$ score distribution around 0. Although \mixfdr does not formally make the ZA, its decomposition
+exhibits a similar hole. In contrast, due to the UA, the alternative $z$ score distribution for \ashr is required to have a mode at 0, 
+effectively ``filling in" the hole.  (Of course the null distribution also has a peak at 0, and the local fdr 
+ under the UA is still smallest for $z$ scores that are far from zero -- i.e. large $z$ scores remain the ``most significant".)
+
+Figure \ref{fig:ZA} may also be helpful in understanding the interacting role of the UA and the penalty term (\ref{eqn:penalty}) that attempts to make $\pi_0$ as ``large as possible" while remaining consistent with the UA. Specifically, consider the panel of Figure \ref{fig:ZA} that shows \ashr's decomposition of $z$ scores, and imagine increasing $\pi_0$ further. This would increase the null component (dark blue) at the expense of
+the alternative component (light blue). Because the null component is $N(0,1)$, and so is biggest at 0, this would eventually create a ``dip" in the light-blue histogram at 0. The role of the penalty term is to push the dark blue component as far as possible, right up to (or, to be conservative, just past) the point where this dip appears. In contrast the ZA pushes the dark blue component until the light-blue component {\it disappears} at 0. See \url{https://stephens999.shinyapps.io/unimodal/unimodal.Rmd} for an interactive
+demonstration.
+
+\subsubsection*{The UA can produce conservative estimates of $\pi_0$}
+
+The illustration in Figure \ref{fig:ZA} suggests that the UA will produce smaller estimates of $\pi_0$ than the ZA.
+Consequently \ashr will estimate smaller $\lfdr$s and FDRs than existing methods that make the ZA. 
+This is desirable, provided that these estimates remain conservative: that is,
+provided that $\pi_0$ does not underestimate the true $\pi_0$ and $\lfdr$ does not underestimate the true $\lfdr$.
+The penalty term (\ref{eqn:penalty}) aims to ensure this conservative behaviour. To check its effectiveness
+we performed simulations under various alternative scenarios (i.e. various distributions for the non-zero effects, which we denote $g_1$), and values
+for $\pi_0$. The alternative distributions are shown in Figure \ref{fig:altdens}, with details in Table \ref{table:scenarios}.
+They range from a ``spiky" distribution -- where many non-zero $\beta$ are
+too close to  zero to be reliably detected, making reliable estimation of $\pi_0$ essentially impossible -- to a much
+flatter distribution, which is a normal distribution with large variance (``big-normal") -- where most non-zero $\beta$ are easily detected
+making reliable estimation of $\pi_0$ easier. We also include one asymmetric distribution (``skew"), and one clearly bimodal distribution (``bimodal"),
+which, although we view as generally unrealistic, we include to assess robustness of \ashr~to deviations from the UA.

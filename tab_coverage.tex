@@ -1,0 +1,22 @@
+\begin{table}
+[!ht]
+\begin{subtable}{\textwidth}
+	\centering\input{tables/scoverage_all.tex}
+	\caption{All observations. Coverage rates are generally satisfactory, except for the extreme ``spiky" scenario. This is due to the penalty term (\ref{eqn:penalty}) which tends to cause over-shrinking towards zero. Removing this penalty term produces coverage rates closer to the nominal levels for uniform and normal methods (Table \ref{tab:nopen}). Removing the penalty in the half-uniform case is not recommended (see Appendix).}
+\end{subtable}
+
+\begin{subtable}{\textwidth}
+\centering\input{tables/scoverage_neg.tex}
+\caption{``Significant" negative discoveries. Coverage rates are generally satisfactory, except for the uniform-based methods in the spiky and near-normal scenarios,
+and the normal-based method in the flat-top scenario. These results likely reflect inaccurate estimates of the tails of $g$ due to a disconnect between the tail of $g$ and the component distributions in these cases. For example, the uniform methods sometimes substantially underestimate the length of the tail of $g$ in these long-tailed scenarios, 
+causing over-shrinkage of the tail toward 0.}
+\end{subtable}
+
+\begin{subtable}{\textwidth}
+\centering\input{tables/scoverage_pos.tex}
+\caption{``Significant" positive discoveries. Coverage rates are generally satisfactory, except for the symmetric methods under the asymmetric (``skew") scenario. }
+\end{subtable}
+
+\caption{Table of empirical coverage for nominal 95\% lower credible bounds} \label{tab:coverage}
+
+\end{table}

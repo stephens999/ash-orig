@@ -1,0 +1,60 @@
+\section*{Discussion}
+
+We have presented an Empirical Bayes approach to large-scale multiple testing that emphasises two ideas.
+First, we emphasise the potential benefits of using two numbers ($\bhat$, and its standard error)
+rather than just one number (a $p$ value or $z$ score)  to summarize the information on each test.
+While requiring two numbers is slightly more onorous than requiring one, in many settings these
+numbers are easily available and if so we argue it makes sense to use them.
+Second, we note the potential benefits -- both statistical and computational -- of assuming that the effects come from a unimodal distribution, and provide
+flexible implementations for performing inference under this assumption. We also introduce the ``false sign rate" as
+an alternative measure of error to the FDR, and illustrate its improved robustness to errors in model fit, particularly mis-estimation
+of the proportion of null tests, $\pi_0$.
+
+Multiple testing is often referred to as a ``problem" or a ``burden". In our opinion, EB approaches turn this idea on its head,
+treating multiple testing as an {\it opportunity}: specifically, an opportunity to learn about the prior distributions, and other modelling assumptions,
+to improve inference and make informed decisions about significance (see also \cite{greenland1991empirical}). This view
+also emphasises that, what matters in multiple testing settings is {\it not} the number of tests, but the {\it results} of the tests.
+Indeed, the FDR at a given fixed threshold does not depend on the number of tests: as the number of tests increases, both the true positives and false positives increase linearly,
+and the FDR remains the same. (If this intuitve argument does not convince, see \cite{storey.03}, and note that the FDR at a given $p$ value threshold does not depend on the number of tests $m$.) Conversely, the FDR {\it does} depend on the overall distribution of effects, and particularly on $\pi_0$ for example. 
+The EB approach captures this dependence in an intuitive way:
+if there are lots of strong signals then we infer $\pi_0$ to be small, and the estimated FDR (or $\lfdr$, or $\lfsr$) at a given threshold may be low, even if a large number of tests were performed; and conversely
+if there are no strong signals then we infer $\pi_0$ to be large and the FDR at the same threshold may be high, even if relatively few tests were performed. 
+More generally, overall signal strength is reflected in the estimated $g$, which in turn influences the estimated FDR.
+
+Two important practical issues that we have not addressed here are correlations among tests,
+and the potential for deviations from the theoretical null distributions of test statistics. These two
+issues are connected: specifically, unmeasured confounding factors can cause both correlations among tests
+and deviations from the theoretical null \cite{efron2007correlation,leek:2007}. And although there are certainly other
+factors that could cause dependence among tests, unmeasured confounders are perhaps the most worrisome in practice
+because they can induce strong correlations among large numbers of tests and profoundly impact results.
+Approaches to deal with unmeasured confounders can be largely divided into two types: those
+that simply attempt to correct for the resulting inflation of test statistics \cite{devlin1999genomic,efron2004large}, and those
+that attempt to infer counfounders using clustering, principal components analysis, or factor models 
+\cite{pritchard.stephens.rosenberg.donnelly.00,price:2006,leek:2007,gagnon2012using},
+and then correct for them in computation of the test statistics (in our case, $\bhat,\shat$). When these latter approaches are viable,
+they provide perhaps the most satisfactory solution, and are certainly a good fit for our framework. Alterntively, our methods
+could also be modified to allow for test statistic inflation, perhaps by incorporating the inflation into the likelihood (\ref{eqn:normlik}) using
+$\bhat_j | \shat_j \sim N(0,\lambda_1 \shat_j + \lambda_2)$, where $\lambda_1,\lambda_2$ are to be estimated. However,
+this immediately raises issues of identifiability and we do not pursue the idea further here.
+
+Another important practical issue is the challenge of small sample sizes. For example, in genomics applications researchers sometimes
+attempt to identify differences between two conditions based on only a handful of samples in each. In such settings the
+normal likelihood approximation (\ref{eqn:normlik}) will be inadequate. And, although the $t$ likelihood (\ref{eqn:tlik}) partially
+addresses this issue, it is also, it turns out, not entirely satisfactory.  The root of the problem is that, with small sample sizes, raw estimated standard
+errors $\shat_j$ can be horribly variable. In genomics it is routine to address this issue by applying EB methods \cite{smyth:2004} to ``moderate" (i.e.~shrink) variance estimates,
+before computing $p$ values from ``moderated" test statistics. We are currently investigating how
+our methods should incorporate such ``moderated" variance estimates to make it applicable to small sample settings.
+
+Our approach involves compromises between flexibility, generality, and simplicity on the one hand, and statistical efficiency and principle on the other.
+For example, in using an EB approach that uses a point estimate for $g$, rather than a fully Bayes approach that accounts for uncertainty in $g$,
+we have opted for simplicity over statistical principle. And in summarizing every test by
+two numbers and making a normal or $t$ approximation to the likelihood, we have aimed to produce generic methods that 
+ can be applied whenever such summary data are available -- just as \qvalue can be applied to any set of $p$ values for example -- although
+ possibly at the expense of statistical efficiency compared with developing multiple tailored approaches based on context-specific likelihoods. 
+ Any attempt to produce generic methods will involve compromise between generality and efficiency.
+ In genomics, many analyses -- not only FDR-based analyses -- involve first computing a series of $p$ values before
+ subjecting them to some further downstream analysis. An important message here is 
+ that working with two numbers ($\bhat_j,\shat_j$), rather than one ($p_j$ or $z_j$), 
+ can yield substantial gains in functionality (e.g.~ estimating effect sizes, as well as testing; accounting for variations in
+measurement precision across units) while losing only a little in generality.  We hope that our work will
+encourate development of methods that exploit this idea in other contexts.

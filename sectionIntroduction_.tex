@@ -1,0 +1,36 @@
+\section*{Introduction}
+
+Since its introduction in 1995 by Benjamini and Hochberg 
+\cite{benjamini1995controlling}, the ``False Discovery Rate" (FDR) has quickly established itself
+as a key concept in modern statistics, and the primary tool by which most practitioners handle large-scale multiple testing
+in which the goal is to identify the non-zero ``effects" among a large number of imprecisely-measured effects.
+
+Here we consider an Empirical Bayes (EB) approach to FDR. This idea is, of course, far from new:
+indeed, the notion that EB approaches could be helpful in handling multiple comparisons predates introduction of
+the FDR  (e.g.~\cite{greenland1991empirical}). More recently, EB approaches to the FDR
+have been extensively studied by several authors, 
+especially B.~Efron and co-authors 
+\cite{efron2001empirical, efron2002empirical,efron2003robbins,efron2008microarrays,efron2010large}; 
+see also \cite{kendziorski2003parametric,newton2004detecting, 
+datta2005empirical,muralidharan2010empirical} for example.
+So what is the ``New Deal" here? We introduce two simple ideas that are new (at least compared with
+existing widely-used FDR pipelines) and can substantially affect
+inference. The first idea is to {\it assume that the distribution of effects is unimodal}. This yields a very simple, fast, and stable computer 
+implementation, as well as improving inference of FDR when the unimodal assumption is correct.  
+The second idea is to use two numbers -- effect sizes, and their standard errors -- rather than just one -- $p$ values, or $z$ scores -- 
+to summarize each measurement. This idea allows variations in measurement precision to be better accounted for,
+ and avoids a problem with standard pipelines that poor-precision measurements can inflate estimated FDR.
+
+In addition to these two new ideas, we highlight a third idea that is old, but which remains under-used in practice:
+the idea that it may be preferable to focus on estimation rather than on testing.
+In principle, Bayesian approaches can naturally unify testing and estimation into a single framework -- testing is
+simply estimation with some positive prior probability that the effect is exactly zero.
+However, despite ongoing interest in this area from both frequentist \cite{benjamini2005false} and Bayesian \cite{zhao2012empirical,gelman2012we} 
+perspectives, in practice large-scale studies that assess many effects almost invariably focus on testing significance and
+controlling the FDR, and not on estimation. To help provide a bridge between FDR and estimation we introduce the term
+``local false sign rate" (lfsr), which is analogous to the ``local false discovery rate" (\lfdr) \cite{efron2008microarrays}, but which measures confidence  
+in the {\it sign} of each effect rather than confidence in each effect being non-zero. We show that in some settings, particularly those with many discoveries, 
+the $\lfsr$ and $\lfdr$ can be quite different, and emphasise benefits of the lfsr, particularly its increased robustness to modelling assumptions.
+
+Our methods are implemented in an R package, \ashr (for {\bf a}daptive {\bf sh}rinkage in {\bf R}), available at \url{http://github.com/stephens999/ashr}.
+(We address the reasons for this name, and connections with shrinkage analysis, in the Discussion.)

@@ -1,0 +1,222 @@
+\section*{Detailed Methods} \label{sec:implement}
+
+\subsection*{Embellishments}
+
+\subsubsection*{More flexible unimodal distributions}
+
+Using a mixture of zero-centered normal distributions for $g$ in (\ref{eqn:mixnorm}) implies that $g$ is not only unimodal, but also symmetric.
+Furthermore, even some symmetric unimodal distributions, such as those with a flat top, cannot be well approximated by a mixture of zero-centered normals.
+ Therefore, we have implemented a more general approach based on
+
+\begin{equation}
+\label{eqn:g-general}
+g(\cdot; \pi) = \sum_{k=0}^K \pi_k f_k(\cdot) ,
+\end{equation}
+where $f_0$ is a point mass on 0, and $f_k$ ($k=1,\dots,K$) are pre-specified component distributions with one of the following forms:
+
+\begin{enumerate}
+[(i)]
+\item $f_k(\cdot) = N(\cdot; 0, \sigma^2_k)$, \qquad (``ash.n")
+\item $f_k(\cdot) = U[\cdot; -a_k,a_k]$,  \qquad (``ash.u")
+\item $f_k(\cdot) = U[\cdot; -a_k,0] \text{ and/or } U[\cdot; 0,a_k]$,  \qquad (``ash.hu")
+\end{enumerate}
+where $U[\cdot; a,b]$ denotes the density of a uniform distribution on $[a,b]$.
+(In (iii) we include both components in the mixture (\ref{eqn:g-general}), so a grid of values $a_1,\dots,a_K$ defines $2K+1$ mixture component densities, 
+and $\pi$ is a $2K+1$ vector that sums to 1.)
+The simplest version (\ref{eqn:mixnorm}) corresponds to (i).
+Replacing these with uniform components (ii)-(iii) only slightly complicates calculations
+under the normal likelihood (\ref{eqn:normlik}), and greatly simplifies the calculations under the $t$ likelihood
+(\ref{eqn:tlik}) introduced below. The use of uniform components here closely mirrors \cite{cordy1997deconvolution}.
+(In fact our implementation can handle {\it any} prespecified uniform or normal distributions for $f_k$ provided they are all from the same family;
+however, we restrict our attention here to (i)-(iii) which imply a unimodal $g$.)
+
+Moving from (i) to (iii) the representation (\ref{eqn:g-general}) becomes increasingly flexible. Indeed,
+using a large dense grid of $\sigma^2_k$ or $a_k$, (i)-(iii) can respectively approximate,
+with arbitrary accuracy,
+
+\begin{enumerate}
+[(i)]
+\item any scale mixture of normals, which includes as special cases
+the double exponential (Laplace) distribution, any $t$ distribution, and a very large number of other distributions used in  high-dimensional regression settings.
+\item any symmetric unimodal distribution about 0.
+\item any unimodal distribution about 0.
+\end{enumerate}
+The latter two claims are related to characterizations of unimodal distributions due to \cite{khintchine1938unimodal} and  \cite{shepp1962symmetric}; see \cite{feller1971introduction}, p158. 
+In other words, (ii) and (iii) provide fully non-parametric estimation for $g$ under the constraints that it is (ii) both unimodal and symmetric, or (iii) unimodal only.
+
+Although our discussion above emphasises the use of large $K$, in practice modest values of $K$ can provide reasonable performance. 
+The key point is that the value of $K$ is not critical provided it is sufficiently large, and the grid of $\sigma_k$ or $a_k$ values suitably chosen.
+See Implementation for details of our software defaults.
+
+\subsubsection*{Dependence of effects on standard errors}
+
+Equation (\ref{eqn:beta}) assumes that the $\beta_j$ all come from the same distribution $g$, independent of $\shat_j$.
+This can be relaxed to allow the distribution of $\beta_j$ to depend on $\shat_j$ using
+
+\begin{equation}
+\label{eqn:beta-alpha}
+ \frac{\beta_j}{\shat_j^\alpha} \, \big |  \shat_j \sim g(\cdot; \pi)
+ \end{equation}
+for any $\alpha$. Setting $\alpha=0$ yields (\ref{eqn:beta}), and setting $\alpha=1$ corresponds to
+assuming that the $t_j =\beta_j/ \shat_j$ have a common distribution. This case is of special interest:
+it effectively corresponds to the ``$p$ value prior" in \cite{wakefield:2009} and is, implicitly, 
+the assumption made by existing FDR methods that rank tests by their $p$ values (or $z$ or $t$ scores). See Results for further discussion.
+
+The model \ref{eqn:beta-alpha} for general $\alpha$ can be fitted using the algorithm for $\alpha=0$. 
+To see this, define $b_j:= \beta_j/ \shat_j^\alpha$, and $\hat{b} := \bhat_j/\shat_j^\alpha$. Then $\hat{b}_j$ is an estimate of $b_j$ with
+ standard error $\shat'_j:=\shat_j^{1-\alpha}$. 
+ Applying the algorithm for $\alpha=0$ to effect estimates $\hat{b}_1,\dots,\hat{b}_J$ with standard errors $\shat'_1,\dots,\shat'_J$
+yields a posterior distribution $p(b_j | \shat_j, \hat{b}_j, \hat{\pi}, \alpha)$, which induces a posterior distribution on $\beta_j = b_j \shat_j^\alpha$.
+
+\subsubsection*{Replace normal likelihood with $t$ likelihood}
+
+We generalize the normal likelihood (\ref{eqn:normlik}) by replacing it with a $t$ likelihood:
+
+\begin{equation}
+\label{eqn:tlik}
+ \bhat_j \, | \, \beta_j, \shat_j \sim T_\nu(\beta_j, \shat_j)
+ \end{equation}
+where $T_\nu(\beta_j,\shat_j)$ denotes the distribution of $\beta_j+\shat_j T_\nu$ where $T_\nu$ has a standard $t$ distribution on $\nu$ degrees of freedom,
+and  $\nu$ denotes the degrees of freedom used to estimate $\shat_j$ (assumed known, and for simplicity assumed to be the same for each $j$).
+The normal approximation (\ref{eqn:normlik}) corresponds to the limit $\nu \rightarrow \infty$.
+This generalization does not complicate inference when the mixture components $f_k$ in (\ref{eqn:g-general}) are uniforms; see Implementation below.
+When the $f_k$ are normal the computations with a $t$ likelihood are considerably more difficult and we have not implemented this combination.
+
+Equation (\ref{eqn:tlik}) is, of course, motivated by the standard asymptotic result
+
+\begin{equation}
+\label{eqn:tdist}
+(\bhat_j-\beta_j)/\shat_j \sim T_\nu.
+\end{equation}
+However (\ref{eqn:tdist}) does not imply (\ref{eqn:tlik}), because in (\ref{eqn:tdist}) $\shat_j$ is random whereas in (\ref{eqn:tlik}) it is conditioned on.
+In principle it would be preferable, for a number of reasons, to model the randomness in $\shat_j$; we are
+currently pursuing this improved approach (joint work with M.Lu) and results will be published elsewhere.
+
+\subsubsection*{Non-zero mode}
+
+An addition to our software implementation, due to C.Dai, allows the mode to be estimated from the data by maximum likelihood, rather than fixed to 0.
+
+\subsection*{Implementation Details}
+
+\subsubsection*{Likelihood for $\pi$}
+
+We define the likelihood for $\pi$ to be the probability of the observed data $\bhat$ conditional on $\shat$: $L(\pi) := p(\bhat | \shat,\pi),$ which
+by our conditional indendence assumptions is equal to the product $\prod_j p(\bhat_j | \shat, \pi)$. [One might prefer to define the likelihood as $p(\bhat, \shat | \pi) = p(\bhat | \shat, \pi) p(\shat | \pi)$, in which case our definition comes down to assuming that the term $p(\shat | \pi)$ does not depend on $\pi$.]
+
+Using the prior $\beta_j \sim \sum_{k=0}^K \pi_k f_k(\beta_j)$ given by (\ref{eqn:g-general}), and the normal likelihood (\ref{eqn:normlik}), integrating over $\beta_j$ yields
+
+\begin{equation}
+p(\bhat_j | \shat,\pi)  = \sum_{k=0}^K \pi_k \tilde{f}_k(\bhat_j)
+\end{equation}
+where
+
+\begin{equation}
+\tilde{f}_k(\bhat_j) := \int f_k(\beta_j) N(\bhat_j; \beta_j,\shat^2_j) \, d\beta_j
+\end{equation}
+denotes the convolution of $f_k$ with a normal density.
+These convolutions are straightforward to evaluate whether $f_k$ is a normal or uniform density.
+Specifically,
+
+\begin{equation}
+\label{eqn:uconv}
+\tilde{f}_k(\bhat_j)  = 
+\begin{cases}
+N(\bhat_j;0, \shat_j^2 +  \sigma_k^2) & \text{if $f_k(\cdot) = N(\cdot; 0, \sigma_k^2)$}, \\
+\frac{\Psi((\bhat_j-a_k)/\shat_j) - \Psi((\bhat_j-b_k)/\shat_j)}{b_k-a_k} & \text{if $f_k(\cdot) = U(\cdot; a_k,b_k)$},
+\end{cases}
+\end{equation}
+where $\Psi$ denotes the cumulative distribution function (c.d.f.) of the standard normal distribution.
+If we replace the normal likelihood with the $t_\nu$ likelihood (\ref{eqn:tlik}) then the convolution 
+for $f_k$ uniform the convolution is still given by (\ref{eqn:uconv}) but with $\Psi$ the c.d.f. 
+of the $t_\nu$ distribution function. (The convolution for $f_k$ normal is tricky and we have not implemented it.)
+
+\subsubsection*{Penalty term on $\pi$}
+
+To make $\lfdr$ and $\lfsr$ estimates from our method ``conservative" we add a penalty 
+term $log(h(\pi;\lambda))$ to the log-likelihood $\log L(\pi)$ to encourage over-estimation of $\pi_0$:
+
+\begin{equation}
+\label{eqn:penalty}
+h(\pi;\lambda) = \prod_{k=0}^K \pi_k^{\lambda_k-1}
+\end{equation}
+where $\lambda_k \geq 1 \, \forall k$. The default is $\lambda_0=10$ and $\lambda_k=1$, which yielded
+consistently conservative estimation of $\pi_0$ in our simulations (Figure \ref{fig:pi0sims}).
+
+Although this penalty is based on a Dirichlet density, we do not interpret this as a ``prior distribution" for $\pi$:
+we chose it to provide conservative estimates of $\pi_0$ rather than to represent prior belief.
+
+\subsubsection*{Problems with removing the penalty term in the half-uniform case}
+
+It is straightforward to remove the penalty term by setting $\lambda_k=1$ in (\ref{eqn:penalty}).
+We note here an unanticipated problem we came across when using no penalty term in the half-uniform case 
+(i.e.~ $f_k(\cdot) = U[\cdot; -a_k,0] \text{ and/or } U[\cdot; 0,a_k]$ in (\ref{eqn:g-general})): when the data
+are nearly null, the estimated $g$ converges, as expected and desired, to a distribution where almost all the mass is near 0, but
+sometimes all this mass is concentrated almost entirely just to one side (left or right) or 0. This can have a very profound effect on the local false sign rate:
+for example, if all the mass is just to the right of 0 then all observations will be assigned a very high probability of being positive (but very small),
+and a (misleading) low local false sign rate. For this reason we do not recommend use of the half-uniform with no penalty.
+
+\subsubsection*{EM algorithm}
+
+With this in place, the penalized log-likelihood for $\pi$ is given by:
+
+\begin{equation}
+\log L(\pi) + \log h(\pi) = \sum_{j=1}^n \log(\sum_{k=0}^K \pi_k l_{kj}) + \sum_{k=0}^K (\lambda_k-1) \log \pi_k
+\end{equation}
+where the $l_{kj}:= \tilde{f}_k(\bhat_j)$ are known. This can be maximized using an EM algorithm \cite{dempster77}, whose
+one-step updates are:
+
+\begin{align}
+\label{eqn:w}
+w_{kj} & = \pi_k l_{kj} / \sum_{k'} {\pi_{k'} l_{k'j}} \\
+n_k & = \sum_j w_{kj} + \lambda_k - 1 \quad \text{[E Step]} \\
+\pi_k &= n_k/\sum_{k'} n_{k'} \quad \text{[M step]}
+\end{align}
+Note that $\pi_k$ can be interpreted as the prior probability that $\beta_j$ arose from component $k$,
+and $l_{kj}$ is the likelihood for $\beta_j$ given that it arose from component $k$, so $w_{kj}$ is the posterior 
+probability that $\beta_j$ arose from component $k$, given $\bhat, \shat, \pi$. (The $w_{kj}$ are sometimes referred to as the ``responsibilities".)
+Thus $n_k$ is the expected number of $\beta_j$ that arose from component $k$, plus pseudo-counts $\lambda_k-1$ from the penalty term.
+We used the elegant R package {\tt SQUAREM} \cite{varadhan2008simple} to accelerate convergence of this EM algorithm.
+
+\subsubsection*{Initialization}
+
+By default we initialize our EM algorithm with $\pi_k=1/n$ for $k=1,\dots,K$, with $\pi_0=1-\pi_1-\dots-\pi_K$. (In all our simulations here $K<<n$ so this initializes with most mass on $\pi_0$.)  
+Our rationale for initializing ``near the null" like this is that we expect that strong signal in the data can quickly draw the EM algorithm away from the null (in a single iteration),
+but weak signal in the data cannot quickly draw the algorithm towards the null.
+
+In addition, once the EM algorithm has converged, we check that the (penalized) log-likelihood attained is higher than that achieved by the global null solution
+$\pi_0=1; \pi_k=0 (k>0)$. If not then we replace the EM solution with the global null solution. This aims to guard against errors due to convergence to a local optimum when the
+data are consistent with the global null.
+
+\subsubsection*{Conditional distributions}
+
+Given $\hat\pi$, we compute the conditional distributions
+
+\begin{equation}
+p(\beta_j | \hat\pi, \bhat, s) \propto g(\beta_j; \pi) L(\beta_j; \bhat_j, \shat_j).
+\end{equation}
+Each posterior is a mixture on $K+1$ components:
+
+\begin{equation}
+p(\beta_j | \hat\pi, \bhat, s) = \sum_{k=0}^K w_{kj} p_k(\beta_j | \bhat_j, \shat_j)
+\end{equation}
+where the posterior weights $w_{kj}$ are computed as in (\ref{eqn:w}) with $\pi=\hat\pi$,
+and the posterior mixture component $p_k$ is the posterior on $\beta_j$ that would be obtained using prior 
+$f_k(\beta_j)$ and likelihood $L(\beta_j; \bhat_j,\shat_j)$.
+All these posterior distributions are easily available.
+For example, if $f_k$ is uniform and $L$ is $t_\nu$ then this is a truncated $t$ distribution.
+If $f_k$ is normal and $L$ is normal, then this is a normal distribution.
+
+\subsubsection*{Choice of grid for $\sigma_k, a_k$} \label{sec:grid}
+
+When $f_k$ is $N(0,\sigma_k)$ we specify our grid by specifying: i) a maximum and minimum value $(\sigmamin,\sigmamax)$; ii) a multiplicative factor $m$ to be used
+in going from one gridpoint to the other, so that $\sigma_{k} = m \sigma_{k-1}$. The multiplicative factor affects the density of the grid; we used $m=\sqrt{2}$
+as a default. We chose $\sigmamin$ to be small compared with the measurement precision ($\sigmamin=min(\shat_j)/10$) and $\sigmamax= 2\sqrt{\max(\bhat_j^2-\shat_j^2)}$
+based on the idea that $\sigmamax$ should be big enough so that  $\sigmamax^2 + \shat_j^2$ should exceed $\bhat_j^2$.   (In rare cases where $\max(\bhat_j^2-\shat_j^2)$
+is negative we set $\sigmamax = 8\sigmamin$.)
+
+When the mixture components $f_k$ are uniform, we use the same grid for the parameters $a_k$ as for $\sigma_k$ described above.
+
+Our goal in specifying a grid was to make the limits sufficiently large and small, and the grid sufficiently dense, that results would not change appreciably with 
+a larger or denser grid. For a specific data set one can of course check this by experimenting with the grid, but these defaults usually work well in our experience.
+
+\appendix

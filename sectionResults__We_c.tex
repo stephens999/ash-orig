@@ -1,0 +1,21 @@
+\section*{Results}
+
+We compare results of \ashr with existing FDR-based methods implemented
+in the R packages \qvalue (v2.0 from Bioconductor), \locfdr (v1.1-7 from \url{https://cran.r-project.org/src/contrib/Archive/locfdr/}), and \mixfdr (v1.0, from \url{https://cran.r-project.org/src/contrib/Archive/mixfdr/}).  In all our simulations we assume that the test statistics follow the expected theoretical distribution under the null, and we indicate this
+to \locfdr using {\tt nulltype=0} and to \mixfdr using {\tt theonull=TRUE}. Otherwise all packages were used with default options.
+
+\subsection*{Effects of the Unimodal Assumption}
+
+Here we consider the effects of making the UA. To isolate these effects we consider the simplest case, where every observation has the same
+standard error, $s_j=1$ and all methods are provided that information. That is,
+$\bhat_j | \beta_j \sim N(\beta_j,1)$ and $\shat_j=s_j=1$. In this case the $z$ scores $z_j:=\bhat_j/\shat_j=\bhat_j$, so modelling the $z$ scores is the same as modelling the $\bhat_j$, and so the only difference between our method and methods like $\locfdr$ and $\mixfdr$ are in how they estimate $g$.
+
+To briefly summarize the results in this section:
+
+\begin{enumerate}
+\item The UA can produce very different inferences compared with the ZA made by existing methods.
+\item The UA can yield conservative estimates of the proportion of true nulls, $\pi_0$, and hence conservative estimates of $\lfdr$ and $\FDR$.
+\item The UA results in a stable procedure, both numerically and statistically, and is somewhat robust to deviations from unimodality.
+\end{enumerate}
+
+\subsubsection*{The UA and ZA can produce different inferences}
