@@ -379,9 +379,11 @@ Both steps 1 and 2 are very straightforward: $\hat{\pi}$ can be obtained using a
 (The simplicity of the EM algorithm in step 1 is due to our use of a fixed grid for $\sigma_k$ in (\ref{eqn:mixnorm}), instead of estimating $\sigma_k$,
 which may seem more natural but is not straightforward when $\shat_j$ varies among $j$. This simple device may be useful in other applications.)
 
-In practice we make a small modification to this procedure: instead of obtaining $\hat\pi$ by maximizing the likelihood, we instead maximise a penalized
+Here we slightly modify this usual procedure: instead of obtaining $\hat\pi$ by maximizing the likelihood, we maximise a penalized
 likelihood [see (\ref{eqn:penalty})], where the penalty encourages $\hat\pi_0$ to be as big as possible whilst remaining consistent with the observed data. 
 We introduce this penalty because in FDR appllications it is considered desirable to avoid underestimating $\pi_0$ so as to avoid underestimating the FDR. 
+
+
 
 \subsection*{The local False Discovery Rate and local False Sign Rate}
 
@@ -1079,35 +1081,35 @@ which has been implemented in our software by C. Dai.
 
 \begin{figure}
 \centering\includegraphics[width=4in]{figures/lfsr_vs_pval_GOODPOOR.pdf}
-\caption{} \label{fig:lfsr_pval}
+\caption{Figure illustrating affects of prior assumptions on re-ordering of significance. Left panel shows results under our ``default prior" which assumes that effects $\beta_j$ are identically distributed, independent of $s_j$. Right panel shows results under the ``$p$-value prior", which assumes that $z$ scores $\beta_j/s_j$ are identically distributed, independent of $s_j$.} \label{fig:lfsr_pval}
 \end{figure}
 
-\subsubsection*{Adaptive Shrinkage}
-
-Johnstone and Silverman \cite{johnstone2004needles} (see also \cite{raykar2011empirical}) note the ability of EB methods to adapt to overall signal strength
-when attempting to identify and estimate strong signals. The idea is that, if most $\beta_j$ are truly at or near zero then (given enough data) 
-the estimated prior distribution $\hat{g}$ will reflect this by being concentrated near 0, and the posterior distributions
- $p(\beta_j | \bhat_j, \shat_j,\hat{g})$ will consequently also tend to concentrate around zero (strong shrinkage). 
- In contrast, if most $\beta_j$ are large then $\hat{g}$ will be flatter, resulting in less shrinkage.
- Indeed, in the limit as $\hat{g}$ becomes flatter and flatter the posterior distribution on $\beta_j$ becomes $N(\bhat_j,\shat_j)$,
- and the Bayesian credible intervals match standard confidence intervals, which might be considered ``no shrinkage".
-
-Our methods we build on this idea in two ways. First,
-by using flexible semi-parametric approaches to estimate $g$ we aim to maximise the potential for this adaptive behaviour.
-Second, by incorporating the precision of each measurement into the likelihood, (\ref{eqn:normlik}) or (\ref{eqn:tlik}), we ensure that shrinkage
-adapts to measurement precision: more precise measurements undergo
- less shrinkage than less precise measurements.  This is because observations $\bhat_j$ with larger standard errors have flatter likelihoods 
-than observations with
-small standard error, and so their posteriors will be more affected by the prior, which, being unimodal at 0, tends to shrink estimates towards 0. 
-To emphasise these two key features we refer to our method as ``{\bf a}daptive {\bf sh}rinkage".
-Figure \ref{fig:ash} illustrates the idea by contrasting results for two simulation scenarios with different signal strengths, where observations vary in their measurment precision.
-
-\begin{figure}[!ht]
-\begin{center}
-\includegraphics[width=400px]{../examples/ash.pdf} 
-\end{center}
-\caption{Figure illustrating adaptive shrinkage. Results are shown for two different scenarios: (left) ``big-normal" where the effects have a wide distribution; (right) ``spiky", where the effects are more concentrated near 0. The standard error of each observation, $s_j$, was simulated from Inverse Gamma(5,5), which resulted in $s_j$ varying from 0.34 to 6.7.  The shrunken estimates ($y$ axis) are plotted against the observed estimates ($x$ axis), with color indicating the (square root of the) precision of each measurement (blue=lower-precision; red=higher-precision). The two key features are i) shrinkage is adaptive to signal in data, so shrinkage is stronger for the spiky scenario; ii) shrinkage is adaptive to the precision of each measurement, so less precise observations (blue) are shrunken more strongly.} \label{fig:ash}
-\end{figure}
+%\subsubsection*{Adaptive Shrinkage}
+%
+%Johnstone and Silverman \cite{johnstone2004needles} (see also \cite{raykar2011empirical}) note the ability of EB methods to adapt to overall signal strength
+%when attempting to identify and estimate strong signals. The idea is that, if most $\beta_j$ are truly at or near zero then (given enough data) 
+%the estimated prior distribution $\hat{g}$ will reflect this by being concentrated near 0, and the posterior distributions
+% $p(\beta_j | \bhat_j, \shat_j,\hat{g})$ will consequently also tend to concentrate around zero (strong shrinkage). 
+% In contrast, if most $\beta_j$ are large then $\hat{g}$ will be flatter, resulting in less shrinkage.
+% Indeed, in the limit as $\hat{g}$ becomes flatter and flatter the posterior distribution on $\beta_j$ becomes $N(\bhat_j,\shat_j)$,
+% and the Bayesian credible intervals match standard confidence intervals, which might be considered ``no shrinkage".
+%
+%Our methods we build on this idea in two ways. First,
+%by using flexible semi-parametric approaches to estimate $g$ we aim to maximise the potential for this adaptive behaviour.
+%Second, by incorporating the precision of each measurement into the likelihood, (\ref{eqn:normlik}) or (\ref{eqn:tlik}), we ensure that shrinkage
+%adapts to measurement precision: more precise measurements undergo
+% less shrinkage than less precise measurements.  This is because observations $\bhat_j$ with larger standard errors have flatter likelihoods 
+%than observations with
+%small standard error, and so their posteriors will be more affected by the prior, which, being unimodal at 0, tends to shrink estimates towards 0. 
+%To emphasise these two key features we refer to our method as ``{\bf a}daptive {\bf sh}rinkage".
+%Figure \ref{fig:ash} illustrates the idea by contrasting results for two simulation scenarios with different signal strengths, where observations vary in their measurment precision.
+%
+%\begin{figure}[!ht]
+%\begin{center}
+%\includegraphics[width=400px]{../examples/ash.pdf} 
+%\end{center}
+%\caption{Figure illustrating adaptive shrinkage. Results are shown for two different scenarios: (left) ``big-normal" where the effects have a wide distribution; (right) ``spiky", where the effects are more concentrated near 0. The standard error of each observation, $s_j$, was simulated from Inverse Gamma(5,5), which resulted in $s_j$ varying from 0.34 to 6.7.  The shrunken estimates ($y$ axis) are plotted against the observed estimates ($x$ axis), with color indicating the (square root of the) precision of each measurement (blue=lower-precision; red=higher-precision). The two key features are i) shrinkage is adaptive to signal in data, so shrinkage is stronger for the spiky scenario; ii) shrinkage is adaptive to the precision of each measurement, so less precise observations (blue) are shrunken more strongly.} \label{fig:ash}
+%\end{figure}
 
 %DISCUSSION ON ADAPTIVE SHRINKAGE; BEST TO PUT IN RESULTS?
 %To understand how this approach leads to ``adaptive shrinkage", think of (\ref{eqn:betaj}) as defining the ``prior distribution" for $\beta_j$ (determined by hyper-parameters $\pi$),  and (\ref{eqn:bhat}) as defining the likelihood for $\beta_j$. Because the prior distribution is unimodal about zero, 
@@ -1153,124 +1155,124 @@ Figure \ref{fig:ash} illustrates the idea by contrasting results for two simulat
 
 \section*{Discussion}
 
-Benefits of two numbers instead of one.  A general idea.
+We have presented an Empirical Bayes approach to large-scale multiple testing that emphasises two ideas.
+First, we emphasise the potential benefits of using two numbers ($\bhat$, and its standard error)
+rather than just one number (a $p$ value or $z$ score)  to summarize the information on each test.
+While requiring two numbers is slightly more onorous than requiring one, in many settings these
+numbers are easily available and if so we argue it makes sense to use them.
+Second, we note the potential benefits -- both statistical and computational -- of assuming that the effects come from a unimodal distribution, and provide
+flexible implementations for performing inference under this assumption. We also introduce the ``false sign rate" as
+an alternative measure of error to the FDR, and illustrate its improved robustness to errors in model fit, particularly mis-estimation
+of the proportion of null tests, $\pi_0$.
 
+Multiple testing is often referred to as a ``problem" or a ``burden". In our opinion, EB approaches turn this idea on its head,
+treating multiple testing as an {\it opportunity}: specifically, an opportunity to learn about the prior distributions, and other modelling assumptions,
+to improve inference and make informed decisions about significance (see also \cite{greenland1991empirical}). This view
+also emphasises that, what matters in multiple testing settings is {\it not} the number of tests, but the {\it results} of the tests.
+Indeed, the FDR at a given fixed threshold does not depend on the number of tests: as the number of tests increases, both the true positives and false positives increase linearly,
+and the FDR remains the same. (If this intuitve argument does not convince, see \cite{storey.03}, and note that the FDR at a given $p$ value threshold does not depend on the number of tests $m$.) Conversely, the FDR {\it does} depend on the overall distribution of effects, and particularly on $\pi_0$ for example. 
+The EB approach captures this dependence in an intuitive way:
+if there are lots of strong signals then we infer $\pi_0$ to be small, and the estimated FDR (or $\lfdr$, or $\lfsr$) at a given threshold may be low, even if a large number of tests were performed; and conversely
+if there are no strong signals then we infer $\pi_0$ to be large and the FDR at the same threshold may be high, even if relatively few tests were performed. 
+More generally, overall signal strength is reflected in the estimated $g$, which in turn influences the estimated FDR.
 
-The use of EB methods for estimation also has a long and close relationship with another key concept in modern statistics: shrinkage estimation \cite{efron1973}.
-This close relationship becomes especially intimate here due to our unimodal assumption on the underlying effects, 
-which encourages shrinkage towards the mode of the distribution.
-%Indeed, within our EB framework, multiple comparisons correction can be seen as a natural limit of shrinkage estimation:
-%if effects are distributed uni-modally about zero then it is natural to shrink estimates towards zero. 
-% are essentially two sides of the same coin, one related to testing and the other to estimation. 
-Thus, although we focus here primarily on FDR-related issues, another important contribution of our work is to provide {\it generic} and {\it adaptive} shrinkage estimation procedures.
-By generic, we mean that these methods can be applied in any setting where a series of effect estimates and corresponding standard errors are available.
-By adaptive, we 
-have two properties in mind. First, the appropriate amount of shrinkage is determined from the data: when the data indicate that large effects are relatively common then
-shrinkage of large observed effects is less than when the data indicate that large effects are rare.
-Second, the amount of shrinkage undergone by each measurement will depend on its precision, or standard error: measurements with big standard errors undergo more shrinkage than measurements with small standard errors.  
-Shrinkage estimation is a powerful tool, with many potential applications, including for example wavelet denoising, 
-where shrinkage of wavelet coefficients is used to smooth signals. Our methods provide an attractive and competitive alternative
-to existing EB shrinkage methods for that context, as will be explored more fully elsewhere (Xing and Stephens, in preparation).
+Two important practical issues that we have not addressed here are correlations among tests,
+and the potential for deviations from the theoretical null distributions of test statistics. These two
+issues are connected: specifically, unmeasured confounding factors can cause both correlations among tests
+and deviations from the theoretical null \cite{efron2007correlation,leek:2007}. And although there are certainly other
+factors that could cause dependence among tests, unmeasured confounders are perhaps the most worrisome in practice
+because they can induce strong correlations among large numbers of tests and profoundly impact results.
+Approaches to deal with unmeasured confounders can be largely divided into two types: those
+that simply attempt to correct for the resulting inflation of test statistics \cite{devlin1999genomic,efron2004large}, and those
+that attempt to infer counfounders using clustering, principal components analysis, or factor models 
+\cite{pritchard.stephens.rosenberg.donnelly.00,price:2006,leek:2007,gagnon2012using},
+and then correct for them in computation of the test statistics (in our case, $\bhat,\shat$). When these latter approaches are viable,
+they provide perhaps the most satisfactory solution, and are certainly a good fit for our framework. Alterntively, our methods
+could also be modified to allow for test statistic inflation, perhaps by incorporating the inflation into the likelihood (\ref{eqn:lik}) using
+$\bhat_j | \shat_j \sim N(0,\lambda_1 \shat_j + \lambda_2)$, where $\lambda_1,\lambda_2$ are to be estimated. However,
+this immediately raises issues of identifiability and we do not pursue the idea further here.
 
-Choice of mixture components. Use of likelihood to compare different mixture components?
+Another important practical issue is the challenge of small sample sizes. For example, in genomics applications researchers sometimes
+attempt to identify differences between two conditions based on only a handful of samples in each. In such settings the
+normal likelihood approximation (\ref{eqn:normlik}) will be inadequate. And, although the $t$ likelihood (\ref{eqn:tlik}) partially
+addresses this issue, it is also, it turns out, not entirely satisfactory.  The root of the problem is that, with small sample sizes, raw estimated standard
+errors $\shat_j$ can be horribly variable. In genomics it is routine to address this issue by applying EB methods \cite{smyth:2004} to ``moderate" (i.e.~shrink) variance estimates,
+before computing $p$ values from ``moderated" test statistics. We are currently investigating how
+our methods should incorporate such ``moderated" variance estimates to make it applicable to small sample settings.
 
+Our approach involves compromises between flexibility, generality, and simplicity on the one hand, and statistical efficiency and principle on the other.
+For example, in using an EB approach that uses a point estimate for $g$, rather than a fully Bayes approach that accounts for uncertainty in $g$,
+we have opted for simplicity over statistical principle. And in summarizing every test by
+two numbers and making a normal or $t$ approximation to the likelihood, we have aimed to produce generic methods that 
+ can be applied whenever such summary data are available -- just as \qvalue can be applied to any set of $p$ values for example -- although
+ possibly at the expense of statistical efficiency compared with developing multiple tailored approaches based on context-specific likelihoods. 
+ Any attempt to produce generic methods will involve compromise between generality and efficiency.
+ In genomics, many analyses -- not only FDR-based analyses -- involve first computing a series of $p$ values before
+ subjecting them to some further downstream analysis. An important message here is 
+ that working with two numbers ($\bhat_j,\shat_j$), rather than one ($p_j$ or $z_j$), 
+ can yield substantial gains in functionality (e.g.~ estimating effect sizes, as well as testing; accounting for variations in
+measurement precision across units) while losing only a little in generality.  We hope that our work will
+encourate development of methods that exploit this idea in other contexts.
 
- An important focus of Efron's work, also implemented in \locfdr, 
- is to relax the assumption that the null $z$ scores are $N(0,1)$, to allow for empirical deviations from this
-theoretical null distribution. Although important, this issue is largely orthogonal to the issues we focus on here, which arise
-even if the theoretical null distribution holds precisely in the empirical data, and so we consider it just briefly in the Discussion. 
-
- noting that the $p$ values in Figure \ref{} were actually generated under a scenario where
-{\it no tests were null}! Thus the qvalue procedure, which estimates the proportion of nulls to be xx\%, is acting very conservatively in this case.
-However, it could be argued that some degree of conservativeness is inevitable, and that nonetheless the procedure is acting sensibly.
-Therefore, to illustrate this point we really want to focus on the fact that, at least in some settings, the assumption is {\it unrealistic}.
-Specifically, we want to argue that the implied distribution of the alternative $p$ values is unrealistic. In fact, this is hard to see in $p$ value space,
-and so instead we translate these $p$ values back to the $z$ scores that lead to these $p$ values.
-
-
-- it allows us to easily just vary sigma on a grid, and fit pi, which
-makes allowing different noise levels really easy! In contrast, incorporating differential errors messes up the EM algorithm if
-we try to estimate $\sigma_k$.
-
-
-Directly modeling the p values, or z scores, say via non-parametric methods, 
-can lead to unrealistic distributions being fitted. Put another way, because z scores are the result of adding noise to some
-distribution, the range of distributions they can take is limited Using entirely non-parametric methods loses this information.
-The solution is to model beta hat as a convolution of some distribution g and an error component.
-
-
-
-About benefits of generic approach.
- In outline, our goal is to perform Bayesian inference for the true effects $\beta$ using information in the summary statistics $\bhat,\shat$.
- That is we aim to compute the joint posterior distribution $p(\beta | \bhat,\shat)$.
-This is connected with work by \cite{wakefield:2009} (see also \cite{johnson:2008}) who performs Bayesian inference
-from summary statistics, computing $p(\beta_j | \bhat_j, \shat_j)$ for a single $j$,
-with a specific fixed prior on $\beta_j$. Essentially we extend this to multiple $j$, using a hierarchical model to connect the observations.
- By working with summary statistics $\bhat, \shat$, rather than more refined data, we aim to produce generic methods that 
- can be applied whenever such summary data are available - just as \qvalue can be applied to any set of $p$ values for example.
-Any attempt to produce generic methods is likely to involve a compromise between functionality and generality; 
-we believe that by working with two numbers ($\bhat_j,\shat_j$) for each observation, rather than one ($p_j$ or $z_j$), 
-we can gain substantially in functionality (e.g.~ we can estimate effect sizes, as well as testing, and we can take better account of variations in
-measurement precision across units $j$) while losing only a little in generality.   
-
-
-Before proceeding, we feel obliged to correct the common misconception
- that the use of FDR methods is to ``correct" for the number of tests performed. In fact the FDR does
- not depend on the number of tests. This is because, as the number of tests increases, both the true positives and false positives increase linearly,
- and the FDR remains the same. (If this intuitve argument does not convince, see \cite{storey.03}, and note that the FDR at a given $p$ value threshold does not depend on the number of tests $m$.)
-  A better way to think of it is that the FDR accounts for the {\it amount of signal} in the tests that were performed: 
- if there are lots of strong signals then the FDR at a given threshold may be low, even if a large number of tests were performed; and conversely
- if there are no strong signals then the FDR at the same threshold may be high, even if relatively few tests were performed. 
- In other words, FDR corrects for the {\it results} of all tests performed, not the {\it number} of all tests performed.
- 
- Note on multiple comparisons: it isn't really a "problem" but an "opportunity". This viewpoint also espoused by \cite{greenland1991empirical}. It isn't the number of tests that is relevant (the false
-discovery rate at a given threshold does not depend on the number of tests). It is the *results* of the tests that are relevant.
-Performing multiple comparisons, or multiple tests, is often
-regarded as a "problem". However, here we regard it instead as an opportunity - an opportunity to combine (or "pool") information across tests or comparisons.
-Focussing on the number of tests performed can be
-seen as an approximation. 
-
-Here performing inference means obtaining an (approximate) posterior distribution for each effect $\beta_j$,
-which can be used to estimate False Discovery Rates, and to produce both point and interval estimates for $\beta_j$.
- Although ``multiple comparisons" is usually presented as a ``problem", our emphasis here is that the multiple measurements
- actually provide an opportunity: the hierarchical model combines information across measurements to improve both accuracy and precision of estimates. 
+%This is connected with work by \cite{wakefield:2009} (see also \cite{johnson:2008}) who performs Bayesian inference
+%from summary statistics, computing $p(\beta_j | \bhat_j, \shat_j)$ for a single $j$,
+%with a specific fixed prior on $\beta_j$. Essentially we extend this to multiple $j$, using a hierarchical model to connect the observations.
  
 
 
- There are two issues with existing approaches to FDR estimation and control that I would like to address here. 
- The first is that they may do not take proper account of differences in measurement precision across units (i.e. differences in $\shat_j$). 
- The second is that the Zero Assumption, although initially appealing as a ``conservative" assumption,
-  is often an unrealistic and unnecessarily conservative assumption. As we shall see, both factors can cause the FDR to be overestimated.
+
+%
+%
+%Both \locfdr and \mixfdr allow for deviations from
+%the theoretical null distribution by allowing that, under the null, the $z$ scores are $N(0,\sigma^2)$ with $\sigma$ estimated from the data rather
+%than fixed to 1. Within our approach this idea could be incorporated by changing the likelihood - for example, to assume $\bhat_j \sim N(0,s_ 
+%
+%These are tricky issues that, as far as we are aware, can affect
+%all approaches to FDR analysis. An important focus of Efron's work, also implemented in \locfdr, 
+% is to relax the assumption that the null $z$ scores are $N(0,1)$, to allow for empirical deviations from this
+%theoretical null distribution. 
+%
+%For example, we and others have worked on Bayesian approaches to genetic association testing, using subjective prior specification of
+%effect sizes based on external data (e.g.~\cite{stephens:2009}). However, the large numbers of tests brings the opportunity to learn about
+%priors, and here we aim to exploit this 
+
+%Choice of mixture components. Use of likelihood to compare different mixture components?
+
+
+
+%  
+%Directly modeling the p values, or z scores, say via non-parametric methods, 
+%can lead to unrealistic distributions being fitted. Put another way, because z scores are the result of adding noise to some
+%distribution, the range of distributions they can take is limited Using entirely non-parametric methods loses this information.
+%The solution is to model beta hat as a convolution of some distribution g and an error component.
+
+
+%Before proceeding, we feel obliged to correct the common misconception
+% that the use of FDR methods is to ``correct" for the number of tests performed. In fact the FDR does
+% not depend on the number of tests. 
+%  A better way to think of it is that the FDR accounts for the {\it amount of signal} in the tests that were performed: 
+% 
+% In other words, FDR corrects for the {\it results} of all tests performed, not the {\it number} of all tests performed.
+ 
  
 
-\cite{efron2008microarrays} states the Zero Assumption as the assumption that ``most of the z-values near zero come from null genes".
-His main aim in making this assumption is to estimate an empirical null though (not assume N(0,1) for the null)
-rather than to impose identifiability.
-
-Note that \cite{muralidharan2010empirical} models $z$ scores as something plus noise under both $H_0$ and $H_1$, which
-avoids this problem. (DOes the same maybe apply to modeling beta, rather than z scores, when the errors vary?)
-
-Rice and Spiegelhalter - BRCA data?
-
-A fundamental idea is
-that the measurements of $\beta_j$ for each gene can be used to improve inference for the values of $\beta$ for other genes.
-
---- NOte 
-In principle we might prefer a full Bayes approach that accounts for uncertainty in $\pi$ (or, more generally, in $g$); however,
-we believe that in most practical applications uncertainty in $g$ will not be the most important concern, and 
-compromise this principle for the simplicity of the EB approach.
 
 
 
-\subsection*{Embellishments and Implementation details} \label{sec:implement}
+
+
+
+\section*{Detailed Methods} \label{sec:implement}
+
+\subsection*{Embellishments} 
 
 \subsubsection*{More flexible unimodal distributions}
 
 Using a mixture of zero-centered normal distributions for $g$ in (\ref{eqn:mixnorm}) implies that $g$ is not only unimodal, but also symmetric.
 Furthermore, even some symmetric unimodal distributions, such as those with a flat top, cannot be well approximated by a mixture of zero-centered normals.
- Therefore, we have implemented a more general approach, based on 
+ Therefore, we have implemented a more general approach based on 
 \begin{equation} \label{eqn:g-general}
-g(\cdot; \pi) = \sum_{k=0}^K \pi_k f_k(\cdot) 
+g(\cdot; \pi) = \sum_{k=0}^K \pi_k f_k(\cdot) ,
 \end{equation}
 where $f_0$ is a point mass on 0, and $f_k$ ($k=1,\dots,K$) are pre-specified component distributions with one of the following forms: 
 \begin{enumerate}[(i)]
@@ -1289,7 +1291,7 @@ under the normal likelihood (\ref{eqn:normlik}), and greatly simplifies the calc
 however, we restrict our attention here to (i)-(iii) which imply a unimodal $g$.)
 
 Moving from (i) to (iii) the representation (\ref{eqn:g-general}) becomes increasingly flexible. Indeed,
-using a large dense grid of $\sigma^2_k$ or $a_k$, we can allow $g$ to approximate,
+using a large dense grid of $\sigma^2_k$ or $a_k$, (i)-(iii) can respectively approximate,
 with arbitrary accuracy,
 \begin{enumerate}[(i)]
 \item any scale mixture of normals, which includes as special cases
@@ -1302,7 +1304,7 @@ In other words, (ii) and (iii) provide fully non-parametric estimation for $g$ u
 
 Although our discussion above emphasises the use of large $K$, in practice modest values of $K$ can provide reasonable performance. 
 The key point is that the value of $K$ is not critical provided it is sufficiently large, and the grid of $\sigma_k$ or $a_k$ values suitably chosen.
-See Section \ref{sec:grid} for our software defaults.
+See Implementation for details of our software defaults.
 
 %Although it is natural to worry about ``overfitting" if $K$ is large,  in fact the unimodal constraint is sufficient to prevent serious problems with overfitting. For example, note that the unimodal constraint is sufficiently strong that there will exist a non-parametric maximum likelihood estimate (NPMLE) for $g$ under this constraint. (Indeed, if the $\beta_j$ are observed without error, corresponding to the standard errors $\shat_j \rightarrow 0$, this NPMLE has an explicit and elegant form; \cite{grenander1956theory}.)
 %Thus allowing $K$ to be large in ii) or iii), and maximizing the likelihood with respect to $\pi$, will approximate the NPMLE for $g$, under the constraints of symmetry and unimodality (ii), or unimodality alone (iii). 
@@ -1314,7 +1316,7 @@ This can be relaxed to allow the distribution of $\beta_j$ to depend on $\shat_j
  \begin{equation} \label{eqn:beta-alpha}
  \frac{\beta_j}{\shat_j^\alpha} \, \big |  \shat_j \sim g(\cdot; \pi)
  \end{equation}
-for any $\alpha \geq 0$. Setting $\alpha=0$ yields (\ref{eqn:beta}), and setting $\alpha=1$ corresponds to
+for any $\alpha$. Setting $\alpha=0$ yields (\ref{eqn:beta}), and setting $\alpha=1$ corresponds to
 assuming that the $t_j =\beta_j/ \shat_j$ have a common distribution. This case is of special interest:
 it effectively corresponds to the ``$p$ value prior" in \cite{wakefield:2009} and is, implicitly, 
 the assumption made by existing FDR methods that rank tests by their $p$ values (or $z$ or $t$ scores). See Results for further discussion.
@@ -1328,13 +1330,13 @@ yields a posterior distribution $p(b_j | \shat_j, \hat{b}_j, \hat{\pi}, \alpha)$
 %treating them all as having the same standard error. In this case the local fdr from our method becomes monotonic in each direction as
 %the $t$ score increases away from zero, just as with \qvalue, and (usually) \mixfdr and \locfdr.
 
-Different values of $\alpha$ in (\ref{eqn:beta-alpha}) essentially correspond to different models for
-how effect sizes $\beta_j$ scale with the standard error $\shat_j$. Since this scaling is unknown it may be desirable to estimate
-it from the data, and this can be done here by jointly maximizing the likelihood $p(\hat{b} | \shat,\pi,\alpha)$ over $\pi$ and $\alpha$
-rather than just $\pi$.  Although values of $\alpha$ other than 0 and 1 may not be easy interpret,
-and the actual relationship between $\beta_j$ and $\shat_j$ is unlikely to exactly follow (\ref{eqn:beta-alpha}) for any $\alpha$,
-this approach seems preferable in practice than simply assuming $\alpha=0$ or $\alpha=1$. We
-do not investigate this in detail here, but it has been implemented in our software by C.Dai, using a simple grid search over $\alpha$.
+%Different values of $\alpha$ in (\ref{eqn:beta-alpha}) essentially correspond to different models for
+%how effect sizes $\beta_j$ scale with the standard error $\shat_j$. Since this scaling is unknown it may be desirable to estimate
+%it from the data, and this can be done here by jointly maximizing the likelihood $p(\hat{b} | \shat,\pi,\alpha)$ over $\pi$ and $\alpha$
+%rather than just $\pi$.  Although values of $\alpha$ other than 0 and 1 may not be easy interpret,
+%and the actual relationship between $\beta_j$ and $\shat_j$ is unlikely to exactly follow (\ref{eqn:beta-alpha}) for any $\alpha$,
+%this approach seems preferable in practice than simply assuming $\alpha=0$ or $\alpha=1$. We
+%do not investigate this in detail here, but it has been implemented in our software by C.Dai, using a simple grid search over $\alpha$.
 
 
 \subsubsection*{Replace normal likelihood with $t$ likelihood}
@@ -1346,7 +1348,7 @@ We generalize the normal likelihood (\ref{eqn:normlik}) by replacing it with a $
 where $T_\nu(\beta_j,\shat_j)$ denotes the distribution of $\beta_j+\shat_j T_\nu$ where $T_\nu$ has a standard $t$ distribution on $\nu$ degrees of freedom,
 and  $\nu$ denotes the degrees of freedom used to estimate $\shat_j$ (assumed known, and for simplicity assumed to be the same for each $j$).
 The normal approximation (\ref{eqn:normlik}) corresponds to the limit $\nu \rightarrow \infty$.
-This generalization does not complicate inference when the mixture components $f_k$ in (\ref{eqn:g-general}) are uniforms.
+This generalization does not complicate inference when the mixture components $f_k$ in (\ref{eqn:g-general}) are uniforms; see Implementation below.
 When the $f_k$ are normal the computations with a $t$ likelihood are considerably more difficult and we have not implemented this combination.
 
 Equation (\ref{eqn:tlik}) is, of course, motivated by the standard asymptotic result
@@ -1355,62 +1357,23 @@ Equation (\ref{eqn:tlik}) is, of course, motivated by the standard asymptotic re
 \end{equation}
 However (\ref{eqn:tdist}) does not imply (\ref{eqn:tlik}), because in (\ref{eqn:tdist}) $\shat_j$ is random whereas in (\ref{eqn:tlik}) it is conditioned on.
 In principle it would be preferable, for a number of reasons, to model the randomness in $\shat_j$; we are
-currently pursuing this improved approach in work with Mengyin Lu, and results will be published elsewhere. We note here that
-modelling the randomness in $\shat_j$ is particularly helpful when the number of observations used to estimate $\shat_j$ is very small (e.g. $<10$),
-where our simpler approach can produce unsatisfactory results (see later).
+currently pursuing this improved approach (joint work with M.Lu) and results will be published elsewhere. 
+%We note here that
+%modelling the randomness in $\shat_j$ is particularly helpful when the number of observations used to estimate $\shat_j$ is very small (e.g. $<10$),
+%where our simpler approach can produce unsatisfactory results.
 
 \subsubsection*{Non-zero mode}
 
-An addition to our software implementation, due to C.Dai, allows the mode to be estimated from the data by maximum likelihood.
+An addition to our software implementation, due to C.Dai, allows the mode to be estimated from the data by maximum likelihood, rather than fixed to 0.
 
+\subsection*{Implementation Details}
 
-\subsubsection*{Choice of grid for $\sigma_k, a_k$} \label{sec:grid}
+\subsubsection*{Likelihood for $\pi$}
 
-\def\sigmamax{\sigma_{\text{max}}}
-\def\sigmamin{\sigma_{\text{min}}}
-When $f_k$ is $N(0,\sigma_k)$ we specify our grid by specifying: i) a maximum and minimum value $(\sigmamin,\sigmamax)$; ii) a multiplicative factor $m$ to be used
-in going from one gridpoint to the other, so that $\sigma_{k} = m \sigma_{k-1}$. The multiplicative factor affects the density of the grid; we used $m=\sqrt{2}$
-as a default. We chose $\sigmamin$ to be small compared with the measurement precision ($\sigmamin=min(\shat_j)/10$) and $\sigmamax= 2\sqrt{\max(\bhat_j^2-\shat_j^2)}$
-based on the idea that $\sigmamax$ should be big enough so that  $\sigmamax^2 + \shat_j^2$ should exceed $\bhat_j^2$.   (In rare cases where $\max(\bhat_j^2-\shat_j^2)$
-is negative we set $\sigmamax = 8\sigmamin$.)
+We define the likelihood for $\pi$ to be the probability of the observed data $\bhat$ conditional on $\shat$: $L(\pi) := p(\bhat | \shat,\pi),$ which
+by our conditional indendence assumptions is equal to the product $\prod_j p(\bhat_j | \shat, \pi)$. [One might prefer to define the likelihood as $p(\bhat, \shat | \pi) = p(\bhat | \shat, \pi) p(\shat | \pi)$, in which case our definition comes down to assuming that the term $p(\shat | \pi)$ does not depend on $\pi$.]
 
-When the mixture components $f_k$ are uniform, we use the same grid for the parameters $a_k$ as for $\sigma_k$ described above.
-
-Our goal in specifying a grid was to make the limits sufficiently large and small, and the grid sufficiently dense, that results would not change appreciably with 
-a larger or denser grid. For a specific data set one can of course check this by experimenting with the grid, but these defaults usually work well in our experience.
-
-\subsubsection*{Penalty term on $\pi$}
-
-In practice data do not distinguish between effects that are ``very small" and ``exactly zero".
-Thus, if a mixture component $f_k$ has most mass very near zero then
-this introduces non-identifiability between $\pi_k$ and $\pi_0$. In practice this is a major problem
-only if one focuses on false discovery rates rather than false sign rates: the $\lfdr$ is sensitive to $\pi_0$ whereas
-the $\lfsr$ is not. However, to make $\lfdr$ (and $\lfsr$) estimates from our method ``conservative" we add a penalty 
-term $log(h(\pi;\lambda))$ to the log-likelihood $\log(L(\pi))$ to encourage over-estimation of $\pi_0$:
-\begin{equation} \label{eqn:penalty}
-h(\pi;\lambda) = \prod_{k=0}^K \pi_k^{\lambda_k-1}
-\end{equation}
-where $\lambda_k \geq 1 \, \forall k$. The default is $\lambda_0=10$ and $\lambda_k=1$, which yielded
-consistently conservative estimation of $\pi_0$ in our simulations (Figure \ref{fig:pi0}). 
-
-Although this penalty is based on a Dirichlet density, we do not interpret this as a ``prior distribution" for $\pi$:
-we chose it to provide conservative estimates of $\pi_0$ rather than to represent prior belief.
-
-
-\subsubsection*{Likelihood for $\pi$ and EM algorithm}
-
-To formally derive the likelihood we restate our modelling assumptions more formally.
-We provide details first for the normal likelihood and then briefly describe modifications for the $t$ likelihood.
-
-We treat the standard errors as $\shat=(\shat_1,\dots,\shat_J)$ as given, and perform all inference conditional on $\shat$.
-We assume that given $\shat$ and the hyper-parameters $\pi$, the $(\beta_j,\bhat_j)$ pairs are independent 
-\begin{align} \label{eqn:b1}
-p(\beta_j \, | \, \shat,\pi) & = \sum_{k=0}^K \pi_k f_k(\beta_j) \\ \label{eqn:b2}
-p(\bhat_j \, | \, \beta_j, \shat, \pi)  & = N(\bhat_j; \beta_j, \shat^2_j),
-\end{align}
-where for notational convenience we have replaced the point mass $\delta_0$ with $f_0$.
-
-Multiplying (\ref{eqn:b1}) and (\ref{eqn:b2}) together gives $p(\bhat_j, \beta_j | \shat,\pi)$, which integrating over $\beta_j$ yields
+Using the prior $\beta_j \sim \sum_{k=0}^K \pi_k f_k(\beta_j)$ given by (\ref{eqn:g-general}), and the normal likelihood (\ref{eqn:normlik}), integrating over $\beta_j$ yields
 \begin{equation}
 p(\bhat_j | \shat,\pi)  = \sum_{k=0}^K \pi_k \tilde{f}_k(\bhat_j)
 \end{equation}
@@ -1418,49 +1381,63 @@ where
 \begin{equation}
 \tilde{f}_k(\bhat_j) := \int f_k(\beta_j) N(\bhat_j; \beta_j,\shat^2_j) \, d\beta_j
 \end{equation}
-denotes the convolution of $f_k$ with the normal density.
+denotes the convolution of $f_k$ with a normal density.
 These convolutions are straightforward to evaluate whether $f_k$ is a normal or uniform density.
 Specifically, 
-\begin{equation}
+\begin{equation} \label{eqn:uconv}
 \tilde{f}_k(\bhat_j)  = 
 \begin{cases}
 N(\bhat_j;0, \shat_j^2 +  \sigma_k^2) & \text{if $f_k(\cdot) = N(\cdot; 0, \sigma_k^2)$}, \\
 \frac{\Psi((\bhat_j-a_k)/\shat_j) - \Psi((\bhat_j-b_k)/\shat_j)}{b_k-a_k} & \text{if $f_k(\cdot) = U(\cdot; a_k,b_k)$},
 \end{cases}
 \end{equation}
-where $\Psi$ denotes the distribution function of the standard normal distribution.
-If we use a $t_\nu$ likelihood instead of a normal likelihood then the convolution is tricky for $f_k$ normal and
-we have not implemented it; for $f_k$ uniform the result (\ref{eqn:uconv}) holds but with the standard normal distribution function replaced
-with the $t_\nu$ distribution function.  
+where $\Psi$ denotes the cumulative distribution function (c.d.f.) of the standard normal distribution.
+If we replace the normal likelihood with the $t_\nu$ likelihood (\ref{eqn:tlik}) then the convolution 
+for $f_k$ uniform the convolution is still given by (\ref{eqn:uconv}) but with $\Psi$ the c.d.f. 
+of the $t_\nu$ distribution function. (The convolution for $f_k$ normal is tricky and we have not implemented it.)
 
-With this in place, the likelihood for $\pi$ is obtained by multiplying across $j$:
-\begin{equation}
-L(\pi) = \prod_j \sum_k \pi_k w_{kj}
+\subsubsection*{Penalty term on $\pi$}
+
+To make $\lfdr$ and $\lfsr$ estimates from our method ``conservative" we add a penalty 
+term $log(h(\pi;\lambda))$ to the log-likelihood $\log L(\pi)$ to encourage over-estimation of $\pi_0$:
+\begin{equation} \label{eqn:penalty}
+h(\pi;\lambda) = \prod_{k=0}^K \pi_k^{\lambda_k-1}
 \end{equation}
-where the $l_{kj}:= \tilde{f}_k(\bhat_j)$ are known. 
-We add to this likelihood a penalty term $h(\pi;\lambda)$ above,
-and use an EM algorithm to maximize $L(\pi)+h(\pi;\lambda)$. The one-step updates for this EM algorithm are:
+where $\lambda_k \geq 1 \, \forall k$. The default is $\lambda_0=10$ and $\lambda_k=1$, which yielded
+consistently conservative estimation of $\pi_0$ in our simulations (Figure \ref{fig:pi0sims}). 
+
+Although this penalty is based on a Dirichlet density, we do not interpret this as a ``prior distribution" for $\pi$:
+we chose it to provide conservative estimates of $\pi_0$ rather than to represent prior belief.
+
+\subsubsection*{EM algorithm}
+
+With this in place, the penalized log-likelihood for $\pi$ is given by:
+\begin{equation}
+\log L(\pi) + \log h(\pi) = \sum_{j=1}^n \log(\sum_{k=0}^K \pi_k l_{kj}) + \sum_{k=0}^K (\lambda_k-1) \log \pi_k
+\end{equation}
+where the $l_{kj}:= \tilde{f}_k(\bhat_j)$ are known. This can be maximized using an EM algorithm \cite{dempster77}, whose
+one-step updates are:
 \begin{align} \label{eqn:w}
 w_{kj} & = \pi_k l_{kj} / \sum_{k'} {\pi_{k'} l_{k'j}} \\
-n_k & = \sum_j w_{kj} + \lambda_k - 1 \quad \text{E Step}
-\pi_k &= n_k/\sum_{k'} n_{k'} \quad \text{M step}
+n_k & = \sum_j w_{kj} + \lambda_k - 1 \quad \text{[E Step]} \\
+\pi_k &= n_k/\sum_{k'} n_{k'} \quad \text{[M step]}
 \end{align}
 Note that $\pi_k$ can be interpreted as the prior probability that $\beta_j$ arose from component $k$,
 and $l_{kj}$ is the likelihood for $\beta_j$ given that it arose from component $k$, so $w_{kj}$ is the posterior 
-probability that $\beta_j$ arose from component $k$, given $\bhat, \shat, \pi$.
+probability that $\beta_j$ arose from component $k$, given $\bhat, \shat, \pi$. (The $w_{kj}$ are sometimes referred to as the ``responsibilities".)
 Thus $n_k$ is the expected number of $\beta_j$ that arose from component $k$, plus pseudo-counts $\lambda_k-1$ from the penalty term.
-We used the elegant R package {\tt SQUAREM} \cite{varadhan2008simple}) to accelerate convergence of this EM algorithm.
+We used the elegant R package {\tt SQUAREM} \cite{varadhan2008simple} to accelerate convergence of this EM algorithm.
 
 %[Note: an alternative Variational Bayes EM approach to estimating $\pi$ has been implemented in our R package by Mengyin Lu.]
 \subsubsection*{Initialization}
 
 By default we initialize our EM algorithm with $\pi_k=1/n$ for $k=1,\dots,K$, with $\pi_0=1-\pi_1-\dots-\pi_K$. (In all our simulations here $K<<n$ so this initializes with most mass on $\pi_0$.)  
-Our rationale to initializing ``near the null" like this is that we expect that strong signal in the data can quickly draw the EM algorithm away from the null (in a single iteration),
+Our rationale for initializing ``near the null" like this is that we expect that strong signal in the data can quickly draw the EM algorithm away from the null (in a single iteration),
 but weak signal in the data cannot quickly draw the algorithm towards the null.
 
 In addition, once the EM algorithm has converged, we check that the (penalized) log-likelihood attained is higher than that achieved by the global null solution
-$\pi_0=1$. If not then we replace the EM solution with the global null solution. (This helps guard against errors due to convergence to a local optimum when the
-data are consistent with the global null.)
+$\pi_0=1; \pi_k=0 (k>0)$. If not then we replace the EM solution with the global null solution. This aims to guard against errors due to convergence to a local optimum when the
+data are consistent with the global null.
 
 
 \subsubsection*{Conditional distributions}
@@ -1479,6 +1456,23 @@ $f_k(\beta_j)$ and likelihood $L(\beta_j; \bhat_j,\shat_j)$.
 All these posterior distributions are easily available.
 For example, if $f_k$ is uniform and $L$ is $t_\nu$ then this is a truncated $t$ distribution.
 If $f_k$ is normal and $L$ is normal, then this is a normal distribution.
+
+
+
+\subsubsection*{Choice of grid for $\sigma_k, a_k$} \label{sec:grid}
+
+\def\sigmamax{\sigma_{\text{max}}}
+\def\sigmamin{\sigma_{\text{min}}}
+When $f_k$ is $N(0,\sigma_k)$ we specify our grid by specifying: i) a maximum and minimum value $(\sigmamin,\sigmamax)$; ii) a multiplicative factor $m$ to be used
+in going from one gridpoint to the other, so that $\sigma_{k} = m \sigma_{k-1}$. The multiplicative factor affects the density of the grid; we used $m=\sqrt{2}$
+as a default. We chose $\sigmamin$ to be small compared with the measurement precision ($\sigmamin=min(\shat_j)/10$) and $\sigmamax= 2\sqrt{\max(\bhat_j^2-\shat_j^2)}$
+based on the idea that $\sigmamax$ should be big enough so that  $\sigmamax^2 + \shat_j^2$ should exceed $\bhat_j^2$.   (In rare cases where $\max(\bhat_j^2-\shat_j^2)$
+is negative we set $\sigmamax = 8\sigmamin$.)
+
+When the mixture components $f_k$ are uniform, we use the same grid for the parameters $a_k$ as for $\sigma_k$ described above.
+
+Our goal in specifying a grid was to make the limits sufficiently large and small, and the grid sufficiently dense, that results would not change appreciably with 
+a larger or denser grid. For a specific data set one can of course check this by experimenting with the grid, but these defaults usually work well in our experience.
 
 
 \appendix
@@ -1500,16 +1494,19 @@ bimodal & $0.5 N(-2,1^2) + 0.5 N(2,1^2)$ \\ \bottomrule
 \end{table}
 
 
-\section{Definitions of FDR-related concepts used here}
+\section{Summary of FDR-related concepts}
 
 Let $\Gamma$ denote a subset of the tests $1,\dots,J$ declared ``significant" by some procedure. 
-We define the FDR for $\Gamma$ as the proportion of these tests that are ``false discoveries" in that $H_j$ is true:
+Define the FDR for $\Gamma$ as the proportion of these tests that are ``false discoveries" in that $H_j$ is true:
 \begin{equation}
 \FDR(\Gamma; H) := \frac{\#\{j: H_j \cap j \in \Gamma\}}{\#\{j: j \in \Gamma\}},
 \end{equation}
 taken to be 0 if both numerator and denominator are 0. Frequentist approaches to controlling the FDR attempt to control
 the expectation of $\FDR(\Gamma;H)$ where the expecation is taken over the sampling distribution of $\Gamma$ (which is a function of the procedure
-used, considered fixed, and the data $D$, considered random). Bayesian approaches, in contrast, condition on the observed data, and compute
+used, considered fixed, and the data $D$, considered random). This expectation may of course depend on $H$ which is unknown, and the goal
+of a frequentist procedure is usually to control the $\FDR$ for all possible values of $H$ (``strong control") or specifically when all the $H$ are null (``weak control").
+
+Bayesian approaches, in contrast, condition on the observed data, and compute
 the posterior distribution for the $H_j$ given the data, which induces a posterior distribution on $\FDR(\Gamma)$. This posterior
 distribution can be used to obtain a point estimate for $\FDR(\Gamma)$, for example using the posterior mean. 
 To be more explicit, Bayesian (and EB) approaches give the posterior probability that $H_j$ holds, which

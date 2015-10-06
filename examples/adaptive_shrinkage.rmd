@@ -72,6 +72,23 @@ ashplot(df)
 ggsave("ash.pdf")
 ```
 
+Now plot lfsr against z scores, colored
+according to the (square root of) precision
+
+
+
+```{r plotting lfsr}
+  
+z_lfsr_plot=function(df,ylab="Observed Z score",xlab="lfsr"){
+  ggplot(df,aes(x=lfsr,y=betahat/s,color=1/s)) + 
+    xlab(xlab) +
+    ylab(ylab) + geom_point() +  facet_grid(.~scenario) + scale_colour_gradient2(midpoint = median(1/s),low="blue", mid="white",high="red",space="Lab") 
+}
+
+z_lfsr_plot(df)
+ggsave("z_vs_lfsr.pdf")
+```
+
 A related consequence is that significance of each observation is no longer monotonic with $p$ value.
 
 ```{r}
@@ -84,12 +101,12 @@ pval_plot(df)
 
 Let's see how these are affected by changing the modelling assumptions so that
 the standardized beta are exchangeable (rather than the beta being exchangeable).
-```{r run-ash-ES}
-beta.bignormal.ash.ES = ash(sim.bignormal$input$betahat, s,model="ES",mixcompdist="normal")
-beta.spiky.ash.ES = ash(sim.spiky$input$betahat, s,model="ES",mixcompdist="normal")
-df.ES = make_df_for_ashplot(sim.spiky,sim.bignormal,beta.spiky.ash.ES,beta.bignormal.ash.ES)
-ashplot(df.ES,ylab="Shrunken beta estimate (ES model)")
-pval_plot(df.ES)
+```{r run-ash-ET}
+beta.bignormal.ash.ET = ash(sim.bignormal$input$betahat, s,model="ET",mixcompdist="normal")
+beta.spiky.ash.ET = ash(sim.spiky$input$betahat, s,model="ET",mixcompdist="normal")
+df.ET = make_df_for_ashplot(sim.spiky,sim.bignormal,beta.spiky.ash.ET,beta.bignormal.ash.ET)
+ashplot(df.ET,ylab="Shrunken beta estimate (ET model)")
+pval_plot(df.ET)
 ```
 
 
