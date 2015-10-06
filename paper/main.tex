@@ -443,10 +443,6 @@ q_j := \widehat \FDR(\{k: \fdr_k \leq \fdr_j\})
 \end{equation}
 provides a measure of significance analogous to Storey's $q$ value \cite{storey.03}.
 
-See Appendix for a more
-thorough discussion of the connection between the Bayesian quantities we compute here and frequentist quantities, including  
-a brief discussion of the False Sign Rate from a frequentist perspective.
-
 %Because our methods involve explicitly modelling effects $\beta_j$, rather than 
 %$p$ values or $z$ scores, they can provide estimates of the local false sign rates.
 
@@ -1276,9 +1272,9 @@ g(\cdot; \pi) = \sum_{k=0}^K \pi_k f_k(\cdot) ,
 \end{equation}
 where $f_0$ is a point mass on 0, and $f_k$ ($k=1,\dots,K$) are pre-specified component distributions with one of the following forms: 
 \begin{enumerate}[(i)]
-\item $f_k(\cdot) = N(\cdot; 0, \sigma^2_k)$,
-\item $f_k(\cdot) = U[\cdot; -a_k,a_k]$,
-\item $f_k(\cdot) = U[\cdot; -a_k,0] \text{ and/or } U[\cdot; 0,a_k]$,
+\item $f_k(\cdot) = N(\cdot; 0, \sigma^2_k)$, \qquad (``ash.n")
+\item $f_k(\cdot) = U[\cdot; -a_k,a_k]$,  \qquad (``ash.u")
+\item $f_k(\cdot) = U[\cdot; -a_k,0] \text{ and/or } U[\cdot; 0,a_k]$,  \qquad (``ash.hu")
 \end{enumerate}
 where $U[\cdot; a,b]$ denotes the density of a uniform distribution on $[a,b]$.
 (In (iii) we include both components in the mixture (\ref{eqn:g-general}), so a grid of values $a_1,\dots,a_K$ defines $2K+1$ mixture component densities, 
@@ -1409,6 +1405,17 @@ consistently conservative estimation of $\pi_0$ in our simulations (Figure \ref{
 Although this penalty is based on a Dirichlet density, we do not interpret this as a ``prior distribution" for $\pi$:
 we chose it to provide conservative estimates of $\pi_0$ rather than to represent prior belief.
 
+\subsubsection*{Problems with removing the penalty term in the half-uniform case}
+
+It is straightforward to remove the penalty term by setting $\lambda_k=1$ in (\ref{eqn:penalty}).
+We note here an unanticipated problem we came across when using no penalty term in the half-uniform case 
+(i.e.~ $f_k(\cdot) = U[\cdot; -a_k,0] \text{ and/or } U[\cdot; 0,a_k]$ in (\ref{eqn:g-general})): when the data
+are nearly null, the estimated $g$ converges, as expected and desired, to a distribution where almost all the mass is near 0, but
+sometimes all this mass is concentrated almost entirely just to one side (left or right) or 0. This can have a very profound effect on the local false sign rate:
+for example, if all the mass is just to the right of 0 then all observations will be assigned a very high probability of being positive (but very small),
+and a (misleading) low local false sign rate. For this reason we do not recommend use of the half-uniform with no penalty.
+
+
 \subsubsection*{EM algorithm}
 
 With this in place, the penalized log-likelihood for $\pi$ is given by:
@@ -1494,107 +1501,19 @@ bimodal & $0.5 N(-2,1^2) + 0.5 N(2,1^2)$ \\ \bottomrule
 \end{table}
 
 
-\section{Summary of FDR-related concepts}
-
-Let $\Gamma$ denote a subset of the tests $1,\dots,J$ declared ``significant" by some procedure. 
-Define the FDR for $\Gamma$ as the proportion of these tests that are ``false discoveries" in that $H_j$ is true:
-\begin{equation}
-\FDR(\Gamma; H) := \frac{\#\{j: H_j \cap j \in \Gamma\}}{\#\{j: j \in \Gamma\}},
-\end{equation}
-taken to be 0 if both numerator and denominator are 0. Frequentist approaches to controlling the FDR attempt to control
-the expectation of $\FDR(\Gamma;H)$ where the expecation is taken over the sampling distribution of $\Gamma$ (which is a function of the procedure
-used, considered fixed, and the data $D$, considered random). This expectation may of course depend on $H$ which is unknown, and the goal
-of a frequentist procedure is usually to control the $\FDR$ for all possible values of $H$ (``strong control") or specifically when all the $H$ are null (``weak control").
-
-Bayesian approaches, in contrast, condition on the observed data, and compute
-the posterior distribution for the $H_j$ given the data, which induces a posterior distribution on $\FDR(\Gamma)$. This posterior
-distribution can be used to obtain a point estimate for $\FDR(\Gamma)$, for example using the posterior mean. 
-To be more explicit, Bayesian (and EB) approaches give the posterior probability that $H_j$ holds, which
-analagous to \cite{efron2008microarrays} we refer to as the ``local FDR", and denote $\fdr_j$:
-%\begin{equation} \label{eqn:FDR}
-%\FDR(T) := \Pr(\text{$H_j$ false} | t_j \geq T).
-%\end{equation}
-\begin{equation} 
-\fdr_j := \Pr(H_j | D).
-\end{equation}
-The FDR can be estimated by the posterior mean for $\FDR(\Gamma)$, given by
-\begin{equation} 
-\widehat\FDR(\Gamma) := \frac{\sum_{j \in \Gamma} \fdr_j }{\#\{j: j \in \Gamma\}}.
-\end{equation}
-Although our approach here is (Empirical) Bayesian, one nice feature of FDR procedures is that 
-Frequentist and Bayesian procedures are often closely aligned, at least under certain assumptions; see
-for example \cite{storey.03}, particularly his Theorem 1. 
-
-The $q$ value for observation $j$ is defined \cite{storey.03} as, roughly, the FDR for the set of observations that are at least as significant as observation $j$.
-In a Bayesian analysis it is natural to order the significance of the hypotheses by $\fdr_j$, so we define
-
-\subsubsection*{qvalue}
-
-To perform this decomposition, \qvalue makes two key assumptions:
-  i) the null $p$ values have a uniform distribution, and ii) the $p$ values near 1 are all from
- tests where the null is true. Under these assumptions performing the decomposition boils down to 
- drawing the horizontal line on the $p$ value histogram that intersects with the distribution at $p=1$: the area under this horizontal
- line defines the uniform component that is due to the null $p$ values, with the remainder necessarily corresponding to
- the alternative $p$ values. In particular, the height of the horizontal line is an estimate of $\pi_0$, the proportion of $p$ values that come from the null.
-  Now, for any given threshold, although we do not know {\it which} $p$ values correspond
- to  null tests  and which to alternative tests, the areas of the two components indicate {\it how many} $p$ values correspond to each,
- allowing the FDR to be estimated (Figure \ref{fig:qvalue}). Specifically, at threshold $\gamma$, and given an estimate $\hat\pi_0$ for $\pi_0$,  a
- natural non-parametric estimate of the FDR is
- \begin{equation} 
-\hat{\FDR}(\gamma) = J \hat\pi_0 \gamma / \#\{ j: p_j \leq \gamma \}.
- \end{equation}
- See \cite{storey.02}, equation (8).
- 
-Frequentist approaches to FDR often concentrate on the {\it average} error rate for a subset of observations
-whose significance exceeds some threshold. Bayesian versions of such quantities can also be computed.
-For example, the FDR for any subset of effects $\Gamma \subset \{1,\dots,J\}$ can be estimated by
-\begin{equation} \label{eqn:FDRhat}
-\widehat\FDR(\Gamma) := \frac{\sum_{j \in \Gamma} \fdr_j }{\#\{j: j \in \Gamma\}}.
-\end{equation}
-And, analogous to \cite{storey.03}, we can define the $q$ value 
-for observation $j$ ($q_j$) as an estimate of the FDR for all observations that are at least as significant as $j$:
-\begin{equation}
-q_j := \widehat\FDR(\{k:\fdr_k \leq \fdr_j\}).
-\end{equation}
-
-
-Since the FDR terminology has become so widespread, we here introduce terminology for these ideas that parallels FDR terminology.
-Recall that, in FDR parlance, a ``discovery" is an effect that is declared to be non-zero; and a ``false discovery" refers to any such declaration that is
-made in error. The FDR is the (expected) proportion of false discoveries among all discoveries.
-Consider now insisting that for every discovery, we {\it also declare the sign of the effect} (positive or negative).
-We call such a declaration a ``signed discovery"; and correspondingly a ``false signed discovery" is any such declaration that is
-made in error - that is, any signed discovery that is either 0, or whose sign is opposite to that declared.
-Based on these definitions we can define the ``false signed discovery rate" (or ``false sign rate", FSR, for short) as the (expected) proportion
-of false signed discoveries among all signed discoveries. Similarly, we can define the local false sign rate, $\lfsr_j$ to be
-the probability that observation $j$ would be a false signed discovery, were we to declare it a signed discovery. Or, equivalently, but perhaps
-more simply, the $\lfsr_j$ is the probability we would get the sign of $\beta_j$ wrong if we
-were to be forced to declare it either positive or negative.  Explicitly:
-
-%(Naturally, we consider it an error to declare $\beta$ to be positive or negative when it is truly zero.)
-By analogy with (\ref{eqn:FDRhat}) we can also define an estimate of the average False Sign Rate for any subset of effects,
-\begin{equation}  \label{eqn:FSRhat}
-\widehat\FSR(\Gamma) := \frac{\sum_{j \in \Gamma} \fsr_j }{\#\{j: j \in \Gamma\}}.
-\end{equation}
-And, by analogy with (\ref{eqn:qj}) we can define the ``$s$-value" for each observation
-\begin{equation} \label{eqn:svalue}
-s_j := \widehat\FSR(\{k:\fsr_k \leq \fsr_j\})
-\end{equation}
-being the average error rate for all observations that are at least as significant as $j$. 
-
-
 \begin{table}[!ht]
 \begin{subtable}{\textwidth}
-	\input{tables/scoverage_all_nopen.tex}
+	\centering\input{tables/scoverage_all_nopen.tex}
 	\caption{All observations}
 \end{subtable}
 
 \begin{subtable}{\textwidth}
-\input{tables/scoverage_neg_nopen.tex}
+\centering\input{tables/scoverage_neg_nopen.tex}
 \caption{``Significant" negative discoveries.}
 \end{subtable}
 
 \begin{subtable}{\textwidth}
-\input{tables/scoverage_pos_nopen.tex}
+\centering\input{tables/scoverage_pos_nopen.tex}
 \caption{``Significant" positive discoveries.}
 \end{subtable}
 
@@ -1605,14 +1524,6 @@ being the average error rate for all observations that are at least as significa
 %q_j = \widehat\FDR(\{k:p_k \leq p_j\})
 %\end{equation}
 %which is close to the definition in \cite{storey.03}.
-\section*{Problems with removing the penalty term in the half-uniform case}
-
-We note here an unanticipated problem we came across when using no penalty term in the half-uniform case: when the data
-are nearly null, the estimated $g$ converges, as expected and desired, to a distribution where almost all the mass is near 0, but
-sometimes all this mass is concentrated almost entirely just to one side (left or right) or 0. This can have a very profound effect on the local false sign rate:
-for example, if all the mass is just to the right of 0 then all observations will be assigned a very high probability of being positive (but very small),
-and a (misleading) low local false sign rate. For this reason we do not recommend use of the half-uniform with no penalty.
-
 
 
 % Do NOT remove this, even if you are not including acknowledgments
@@ -1621,9 +1532,9 @@ and a (misleading) low local false sign rate. For this reason we do not recommen
 Statistical analyses were conducted in the {\sf R} programming language \cite{Rcore:2012}, Figures produced using the ggplot2 package \cite{ggplot2}, and text
 prepared using \LaTeX. Development of the methods in this paper was greatly enhanced by the use of the {\tt knitr} package \cite{xie2013dynamic}  within the RStudio GUI, and 
 git and github. The {\tt ashr} R package is available from \url{http://github.com/stephens999/ashr} , and includes contributions 
-from Chaixing (Rick) Dai, Mengyin Lu, and Tian Sen. 
+from Chaoxing (Rick) Dai, Mengyin Lu, and Tian Sen. 
 
-This work was supported by NIH grant xxx and a grant from the Gordon and Betty Moore Foundation.
+This work was supported by NIH grant HG02585 and a grant from the Gordon and Betty Moore Foundation.
 
 
 %\section*{References}
