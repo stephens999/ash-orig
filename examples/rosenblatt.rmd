@@ -1,0 +1,50 @@
+---
+title: "mixture of zero and non-zero mean components"
+output: html_document
+---
+
+Based on email exchange with Jonathan Rosenblatt (October 13, 2015) 
+let's try to fit data to a model that is a 50-50 mixture of a distribution g0 centered at 0
+and a distribution g1 centered at mu. 
+
+First I'll simulate from such a model:
+```{r}
+library(ashr)
+set.seed(100)
+ns = 1000 # number of samples
+beta = c(rnorm(ns/2,0,1),rnorm(ns/2,3,1))
+shat = 1 #just set noise to 1
+betahat = rnorm(ns,beta,shat)
+hist(betahat)
+```
+
+Now fit the model for various values of mu (I just used -1 to 5)
+```{r}
+mixsd = ashr:::autoselect.mixsd(betahat,shat,mult=sqrt(2)) #probably can improve choice of grid, but just to get something rolling
+k= length(mixsd) 
+
+mu = seq(-1,5,length=7)
+fit.ash=list()
+
+for(i in 1:length(mu)){ #fit ash model for each mu
+  g = normalmix(pi=rep(1/(2*k),2*k), mean = c(rep(0,k),rep(mu[i],k)), sd = c(mixsd,mixsd) )
+  fit.ash[[i]] = ash(betahat,shat,g=g,prior="uniform")
+}
+```
+
+Plot log-likelihood for different mu: it seems to be maximized near mu=3 which is promising.
+```{r}
+l=lapply(fit.ash,get_loglik)
+plot(mu,l,xlab="mu",ylab="log-likelihood (maximized over g0,g1)")
+```
+
+Look at the estimated proportions of the zero vs 3 component
+```{r}
+x=seq(-1,5,length=100)
+a = fit.ash[[which.max(l)]]
+plot(get_density(a,x),type="l")
+fit.ash[[which.max(l)]]
+```
+
+
+
