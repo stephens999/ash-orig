@@ -156,6 +156,23 @@ $\ast$ E-mail: Corresponding mstephens@uchicago.edu
 % Please keep the abstract between 250 and 300 words
 \section*{Abstract}
 
+We introduce a novel Empirical Bayes approach for performing large-scale hypothesis testing, including  
+estimating False Discovery Rates (FDRs), and estimating effect sizes. Compared with
+existing commonly-used approaches to FDR analysis, the method has two key differences. First, it
+assumes that the distribution of the actual (unobserved) effects being tested is unimodal, with a mode at 0.
+This ``unimodal assumption" (UA), which is common in other related contexts, but very different from assumptions usually made
+in FDR analyses, yields more accurate estimates of FDR than existing methods, provided the UA holds.
+Second, the method takes as it input two numbers for each test (an effect size estimate, and corresponding standard error),
+rather than the one number usually used ($p$ value, or $z$ score). Provided these two numbers are available,
+using them allows our method to better account for
+variations in measurement precision across tests. It also facilitates the estimation of actual 
+effect sizes, and our approach provides ``shrunken" interval estimates (credible regions) for each effect in addition to measures of ``significance".
+To provide a bridge between interval estimates and signicance measures we introduce the term ``local false sign rate"
+to refer to the probability of getting the sign of an effect wrong, and argue that it is a superior
+measure of significance than the local FDR because it is both more generally applicable, and
+can be more robustly estimated. Our methods are implemented in an R package {\tt ashr}
+available from \url{http://github.com/stephens999/ashr}. 
+
 % Please keep the Author Summary between 150 and 200 words
 % Use first person. PLoS ONE authors please skip this step. 
 % Author Summary not valid for PLoS ONE submissions.   
@@ -193,7 +210,7 @@ perspectives, in practice large-scale studies that assess many effects almost in
 controlling the FDR, and not on estimation. To help provide a bridge between FDR and estimation we introduce the term
 ``local false sign rate" (lfsr), which is analogous to the ``local false discovery rate" (\lfdr) \cite{efron2008microarrays}, but which measures confidence  
 in the {\it sign} of each effect rather than confidence in each effect being non-zero. We show that in some settings, particularly those with many discoveries, 
-the $\lfsr$ and $\lfdr$ can be quite different, and emphasise benefits of the lfsr, particularly its increased robustness to modelling assumptions. 
+the $\lfsr$ and $\lfdr$ can be quite different, and emphasise benefits of the $\lfsr$, particularly its increased robustness to modelling assumptions. 
 
 %terminology
 %``signed discovery" for a discovery (an effect declared to be non-zero) for which the sign of the effect (positive or negative) is declared,
@@ -201,9 +218,10 @@ the $\lfsr$ and $\lfdr$ can be quite different, and emphasise benefits of the lf
 
 %The methods we provide here can address both problems, and we provide results that highlight important benefits of focussing on estimation, and particularly on assessing the correctness of the {\it sign} of the estimated effects, rather than on testing for non-zero effects.
 
-
 Our methods are implemented in an R package, \ashr (for {\bf a}daptive {\bf sh}rinkage in {\bf R}), available at \url{http://github.com/stephens999/ashr}.
-(We address the reasons for this name, and connections with shrinkage analysis, in the Discussion.)
+(The names comes from the fact that EB methods in general, and -- due to the UA -- our EB method in particular, is a form of shrinkage estimation,
+and the shrinkage is adaptive to both the amount of signal in the data and the measurement precision of each observation. 
+This will be discussed further in Xing and Stephens (in preparation).)
 
 
 %Measurement precision will often vary among genes --  for example, log-fold change estimate for highly expressed genes may have greater precision than those for lower-expressed genes -- and one goal  of our methods is to allow for thiis variation. 
@@ -305,7 +323,7 @@ However, this simple model also has several additional assumptions that can be r
 We can relax this to allow for a relationship between these quantities [see (\ref{eqn:beta-alpha})].
 \item The likelihood (\ref{eqn:normlik}) effectively assumes that the number of observations used to compute $\bhat_j,\shat_j$ are sufficiently large to justify a normal approximation. We can generalize this likelihood using a $t$ likelihood [see (\ref{eqn:tlik})].
 \end{enumerate}
-These embellishments are detailed in Embellishments and Implementation Details.
+These embellishments are detailed in Detailed Methods.
 Of course there remain limitations that are harder to relax, most notably the independence and conditional independence assumptions encapsulated in our model
 (which are also made by most existing EB approaches to this problem). Correlations among tests certainly arise in practice, either due to genuine correlations
 in the system of study, or due to unmeasured confounders, and their potential to impact results of an FDR analysis is important to consider
@@ -758,20 +776,6 @@ However, there is ``no free lunch":  if in fact some effects are exactly zero
 then the analysis with no point mass will tend to be anti-conservative, underestimating $\lfsr$ (Figure \ref{fig:lfsr-s}). 
 We conclude that {\it if} ensuring a ``conservative" analysis is important then one must allow for a point mass at 0. 
 
-\begin{figure}
-\begin{center}
-\begin{subfigure}{\textwidth}
-\includegraphics[height=1.8in]{figures/lfsr_est_s_nn.png} 
-\caption{Comparison of true and estimated $\lfsr$ when data are simulated with no point mass at zero ($\pi_0=0$), and also analyzed by \ashr with no point mass on 0 (and mixture of normal components for $g$). Black line is $y=x$ and red line is $y=2x$. The results illustrate how estimates of $\lfsr$ can be more accurate in this case. That is, assuming there is no point mass can be beneficial if that is indeed true.}  \label{fig:lfsr-nn}
-\end{subfigure}
-\begin{subfigure}{\textwidth}
-\includegraphics[height=1.8in]{figures/lfsr_est_s.png} 
-\caption{Comparison of true and estimated $\lfsr$ when data are simulated with point mass at zero (drawn uniformly from [0,1] in each simulation), but analyzed by \ashr with no point mass on 0 (and mixture of normal components for $g$). Black line is $y=x$ and red line is $y=2x$. The results illustrate how estimates of $\lfsr$ can be anti-conservative if we assume there is no point mass when the truth is that there is a point mass.} \label{fig:lfsr-s}
-\end{subfigure}
-\end{center}
-\caption{Illustration of effects of excluding a point mass from the analysis.} \label{fig:lfsr-nopointmass}
-\end{figure}
-
 
 
 \subsubsection*{Numerical Stability}
@@ -1184,7 +1188,7 @@ that attempt to infer counfounders using clustering, principal components analys
 \cite{pritchard.stephens.rosenberg.donnelly.00,price:2006,leek:2007,gagnon2012using},
 and then correct for them in computation of the test statistics (in our case, $\bhat,\shat$). When these latter approaches are viable,
 they provide perhaps the most satisfactory solution, and are certainly a good fit for our framework. Alterntively, our methods
-could also be modified to allow for test statistic inflation, perhaps by incorporating the inflation into the likelihood (\ref{eqn:lik}) using
+could also be modified to allow for test statistic inflation, perhaps by incorporating the inflation into the likelihood (\ref{eqn:normlik}) using
 $\bhat_j | \shat_j \sim N(0,\lambda_1 \shat_j + \lambda_2)$, where $\lambda_1,\lambda_2$ are to be estimated. However,
 this immediately raises issues of identifiability and we do not pursue the idea further here.
 
@@ -1484,6 +1488,20 @@ a larger or denser grid. For a specific data set one can of course check this by
 
 \appendix
 
+\begin{figure}
+\begin{center}
+\begin{subfigure}{\textwidth}
+\includegraphics[height=1.8in]{figures/lfsr_est_s_nn.png} 
+\caption{Comparison of true and estimated $\lfsr$ when data are simulated with no point mass at zero ($\pi_0=0$), and also analyzed by \ashr with no point mass on 0 (and mixture of normal components for $g$). Black line is $y=x$ and red line is $y=2x$. The results illustrate how estimates of $\lfsr$ can be more accurate in this case. That is, assuming there is no point mass can be beneficial if that is indeed true.}  \label{fig:lfsr-nn}
+\end{subfigure}
+\begin{subfigure}{\textwidth}
+\includegraphics[height=1.8in]{figures/lfsr_est_s.png} 
+\caption{Comparison of true and estimated $\lfsr$ when data are simulated with point mass at zero (drawn uniformly from [0,1] in each simulation), but analyzed by \ashr with no point mass on 0 (and mixture of normal components for $g$). Black line is $y=x$ and red line is $y=2x$. The results illustrate how estimates of $\lfsr$ can be anti-conservative if we assume there is no point mass when the truth is that there is a point mass.} \label{fig:lfsr-s}
+\end{subfigure}
+\end{center}
+\caption{Illustration of effects of excluding a point mass from the analysis.} \label{fig:lfsr-nopointmass}
+\end{figure}
+
 
 
 \begin{table}[!ht]
@@ -1517,7 +1535,7 @@ bimodal & $0.5 N(-2,1^2) + 0.5 N(2,1^2)$ \\ \bottomrule
 \caption{``Significant" positive discoveries.}
 \end{subtable}
 
-\caption{Table of empirical coverage for nominal 95\% lower credible bounds for methods {\it without} the penalty term). } \label{table:nopen}
+\caption{Table of empirical coverage for nominal 95\% lower credible bounds for methods {\it without} the penalty term). } \label{tab:nopen}
 \end{table}
 %In simple settings (e.g. symmetric effects, with the same standard error) $\fdr_j$ is a monotonic function of the $p$ value $p_j$, and so
 %\begin{equation}
@@ -1529,9 +1547,9 @@ bimodal & $0.5 N(-2,1^2) + 0.5 N(2,1^2)$ \\ \bottomrule
 % Do NOT remove this, even if you are not including acknowledgments
 \section*{Acknowledgements}
 
-Statistical analyses were conducted in the {\sf R} programming language \cite{Rcore:2012}, Figures produced using the ggplot2 package \cite{ggplot2}, and text
+Statistical analyses were conducted in the {\sf R} programming language \cite{Rcore:2012}, Figures produced using the {\tt ggplot2} package \cite{ggplot2}, and text
 prepared using \LaTeX. Development of the methods in this paper was greatly enhanced by the use of the {\tt knitr} package \cite{xie2013dynamic}  within the RStudio GUI, and 
-git and github. The {\tt ashr} R package is available from \url{http://github.com/stephens999/ashr} , and includes contributions 
+git and github. The {\tt ashr} R package is available from \url{http://github.com/stephens999/ashr} and includes contributions 
 from Chaoxing (Rick) Dai, Mengyin Lu, and Tian Sen. 
 
 This work was supported by NIH grant HG02585 and a grant from the Gordon and Betty Moore Foundation.
