@@ -19,13 +19,6 @@ require("knitr")
   dep_auto()
 ```
 
-## How can we make more progress together?
-
-- Abstract our problems
-- Develop benchmarks
-- Build generic tools
-
-
 ## The power of generic tools
 
 - Linear regression
@@ -33,7 +26,7 @@ require("knitr")
 - Principal Components Analysis
 - qvalue for FDR
 
-Goal: generic tools for shrinkage estimation
+Goal: generic tools for FDR and shrinkage estimation
 
 
 ## The Canonical Genomics Experiment 
@@ -129,14 +122,14 @@ been cited 27,331 times (June 2015) according to Google Scholar.
 - The standard `qvalue` 
 approach assumes that all the $p$ values near 1 are null.
 
-- Analogously, one can assume that all Z scores near 0 are null. Efron refers to this as the ``Zero Assumption".
+- Analogously, one can assume that all Z scores near 0 are null. Efron refers to this as the "Zero Assumption".
 
 - Seems initially natural.
 
 
 ```{r, echo=FALSE, include=FALSE}
-require(fdrtool)
-  hh.fdrtool = fdrtool(hh.pval,statistic="pvalue",plot=FALSE)
+#require(fdrtool)
+#  hh.fdrtool = fdrtool(hh.pval,statistic="pvalue",plot=FALSE)
 require(locfdr)
   hh.locfdr = locfdr(hh.zscore,nulltype=0,plot=0)
 require(mixfdr)
@@ -162,21 +155,20 @@ require(mixfdr)
     plot(h,add=TRUE,col=altcol,freq=FALSE)
   }
    
-  nullalthist(hh.zscore,hh.fdrtool$lfdr)  
+  nullalthist(hh.zscore,hh.q$lfdr)  
 ```
 
 
 
 ## FDR problem 2: different measurement precision
 
-- In some cases the measurement precisions differ among units
+- Measurement precision can differ among units
 
-- Eg effect sizes of rare SNPs have larger standard error than those of common SNPs
+    - Eg effects of rare SNPs have larger standard error than common SNPs
 
-- Eg Expression levels of low-expressed genes have less precision than high-expressed genes
+    - Eg low-expressed genes less precise than high-expressed genes
 
-- If some effects are measured less precisely than others, those tests ``lack power"
-and dilute signal, increasing FDR
+- Low precision measurements add noise, dilute signal, increase FDR
 
 
 ```{r, echo=FALSE}
@@ -263,16 +255,13 @@ Two Ideas:
 
 ## FDR via Empirical Bayes
 
-- Following previous work (e.g. Newton, Efron, Muralidharan) we take an empirical Bayes approach to FDR.
+- Following previous work (e.g. Newton, Efron, Muralidharan) we take an empirical Bayes approach.
 
 - Eg Efron assumes that the $Z$ scores come from a mixture of null, and alternative:
 $$Z_j \sim f_Z(.) = \pi_0 N(.;0,1) + (1-\pi_0) f_1(.)$$
 where $f_1, \pi_0$ are to be estimated from the data.
 
-- Various semi-parametric approaches taken to estimating $f_1$. For example,
-Efron uses Poisson regression; Muralidharan uses mixture of normal distributions.
-
-- Once $f_1$ and $\pi_0$ estimated, FDR calculations are straightforward.
+- Once $f_1$ and $\pi_0$ estimated, FDR calculations straightforward.
 
 ## FDR: A New Deal
 
@@ -284,7 +273,6 @@ $$\beta_j \sim \pi_0 \delta_0(.) + (1-\pi_0) g(.)$$
 - *Incorporate precision* of each observation $\hat\beta$ into the likelihood:
 $$\hat\beta_j | s_j \sim N(\beta_j, s_j)$$
 
-(cf Bayes inference from summary statistics; V.Johnson, J.Wakefield)
 
 ## FDR - A New Deal
 
@@ -292,20 +280,7 @@ $$\hat\beta_j | s_j \sim N(\beta_j, s_j)$$
 normal distributions: 
 $$g(\beta; \pi) = \sum_{k=1}^K \pi_k N(\beta; 0, \sigma^2_k)$$
 
-- Estimating $g$ comes down to estimating $\pi$. Joint estimation of $\pi_0,\pi$ easy by maximum likelihood (EM algorithm).
-
-- By allowing $K$ large, and $\sigma_k$ to span a dense grid of values,
-we get a flexible unimodal symmetric distribution.
-
-- Can approximate, arbitrarily closely, any scale mixture of normals.
-Includes almost all priors used for sparse regression problems (spike-and-slab, double exponential/Laplace/Bayesian Lasso, horseshoe). 
-
-## FDR - A New Deal
-
-- Alternatively, a mixture of uniforms, with 0 as one end-point of the range,
-provides still more flexibility, and in particular allows for asymmetry. 
-
-- If allow a very large number of uniforms this provides the non-parametric mle for $g$; cf Grenander 1953; Cordy + Thomas 1997.
+- Fix $K$ large, $\sigma_k$ fixed dense grid, estimate $\pi$.
 
 
 ## Illustration: $g$ a mixture of 0-centered normals
@@ -346,22 +321,20 @@ plot(x, 0.1*dunif(x,0,3)+ 0.3*dunif(x,0,0.2) + 0.2*dunif(x,0,0.5) + 0.1* dunif(x
 
 ## Adaptive Shrinkage
 
-- This approach actually provides a full posterior distribution for each $\beta_j$.
+- Approach provides not only FDR estimates, but posterior distribution for each $\beta_j$.
 
-- So easy to obtain point estimates and credible intervals.
-
-- Because $g(\beta)$ is unimodal, the point estimates (and CIs) will tend to be ``shrunk" towards the overall mean (0).
+- Because $g(\beta)$ is unimodal, the point estimates (and CIs) will tend to be "shrunk" towards the overall mean (0).
 
 - Because $g(\beta)$ is estimated from the data, the amount
 of shrinkage is adaptive to signal in the data. And because of the role of $s_j$, the amount of shrinkage adapts to the information on each observation.
 
-- So we call the approach ``Adaptive Shrinkage" (ASH).
+- So we call the approach "Adaptive Shrinkage" (ASH).
 
 
 
 ## Recall Problem 1: distribution of alternative Z values multimodal
 ```{r, echo=FALSE,fig.height=4,fig.cap=""}
-nullalthist(hh.zscore,hh.fdrtool$lfdr,main="qvalue")  
+nullalthist(hh.zscore,hh.q$lfdr,main="qvalue")  
 ```
 
 ## Problem Fixed: distribution of alternative Z values unimodal
@@ -386,7 +359,7 @@ Number of findings at (estimated) FDR=0.05:
   kable(res.tab,row.names=TRUE,format="pandoc")
 ```
 
-## Some more extensive simulations
+## More extensive simulations
 
 ![Image](../paper/figures/scenarios_density.pdf)
 
@@ -398,7 +371,9 @@ Goals: Estimate $\pi_0$? Estimate $g$?
 
 ![Image](../paper/figures/pi0_est.pdf)
 
-All methods are, generally, "conservative" (deliberately).
+- All methods are, generally, "conservative" (deliberately). 
+
+- `ash` generally least conservative.
 
 ## Estimation of $g$
 
@@ -416,25 +391,6 @@ All methods are, generally, "conservative" (deliberately).
 ![Image](../paper/figures/egcdf.pdf)
 
 
-## A new problem: an embarrassment of riches
-
-- If the null is mostly false, this approach can  provide unsettling results
-
-- The FDR can be small for all observations, even those with $p \approx 1$!
-
-- In the illustrative example, the maximum $q$ value is `r round(max(hh.ash$qvalue),2)`
-
-
-## Perhaps we didn't really understand the question?
-
-- Problem arises only if we insist on asking question "is $\beta_j=0$?"
-
-- Given enough signal, we become convinced that very few of the $\beta_j=0$
-
-- But for some $\beta_j$ we still may have little information about actual value
-
-- Suggests a change of focus: ask for which $\beta_j$ are we confident about the sign (cf Gelman et al, 2012; Tukey 1961).
-
 
 ## Generic procedure: summary
 
@@ -443,17 +399,6 @@ All methods are, generally, "conservative" (deliberately).
 
 $$\hat{\beta}_j | \beta_j, s_j \sim N(\beta_j,s_j)$$
 $$\beta_j | s_j \sim g(), \text{unimodal}.$$
-
-- Output: estimate of $g$; "shrunken" posterior distribution for $\beta_j$.
-
-
-## Generic procedure: embellishments
-
-- Inputs: $(\hat{\beta}_1,s_1), \dots, (\hat{\beta}_p,s_p)$
-- Assumptions: 
-
-$$\hat{\beta}_j | \beta_j, s_j \sim t(\beta_j,s_j)$$
-$$\beta_j | s_j \sim s_j^\alpha g(), \text{unimodal}.$$
 
 - Output: estimate of $g$; "shrunken" posterior distribution for $\beta_j$.
 
@@ -468,7 +413,7 @@ effect size and standard error for each object.
 
 ## Next steps?
 
-- Incorporate shrinkage of variances and not just means. (e.g. ``moderated $t$ test", Smyth et al).
+- Incorporate shrinkage of variances and not just means. (e.g. "moderated $t$ test", Smyth et al).
 
 - Allow $g(\cdot;\pi)$ to depend on covariates $X$.
 
@@ -489,6 +434,6 @@ who have worked with me on related topics.
 
 - Including  Chaoxing Dai, Mengyin Lu, Ester Pantaleo, Scott Powers, Sen Tian, Wei Wang, Zhengrong Xing. 
 
-- NHGRI, Moore Foundation for funding.
+- NHGRI, and the Gordon and Betty Moore Foundation for funding.
 
 - `ashr` package: `http://www.github.com/stephens999/ashr`
