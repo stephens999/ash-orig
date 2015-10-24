@@ -1476,7 +1476,7 @@ If $f_k$ is normal and $L$ is normal, then this is a normal distribution.
 \def\sigmamin{\sigma_{\text{min}}}
 When $f_k$ is $N(0,\sigma_k)$ we specify our grid by specifying: i) a maximum and minimum value $(\sigmamin,\sigmamax)$; ii) a multiplicative factor $m$ to be used
 in going from one gridpoint to the other, so that $\sigma_{k} = m \sigma_{k-1}$. The multiplicative factor affects the density of the grid; we used $m=\sqrt{2}$
-as a default. We chose $\sigmamin$ to be small compared with the measurement precision ($\sigmamin=min(\shat_j)/10$) and $\sigmamax= 2\sqrt{\max(\bhat_j^2-\shat_j^2)}$
+as a default. We chose $\sigmamin$ to be small compared with the measurement precision ($\sigmamin=\min(\shat_j)/10$) and $\sigmamax= 2\sqrt{\max(\bhat_j^2-\shat_j^2)}$
 based on the idea that $\sigmamax$ should be big enough so that  $\sigmamax^2 + \shat_j^2$ should exceed $\bhat_j^2$.   (In rare cases where $\max(\bhat_j^2-\shat_j^2)$
 is negative we set $\sigmamax = 8\sigmamin$.)
 
