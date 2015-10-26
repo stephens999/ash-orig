@@ -12,7 +12,7 @@ Here we summarize the results of the simulation study to look at convergence of 
   library(ggplot2)
   library(reshape2)
   library("dplyr")
-  load("dsc_robust.RData") 
+  load("dsc-robust-files/dsc_robust.RData") 
   res = dsc_robust$res
 ```
 

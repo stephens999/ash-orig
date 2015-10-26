@@ -33,7 +33,7 @@ add_score(dsc_robust,score)
 ######## Run the DSC #################
 
 res_robust=run_dsc(dsc_robust)
-save(dsc_robust,file="dsc_robust.RData")
+save(dsc_robust,file="dsc-robust-files/dsc_robust.RData")
 
 
 
