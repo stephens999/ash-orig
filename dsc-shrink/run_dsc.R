@@ -33,6 +33,6 @@ add_score(dsc_shrink,score_lfdr,"lfdr","ash_output") #just extracts the lfdr
 
 
 res=run_dsc(dsc_shrink)
-save(res,dsc_shrink,file="res.RData")
+save(res,dsc_shrink,file="dsc-shrink-files/res.RData")
 
 
