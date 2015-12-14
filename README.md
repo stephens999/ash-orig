@@ -1,31 +1,12 @@
-[![Build Status](https://travis-ci.org/daichaoxing/ash.svg?branch=travis)](https://travis-ci.org/daichaoxing/ash)
+This repository is no longer in active use, but serves as an archive. 
+It was the original repository I set up when I started working on my ``adaptive shrinkage" work. 
 
-This repository contains ongoing work on Bayesian FDR and Adaptive Shrinkage.
-Because the repo was getting rather out of hand I moved the package
-to its own repo. So:
+Because the repo was getting rather out of hand I moved the package to its own repo. So:
 the ashr R package is now [here](https://github.com/stephens999/ashr)
 
-To install the ashr package first you need to install devtools
-```
-install.packages("devtools")
-library(devtools)
-install_github("stephens999/ashr")
-```
-
-## Running Adaptive Shrinkage
+Then I wanted to refactor my repo in light of lessons I learned about how to better organize my workflow
+and make things more reproducible. The refactored repo, including the paper, figures, and related documents, is now [here](https://github.com/stephenslab/ash)
 
 
-The main function in the ashr package is `ash`. To get minimal help:
-```
-> library(ashr)
-> ?ash
-```
 
-To get more information download the repository, and look at `Rcode/intro.html` and `Rcode/readme.html`
-
-(These html files are generated from `Rcode/intro.rmd` and `Rcode/readme.rmd` and can be
-reproduced using the R package knitr. R studio provides a nice interface to accomplish this.
-See for example http://jeromyanglim.blogspot.com/2012/05/getting-started-with-r-markdown-knitr.html)
-
-If you are interested in contributing to this project, contact mstephens@uchicago.edu
 
