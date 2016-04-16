@@ -1,7 +1,7 @@
 ---
 title: "False Discovery Rates, A New Deal"
 author: Matthew Stephens
-date: March 9, 2015
+date: April 15, 2016
 output: ioslides_presentation
 ---
 
@@ -40,7 +40,8 @@ I've noticed something.
 
 - A repository: a central place in which an aggregation of data is kept and maintained in an organized way (searcharticle.com)
 - Great for sharing material across multiple people (eg student and advisor!)
-- An amateur example: [http://github.com/stephens999/ash](http://github.com/stephens999/ash)
+- For example: [https://github.com/jdblischak/singleCellSeq](https://github.com/jdblischak/singleCellSeq)
+- A template (in progress): [https://github.com/jhsiao999/ashlar](https://github.com/jhsiao999/ashlar)
 
 ## What is knitr?
 
@@ -66,29 +67,29 @@ be compared to a mathematician publishing an announcement of a mathematical theo
 - Helps communications among researchers (eg student + advisor).
 - If you do not publish code implementing your methods, your methods will likely go unused.
 
-## Commercial Break: 
+<!-- ## Commercial Break:  -->
 
-A quick ad for a recently-started project I call "Dynamic Statistical Comparisons":
+<!-- A quick ad for a recently-started project I call "Dynamic Statistical Comparisons": -->
 
-- Overall Goal: Improve how the statistics and genomics (and other) communities make comparisons among methods.
+<!-- - Overall Goal: Improve how the statistics and genomics (and other) communities make comparisons among methods. -->
 
-- How? Centralize reproducible statistical comparisons in easily-extensible public repositories.
+<!-- - How? Centralize reproducible statistical comparisons in easily-extensible public repositories. -->
 
 
-## Dynamic Statistical Comparisons: advantages
+<!-- ## Dynamic Statistical Comparisons: advantages -->
 
-- Authors can run their own methods. 
-- Ease of adding new data can quickly uncover over-tuning to specific datasets.
-- Work is divided, and not duplicated.
-- Promotes collaboration through competition. 
-- Ensures results are reproducible, and extendable.
+<!-- - Authors can run their own methods.  -->
+<!-- - Ease of adding new data can quickly uncover over-tuning to specific datasets. -->
+<!-- - Work is divided, and not duplicated. -->
+<!-- - Promotes collaboration through competition.  -->
+<!-- - Ensures results are reproducible, and extendable. -->
 
-## More on git, github, knitr, reproducibility, DSCs
+## More on git, github, knitr, reproducibility
 
 - Google "The git book", to get started on git.
 - Google "Karl Broman github tutorial" for statistics-oriented intro to github.
 - Google "donohoe buckheit" for "Wavelab and reproducible research"
-- [http://stephens999.github.io/blog/](http://stephens999.github.io/blog/) for more on DSC
+
 
 ## The Canonical Genomics Experiment 
 
@@ -368,10 +369,9 @@ Or, better, use a $t$ likelihood if $s_j$ estimated using few observations.
 normal distributions: 
 $$g(\beta; \pi) = \sum_{k=1}^K \pi_k N(\beta; 0, \sigma^2_k)$$
 
-- Estimating $g$ comes down to estimating $\pi$. Joint estimation of $\pi_0,\pi$ easy by maximum likelihood (EM algorithm).
+- Estimating $g$ comes down to estimating $\pi$. Joint estimation of $\pi_0,\pi$ easy by maximum likelihood (convex optimization).
 
-- By allowing $K$ large, and $\sigma_k$ to span a dense grid of values,
-we get a flexible unimodal symmetric distribution.
+- Setting $K$ large, with dense grid of $\sigma_k$, yields flexible unimodal symmetric distribution.
 
 - Can approximate, arbitrarily closely, any scale mixture of normals.
 Includes almost all priors used for sparse regression problems (spike-and-slab, double exponential/Laplace/Bayesian Lasso, horseshoe). 
@@ -426,7 +426,7 @@ plot(x, 0.1*dunif(x,0,3)+ 0.3*dunif(x,0,0.2) + 0.2*dunif(x,0,0.5) + 0.1* dunif(x
 
 - So easy to obtain point estimates and credible intervals.
 
-- Because $g(\beta)$ is unimodal, the point estimates (and CIs) will tend to be ``shrunk" towards the overall mean (0).
+- Because $g(\beta)$ is unimodal, the point estimates (and CIs) will tend to be "shrunk" towards the overall mean (0).
 
 - Because $g(\beta)$ is estimated from the data, the amount
 of shrinkage is adaptive to signal in the data. And because of the role of $s_j$, the amount of shrinkage adapts to the information on each observation.
@@ -538,33 +538,36 @@ small". So $\pi_0$ is not identifiable, and FDR is very sensitive to $\pi_0$.
 - The False Sign Rate is much less senstive to $\pi_0$, and hence more identifiable from data!
 
 
-## Simulated example: $\pi_0$ not identifiable.
+## More extensive simulations
 
-```{r,echo=FALSE,include=FALSE}
-load("../paper/Rcode/sim1.RData") #load simulation results
-source("../paper/Rcode/plot_pi0.R")
-```
+![Image](../paper/figures/scenarios_density.pdf)
 
-```{r, echo=FALSE,fig.height=4,fig.cap=""}
-plot_pi0(list(simres1a))
-```
+$$\beta_j \sim \pi_0 \delta_0(.) + (1-\pi_0) g(.)$$
+
+Goals: Estimate $\pi_0$? Estimate $g$?
+
+## Estimation of $\pi_0$
+
+![Image](../paper/figures/pi0_est.pdf)
+
+- All methods are, generally, "conservative" (deliberately). 
+
+- `ash` generally least conservative.
+
+## Estimation of $g$
+
+- Estimating $g$ is a “deconvolution problem”.
+- Notoriously difficult in general. 
+- Efron emphasises the difficulties of implementing a stable general algorithm:
+
+<div class="red">
+“the effort foundered on practical difficulties involving the perils of deconvolution... Maybe I am trying to be overly nonparametric... but it is hard to imagine a generally satisfactory parametric formulation...”
+</div>
 
 
+## Unimodal assumption stabilizes estimation of $g$
 
-
-## Simulated Example: so fdr not identifiable
-
-```{r, echo=FALSE,fig.height=4,fig.cap="",warning=FALSE,message=FALSE}
-source("../paper/Rcode/plot_lfsr.R")
-  plot_lfsr(list(simres1a),0.1,ptype="lfdr")
-```
-
-## Simulated Example: fsr much more identifiable
-
-```{r, echo=FALSE,fig.height=4,fig.cap="",warning=FALSE,message=FALSE}
-  plot_lfsr(list(simres1a),0.1,ptype="lfsr")
-```
-
+![Image](../paper/figures/egcdf.pdf)
 
 ## Summary
 
@@ -580,22 +583,19 @@ measurements is better accounted for.
 better representation of information in data for ``high-signal" situations.
 
 
-## Other Applications
+## Applications/Generalizations
 
-- Widely applicable: requiring only an estimated
-effect size and standard error for each object.
+- The idea of inducing sparsity/shrinkage via unimodal distributions is very general!
 
-- E.g. Currently applying it to wavelet shrinkage applications.
+- smash: Smoothing via adaptive shrinkage (wavelet-based)
 
+- vash: shrinkage of variances and not just means. (e.g. ``moderated $t$ test", Smyth et al) [Mengyin Lu]
 
-## Next steps?
+- flash: shrinkage of factors and loadings in factor analysis [Wei Wang; David Gerard]
 
-- Incorporate shrinkage of variances and not just means. (e.g. ``moderated $t$ test", Smyth et al)
+- mash: allow for matrix of observations/effects $\hat\beta_{ij}$ [Sarah Urbut, Gao Wang]
 
-- Allow $g(\cdot;\pi)$ to depend on covariates $X$.
-
-- Allow for correlations in the measured $\hat\beta_j$.
-
+- cash: allow $g(\cdot;\pi)$ to depend on covariates $X$ [Scott Powers, Lei Sun]
 
 
 
@@ -607,7 +607,7 @@ Also the very cool **SQUAREM** package.
 - to the several postdoctoral researchers and students
 who have worked with me on related topics.
 
-- Including  Chaoxing Dai, Mengyin Lu, Ester Pantaleo, Scott Powers, Sen Tian, Wei Wang, Zhengrong Xing. 
+- Including  Chaoxing Dai, Mengyin Lu, Ester Pantaleo, Sen Tian, Wei Wang, Zhengrong Xing, Sarah Urbut
 
 - NHGRI, Moore Foundation for funding.
 
